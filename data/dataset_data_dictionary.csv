@@ -1,0 +1,14 @@
+column_name,description
+ID,Unique identifier for each observation
+timestamp,Date and time of the observation 
+precipitation (mm),Amount of precipitation recorded during the measurement interval
+radiation (W/m2),Incoming solar radiation measured by the sensor (TARGET VARIABLE) in watts per square metre (W/m²)
+relativehumidity (-),Relative humidity 
+temperature (degrees Celsius),Air temperature at the time of measurement
+station,Unique station identifier code
+station_name,Human-readable name of the station
+country,Country code where the station is located (ISO format)
+installation_height,Height of the sensor installation above ground level in metres (m)
+elevation,Elevation of the station above sea level in metres (m)
+latitude,Geographic latitude of the station in decimal degrees
+longitude,Geographic longitude of the station in decimal degrees

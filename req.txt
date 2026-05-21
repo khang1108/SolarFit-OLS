@@ -1,0 +1,1194 @@
+ĐẠI HỌC QUỐC GIA TP. HỒ CHÍ MINH
+TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN
+KHOA CÔNG NGHỆ THÔNG TIN
+
+ĐỒ ÁN 2
+Data Fitting và Phương Pháp OLS
+
+Môn học:
+
+Toán Ứng Dụng và Thống Kê
+
+Mã môn:
+
+MTH00051
+
+Học kỳ:
+
+HỌC KỲ 2, 2025 – 2026
+
+Thông tin giảng viên
+GV Thực hành:
+
+ThS. Võ Nam Thục Đoan, ThS. Lê Nhựt Nam
+
+E-mail:
+
+{vntdoan, lnnam}@fit.hcmus.edu.vn
+
+Tài liệu này dành riêng cho mục đích học thuật.
+
+FIT – HCMUS
+
+Toán Ứng Dụng và Thống Kê
+
+Mục lục
+
+Giới Thiệu Đồ Án
+
+3
+
+1
+
+Phần 1: Lý Thuyết Data Fitting và Minh Họa
+
+4
+
+1.1
+
+Bài Toán Data Fitting . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+4
+
+1.1.1
+
+Phát biểu bài toán tổng quát . . . . . . . . . . . . . . . . . . . . .
+
+4
+
+1.1.2
+
+Các Giả Thiết Gauss–Markov . . . . . . . . . . . . . . . . . . . .
+
+4
+
+Phương Pháp Ordinary Least Squares (OLS) . . . . . . . . . . . . . . . . .
+
+4
+
+1.2.1
+
+Hàm mất mát và nghiệm OLS . . . . . . . . . . . . . . . . . . . .
+
+5
+
+1.2.2
+
+Ma Trận Chiếu và Hat Matrix . . . . . . . . . . . . . . . . . . . .
+
+5
+
+1.2.3
+
+Định Lý Gauss–Markov . . . . . . . . . . . . . . . . . . . . . . .
+
+5
+
+1.2.4
+
+Ước Lượng Phương Sai Nhiễu . . . . . . . . . . . . . . . . . . . .
+
+6
+
+Đánh Giá Mô Hình . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+6
+
+1.3.1
+
+Hệ số xác định R2 và R2 hiệu chỉnh . . . . . . . . . . . . . . . . .
+
+6
+
+1.3.2
+
+Kiểm Định Giả Thuyết . . . . . . . . . . . . . . . . . . . . . . . .
+
+6
+
+Các Vấn Đề Nâng Cao trong Data Fitting . . . . . . . . . . . . . . . . . .
+
+6
+
+1.4.1
+
+Đa cộng tuyến (Multicollinearity) . . . . . . . . . . . . . . . . . .
+
+6
+
+1.4.2
+
+Hồi Quy Ridge và Lasso (Regularization) . . . . . . . . . . . . . .
+
+7
+
+1.4.3
+
+Phân Tích Phần Dư (Residual Analysis) . . . . . . . . . . . . . . .
+
+7
+
+1.4.4
+
+Cross-Validation và Lựa Chọn Mô Hình . . . . . . . . . . . . . . .
+
+7
+
+1.5
+
+Yêu Cầu Cài Đặt Python — Phần 1 . . . . . . . . . . . . . . . . . . . . . .
+
+7
+
+1.6
+
+Tiêu Chí Đánh Giá — Phần 1 . . . . . . . . . . . . . . . . . . . . . . . . .
+
+8
+
+1.2
+
+1.3
+
+1.4
+
+2
+
+Phần 2: Ứng Dụng Data Fitting vào Dữ Liệu Thực Tế
+
+9
+
+2.1
+
+Tiêu Chí Chọn Bộ Dữ Liệu . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+9
+
+2.2
+
+Tiền Xử Lý Dữ Liệu . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+9
+
+2.2.1
+
+Khảo Sát Dữ Liệu (Exploratory Data Analysis — EDA) . . . . . .
+
+10
+
+2.2.2
+
+Xử Lý Missing Values . . . . . . . . . . . . . . . . . . . . . . . .
+
+10
+
+2.2.3
+
+Các Bước Tiền Xử Lý Khác . . . . . . . . . . . . . . . . . . . . .
+
+10
+
+Xây Dựng và Đánh Giá Mô Hình . . . . . . . . . . . . . . . . . . . . . . .
+
+11
+
+2.3.1
+
+Quy trình xây dựng mô hình . . . . . . . . . . . . . . . . . . . . .
+
+11
+
+2.3.2
+
+Các Mô Hình Cần Thử Nghiệm . . . . . . . . . . . . . . . . . . .
+
+11
+
+2.3
+
+Đồ án 2 | Data Fitting và Phương pháp OLS
+
+Trang 1/17
+
+FIT – HCMUS
+
+2.3.3
+
+3
+
+Toán Ứng Dụng và Thống Kê
+
+Tiêu Chí So Sánh Mô Hình . . . . . . . . . . . . . . . . . . . . . .
+
+11
+
+2.4
+
+Kỹ Thuật Nâng Cao (Tùy Chọn) . . . . . . . . . . . . . . . . . . . . . . .
+
+11
+
+2.5
+
+Yêu Cầu Cài Đặt Python — Phần 2 . . . . . . . . . . . . . . . . . . . . . .
+
+12
+
+2.6
+
+Tiêu Chí Đánh Giá — Phần 2 . . . . . . . . . . . . . . . . . . . . . . . . .
+
+13
+
+Yêu Cầu Chung và Hướng Dẫn Nộp Bài
+
+14
+
+3.1
+
+Cấu Trúc Báo Cáo . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+14
+
+3.2
+
+Cấu Trúc Thư Mục Nộp Bài . . . . . . . . . . . . . . . . . . . . . . . . .
+
+14
+
+3.3
+
+Yêu Cầu Kỹ Thuật . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+14
+
+3.4
+
+Phân Công Nhóm và Đạo Đức Học Thuật . . . . . . . . . . . . . . . . . .
+
+15
+
+3.5
+
+Thang Điểm Tổng Hợp . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+15
+
+Tài Liệu Tham Khảo
+
+Đồ án 2 | Data Fitting và Phương pháp OLS
+
+17
+
+Trang 2/17
+
+FIT – HCMUS
+
+Toán Ứng Dụng và Thống Kê
+
+Giới Thiệu Đồ Án
+
+Mục tiêu tổng quát
+Đồ án này tập trung vào hai nhóm nhiệm vụ bổ sung cho nhau:
+1. Lý thuyết và minh họa — Nắm vững nền tảng toán học của data fitting và
+phương pháp Ordinary Least Squares (OLS), sau đó minh họa các kết quả lý
+thuyết bằng code Python tự cài đặt.
+2. Ứng dụng thực tế — Vận dụng data fitting để phân tích một bộ dữ liệu thực,
+bao gồm tiền xử lý, xây dựng mô hình hồi quy và đánh giá kết quả một cách có
+hệ thống.
+Sau khi hoàn thành đồ án, sinh viên có khả năng:
+• Giải thích và chứng minh các tính chất cốt lõi của OLS (unbiasedness, BLUE, Gauss–
+Markov).
+• Cài đặt pipeline data fitting hoàn chỉnh từ đầu bằng Python, có thể so sánh được với thư
+viện sklearn.LinearRegression.
+• Phân tích và xử lý bộ dữ liệu thực có missing values, outliers và các vấn đề thực tiễn.
+• Đánh giá mô hình một cách toàn diện (hệ số R2 , residual analysis, cross-validation).
+
+Các công cụ cho phép sử dụng trong đồ án
+• Python 3.10+: Ngôn ngữ cài đặt chính.
+• NumPy, SciPy: Tính toán số; dùng để kiểm chứng, không dùng để thay thế cài đặt thuật
+toán.
+• Pandas: Đọc, xử lý và thao tác dữ liệu.
+• Matplotlib, Seaborn: Trực quan hóa dữ liệu và kết quả mô hình.
+• Scikit-learn: Chỉ dùng để so sánh và kiểm chứng kết quả, không dùng để cài đặt OLS
+chính.
+• Jupyter Notebook: Trình bày toàn bộ thực nghiệm.
+� Lưu ý
+Các
+hàm
+như
+sklearn.linear_model.LinearRegression,
+numpy.linalg.lstsq chỉ được dùng để kiểm chứng (verification). Phần
+cài đặt thuật toán chính phải được viết từ đầu dựa trên công thức toán học.
+
+Đồ án 2 | Data Fitting và Phương pháp OLS
+
+Trang 3/17
+
+FIT – HCMUS
+
+Toán Ứng Dụng và Thống Kê
+
+1. Phần 1: Lý Thuyết Data Fitting và Minh Họa
+
+Tóm tắt yêu cầu Phần 1: Trình bày lại kiến thức đã học về data fitting và OLS. Với mỗi
+kết quả lý thuyết, sinh viên viết code Python để minh họa và kiểm chứng bằng dữ liệu
+giả lập (synthetic data).
+
+1.1. Bài Toán Data Fitting
+1.1.1. Phát biểu bài toán tổng quát
+Định nghĩa 1.1 (Bài toán Data Fitting). Cho tập dữ liệu D = {(xi , yi )}ni=1 với xi ∈ Rp ,
+yi ∈ R. Bài toán data fitting là tìm hàm f : Rp → R trong một lớp hàm cho trước sao cho f
+xấp xỉ tốt nhất ánh xạ từ xi đến yi theo một tiêu chí đã định.
+Trong mô hình hồi quy tuyến tính, ta giả thiết:
+yi = β0 + β1 xi1 + β2 xi2 + · · · + βp xip + εi = xTi β + εi ,
+
+(1)
+
+với β = (β0 , β1 , . . . , βp )T ∈ Rp+1 là vector tham số cần ước lượng và εi là nhiễu ngẫu nhiên.
+Viết dưới dạng ma trận với X ∈ Rn×(p+1) (ma trận design có cột đầu toàn 1):
+y = Xβ + ε.
+
+(2)
+
+1.1.2. Các Giả Thiết Gauss–Markov
+Các giả thiết Gauss–Markov (GM1 – GM5)
+GM1. Tuyến tính: y = Xβ + ε.
+GM2. Không hoàn hảo đa cộng tuyến: rank(X) = p + 1 (các cột độc lập tuyến tính).
+GM3. Ngoại sinh: E[ε | X] = 0, tức E[εi | xi ] = 0.
+GM4. Đồng phương sai: Var(ε | X) = σ 2 In , tức Var(εi ) = σ 2 và Cov(εi , εj ) = 0 với
+i ̸= j.
+GM5. Phần dư Chuẩn: ε | X ∼ N (0, σ 2 In ).
+
+1.2. Phương Pháp Ordinary Least Squares (OLS)
+
+Đồ án 2 | Data Fitting và Phương pháp OLS
+
+Trang 4/17
+
+FIT – HCMUS
+
+Toán Ứng Dụng và Thống Kê
+
+1.2.1. Hàm mất mát và nghiệm OLS
+OLS tìm β̂ tối thiểu hóa tổng bình phương phần dư (Residual Sum of Squares):
+RSS(β) = ∥y − Xβ∥22 =
+
+n
+X
+
+(yi − xTi β)2 .
+
+(3)
+
+i=1
+
+Định lý 1.1 (Nghiệm OLS — Normal Equations). Nếu XT X khả nghịch, nghiệm OLS duy
+nhất là:
+β̂ OLS = (XT X)−1 XT y.
+(4)
+Chứng minh. Tính đạo hàm và cho đạo hàm bằng không:
+∇β RSS = −2XT (y − Xβ) = 0.
+Sau đó giải ra:
+XT Xβ = XT y.
+
+1.2.2. Ma Trận Chiếu và Hat Matrix
+Định nghĩa 1.2 (Hat Matrix). Ma trận chiếu (projection matrix hay hat matrix) là:
+H = X(XT X)−1 XT ∈ Rn×n .
+Mệnh đề 1.1 (Tính chất của H).
+
+(5)
+
+(i) H2 = H (idempotent).
+
+(ii) HT = H (đối xứng).
+(iii) Giá trị riêng của H: chỉ là 0 hoặc 1.
+(iv) rank(H) = p + 1.
+(v) Giá trị fitted: ŷ = Hy; phần dư: ε̂ = (I − H)y.
+1.2.3. Định Lý Gauss–Markov
+Định lý 1.2 (Gauss–Markov). Dưới các giả thiết GM1–GM4, ước lượng OLS β̂ OLS là ước
+lượng tuyến tính không chệch tốt nhất (Best Linear Unbiased Estimator — BLUE):
+(i) Không chệch: E[β̂ OLS ] = β.
+(ii) Tốt nhất (phương sai nhỏ nhất): Với mọi ước lượng tuyến tính không chệch β̃ khác,
+ta có Var(β̃j ) ≥ Var(β̂jOLS ) với mọi j.
+Ma trận hiệp phương sai của β̂ OLS :
+Var(β̂ OLS | X) = σ 2 (XT X)−1 .
+Đồ án 2 | Data Fitting và Phương pháp OLS
+
+(6)
+Trang 5/17
+
+FIT – HCMUS
+
+Toán Ứng Dụng và Thống Kê
+
+1.2.4. Ước Lượng Phương Sai Nhiễu
+Ước lượng không chệch của σ 2 :
+
+σ̂ 2 =
+
+y − Xβ̂
+
+2
+
+RSS
+=
+.
+n−p−1
+n−p−1
+
+(7)
+
+1.3. Đánh Giá Mô Hình
+1.3.1. Hệ số xác định R2 và R2 hiệu chỉnh
+Định nghĩa 1.3 (Hệ số xác định). Hệ số xác định R2 được định nghĩa như sau:
+P
+(yi − ŷi )2
+RSS
+2
+R =1−
+= 1 − Pi
+R2 ∈ [0, 1]
+2
+TSS
+(y
+−
+ȳ)
+i
+i
+
+(8)
+
+R2 luôn tăng khi thêm biến. Để so sánh các mô hình có số biến khác nhau, ta hay dùng R2
+hiệu chỉnh:
+n−1
+(1 − R2 ).
+(9)
+R̄2 = 1 −
+n−p−1
+1.3.2. Kiểm Định Giả Thuyết
+Dưới giả thiết chuẩn GM5, β̂ ∼ N (β, σ 2 (XT X)−1 ).
+Kiểm định Student, t test – Kiểm định ý nghĩa của từng đặc trưng đối với mô hình:
+β̂j
+tj = p
+∼ tn−p−1
+σ̂ [(XT X)−1 ]jj
+
+(với H0 : βj = 0)
+
+(10)
+
+Kiểm định F cho mô hình tổng thể – Kiểm định ý nghĩa của mô hình:
+F =
+
+(TSS − RSS)/p
+∼ Fp, n−p−1
+RSS/(n − p − 1)
+
+(với H0 : β1 = · · · = βp = 0)
+
+(11)
+
+1.4. Các Vấn Đề Nâng Cao trong Data Fitting
+1.4.1. Đa cộng tuyến (Multicollinearity)
+Đa cộng tuyến xảy ra khi các cột của X có tương quan cao, khiến XT X gần suy biến. Để
+phát hiện hiện tượng này, chúng ta có thể sử dụng hệ số phóng đại (Variance Inflation Factor)
+được định nghĩa như sau:
+1
+VIFj =
+,
+(12)
+1 − Rj2
+trong đó Rj2 là R2 khi hồi quy biến Xj theo các biến còn lại. VIF > 10 cho thấy đa cộng tuyến
+nghiêm trọng.
+Đồ án 2 | Data Fitting và Phương pháp OLS
+
+Trang 6/17
+
+FIT – HCMUS
+
+Toán Ứng Dụng và Thống Kê
+
+1.4.2. Hồi Quy Ridge và Lasso (Regularization)
+Khi dữ liệu có nhiều đặc trưng hoặc đa cộng tuyến, ta cần thêm thành phần chính quy hoá /
+thành phần điều (đặt) chỉnh (regularization):
+Ridge Regression (L2 ):
+
+β̂ ridge = arg min ∥y − Xβ∥2 + λ ∥β∥22 = (XT X + λI)−1 XT y.
+
+(13)
+
+β
+
+Lasso Regression (L1 ):
+
+β̂ lasso = arg min ∥y − Xβ∥2 + λ ∥β∥1 .
+
+(14)
+
+β
+
+Lasso không có nghiệm closed-form; giải bằng coordinate descent hoặc các phương pháp
+dưới gradient (subgradient methods).
+1.4.3. Phân Tích Phần Dư (Residual Analysis)
+Sử dụng các công cụ thống kê mô tả để kiểm tra sai số của mô hình:
+• Residuals vs Fitted: Kiểm tra tính tuyến tính và đồng phương sai.
+• Q-Q Plot: Kiểm tra tính chuẩn của phần dư.
+• Scale-Location: Kiểm tra phương sai đồng đều (homoscedasticity).
+• Cook’s Distance: Xác định các quan sát có ảnh hưởng lớn (influential points).
+1.4.4. Cross-Validation và Lựa Chọn Mô Hình
+k-Fold Cross-Validation: Chia dữ liệu thành k phần bằng nhau. Mỗi lần dùng k − 1 phần
+để huấn luyện, 1 phần để kiểm tra. Lặp k lần và lấy trung bình:
+1X
+MSEi .
+k i=1
+k
+
+CV(k) =
+
+(15)
+
+Tiêu chí lựa chọn mô hình: Thông thường người ta sẽ dựa trên các tiêu chí như AIC (Akaike
+Information Criterion) hoặc BIC (Bayesian Information Criterion):
+
+
+
+
+RSS
+RSS
++ 2(p + 2),
+BIC = n ln
++ (p + 2) ln n
+(16)
+AIC = n ln
+n
+n
+
+1.5. Yêu Cầu Cài Đặt Python — Phần 1
+
+Đồ án 2 | Data Fitting và Phương pháp OLS
+
+Trang 7/17
+
+FIT – HCMUS
+
+Toán Ứng Dụng và Thống Kê
+
+Yêu cầu cài đặt — Phần 1
+Với mỗi mục dưới đây, sinh viên phải: (a) trình bày công thức toán học, (b) cài đặt
+Python từ đầu, (c) minh họa bằng dữ liệu giả lập, (d) kiểm chứng với NumPy/sklearn.
+1. ols_fit(X, y) — Tính β̂ = (XT X)−1 XT y và σ̂ 2 .
+2. hat_matrix(X) — Tính H = X(XT X)−1 XT , kiểm tra idempotent.
+3. model_metrics(y, y_hat, p) — Tính RSS, TSS, R2 , R̄2 , kiểm định F .
+4. coef_inference(X, y, beta_hat, sigma2) — Tính standard errors,
+t-statistics, p-values và khoảng tin cậy 95%.
+5. vif(X) — Tính VIF cho từng biến.
+6. ridge_fit(X, y, lam) — Cài đặt Ridge Regression, vẽ ridge trace.
+7. residual_plots(X, y, beta_hat) — Vẽ 4 biểu đồ phân tích phần dư.
+8. kfold_cv(X, y, k) — Cài đặt k-fold cross-validation, tính CV score.
+9. Minh họa định lý Gauss–Markov: Mô phỏng Monte Carlo để kiểm chứng E[β̂] =
+β và OLS có phương sai nhỏ nhất.
+
+1.6. Tiêu Chí Đánh Giá — Phần 1
+Tiêu chí
+
+Mô tả
+
+Điểm
+
+Trình bày lý thuyết OLS
+
+Đúng, đầy đủ công thức, có chứng minh
+
+1.0
+
+Cài đặt OLS từ đầu
+
+Đúng, kiểm chứng với NumPy
+
+1.0
+
+Hat matrix và tính chất
+
+Cài đặt, kiểm tra idempotent
+
+0.5
+
+Kiểm định hệ số (t, F )
+
+Tính đúng t-stat, p-value
+
+0.5
+
+Regularization (Ridge/Lasso)
+
+Cài đặt, vẽ ridge trace
+
+1.0
+
+Phân tích phần dư
+
+4 biểu đồ đầy đủ, nhận xét
+
+0.5
+
+Cross-validation
+
+Cài k-fold CV, so sánh mô hình
+
+0.5
+
+Minh họa Gauss–Markov
+
+Monte Carlo rõ ràng, nhận xét
+
+0.5
+
+Trình bày Notebook
+
+Rõ ràng, có markdown giải thích
+
+0.5
+
+Tổng Phần 1
+
+Đồ án 2 | Data Fitting và Phương pháp OLS
+
+6.0
+
+Trang 8/17
+
+FIT – HCMUS
+
+Toán Ứng Dụng và Thống Kê
+
+2. Phần 2: Ứng Dụng Data Fitting vào Dữ Liệu Thực Tế
+
+Tóm tắt yêu cầu Phần 2: Chọn ít nhất một bộ dữ liệu thực có missing values, thực hiện
+tiền xử lý, áp dụng data fitting để giải bài toán hồi quy, đánh giá và phân tích kết quả.
+
+2.1. Tiêu Chí Chọn Bộ Dữ Liệu
+Yêu cầu chọn dữ liệu
+Bộ dữ liệu phải thỏa mãn đồng thời các điều kiện:
+1. Dữ liệu thực (real-world): Thu thập từ quan sát thực tế, không phải dữ liệu tổng
+hợp (synthetic) hay dữ liệu toy (ví dụ: không dùng Iris, Boston Housing từ sklearn).
+2. Có missing values: Dữ liệu gốc phải chứa ít nhất một cột có giá trị bị thiếu (≥ 5%
+dữ liệu bị thiếu để có ý nghĩa xử lý).
+3. Biến mục tiêu liên tục: Bài toán hồi quy (regression), không phải phân loại
+(classification).
+4. Kích thước hợp lý: n ≥ 200 quan trắc, p ≥ 3 biến đặc trưng.
+5. Nguồn đáng tin cậy: Kaggle, UCI ML Repository, data.gov, World Bank, v.v.
+Gợi ý bộ dữ liệu tham khảo
+• Kaggle
+–
+House
+Prices
+(kaggle.com/c/
+house-prices-advanced-regression-techniques): Dự đoán
+giá nhà với 79 biến, nhiều missing values.
+• UCI – Auto MPG: Dự đoán mức tiêu hao nhiên liệu của xe hơi.
+• UCI – Bike Sharing Dataset: Dự đoán số lượng xe đạp cho thuê.
+• World Bank Open Data: Dữ liệu kinh tế vĩ mô theo quốc gia và năm.
+• WHO Global Health Observatory: Dữ liệu sức khỏe toàn cầu.
+• OECD Data: Dữ liệu giáo dục, lao động, kinh tế.
+Sinh viên được khuyến khích tự chọn bộ dữ liệu phù hợp với sở thích và chuyên ngành.
+
+2.2. Tiền Xử Lý Dữ Liệu
+
+Đồ án 2 | Data Fitting và Phương pháp OLS
+
+Trang 9/17
+
+FIT – HCMUS
+
+Toán Ứng Dụng và Thống Kê
+
+2.2.1. Khảo Sát Dữ Liệu (Exploratory Data Analysis — EDA)
+Trước khi xử lý, sinh viên phải thực hiện EDA bao gồm:
+• Thống kê mô tả: mean, median, std, min, max, quartiles.
+• Phân phối từng biến: histogram, boxplot.
+• Ma trận tương quan: heatmap.
+• Kiểm tra dữ liệu trùng lắp.
+• Phân tích missing values: tỉ lệ thiếu theo từng cột.
+• Phát hiện outliers: phương pháp IQR, z-score hoặc tự định nghĩa ra ngưỡng để lọc
+outliers.
+2.2.2. Xử Lý Missing Values
+Các phương pháp xử lý missing values
+MV1. Listwise deletion: Xóa toàn bộ hàng có ít nhất một giá trị thiếu. Đơn giản nhưng
+gây mất thông tin.
+MV2. Mean/Median/Mode imputation: Thay giá trị thiếu bằng thống kê của cột.
+ximputed
+= x̄j
+ij
+
+hoặc
+
+median(xj )
+
+MV3. Regression imputation: Dự đoán giá trị thiếu bằng cách hồi quy biến đó theo
+các biến còn lại.
+MV4. k-NN imputation: Thay giá trị thiếu bằng trung bình của k quan sát gần nhất
+theo khoảng cách Euclidean trên các biến đã biết.
+MV5. Multiple Imputation (MICE): Tạo nhiều bản sao dữ liệu đã điền, phân tích
+từng bản, gộp kết quả theo quy tắc Rubin.
+� Lưu ý
+Sinh viên cần giải thích lý do chọn phương pháp xử lý missing values cụ thể cho
+bộ dữ liệu của mình, dựa trên cơ chế thiếu dữ liệu: MCAR (Missing Completely At
+Random), MAR (Missing At Random) hay MNAR (Missing Not At Random).
+
+2.2.3. Các Bước Tiền Xử Lý Khác
+• Feature engineering: Tạo biến mới, biến đổi phi tuyến (log,
+
+√
+
+·, polynomial features).
+
+• Encoding biến phân loại: One-hot encoding hoặc ordinal encoding.
+
+Đồ án 2 | Data Fitting và Phương pháp OLS
+
+Trang 10/17
+
+FIT – HCMUS
+
+Toán Ứng Dụng và Thống Kê
+
+• Chuẩn hóa (normalization/standardization): Ví dụ như z-score như sau
+xj − x̄j
+xstd
+(z-score standardization)
+j =
+sj
+
+(17)
+
+• Phát hiện và xử lý outliers: Winsorization hoặc loại bỏ có căn cứ.
+• Kiểm tra đa cộng tuyến: VIF trước khi đưa vào mô hình.
+
+2.3. Xây Dựng và Đánh Giá Mô Hình
+2.3.1. Quy trình xây dựng mô hình
+Sinh viên thực hiện theo pipeline sau:
+
+EDA
+
+Train/Test Split
+
+Tiền xử lý
+
+Xây dựng mô hình
+
+Điều chỉnh lại
+Báo cáo kết quả
+
+Tinh chỉnh
+
+Đánh giá
+
+2.3.2. Các Mô Hình Cần Thử Nghiệm
+Sinh viên xây dựng và so sánh ít nhất 3 mô hình:
+Mô hình
+
+Loại
+
+Mô tả
+
+OLS cơ bản
+
+Bắt buộc
+
+Hồi quy với tất cả các biến (sau tiền xử lý)
+
+OLS chọn biến
+
+Bắt buộc
+
+Loại bỏ biến dựa trên p-value hoặc VIF
+
+Ridge / Lasso
+
+Bắt buộc
+
+Regularization, chọn λ qua CV
+
+Polynomial / Interaction
+
+Tùy chọn
+
+Thêm đặc trưng phi tuyến
+
+Kernel / Bayesian
+
+Nâng cao
+
+Xem mục 2.4
+
+2.3.3. Tiêu Chí So Sánh Mô Hình
+Mỗi mô hình được đánh giá trên tập test (không được dùng trong quá trình huấn luyện):
+s
+1 X
+1 X
+RSStest
+2
+MAE =
+|yi − ŷi | , RMSE =
+(yi − ŷi )2 , Rtest
+=1−
+. (18)
+ntest i
+ntest i
+TSStest
+
+2.4. Kỹ Thuật Nâng Cao (Tùy Chọn)
+Kernel Regression
+
+Đồ án 2 | Data Fitting và Phương pháp OLS
+
+Trang 11/17
+
+FIT – HCMUS
+
+Toán Ứng Dụng và Thống Kê
+
+Kernel Regression
+Kernel regression mở rộng OLS sang không gian đặc trưng phi tuyến thông qua kernel
+trick:
+ŷ(x) = k(x)T (K + λI)−1 y,
+(19)
+với Kij = k(xi , xj ) là ma trận Gram và k(·, ·) là hàm kernel (RBF, polynomial, v.v.):
+!
+′ 2
+∥x
+−
+x
+∥
+.
+(20)
+kRBF (x, x′ ) = exp −
+2ℓ2
+Sinh viên cài đặt Kernel Ridge Regression và so sánh với OLS thông thường.
+Bayesian Linear Regression
+Bayesian Linear Regression
+Bayesian approach đặt prior cho β:
+β ∼ N (m0 , S0 ),
+
+y | x, β ∼ N (xT β, σ 2 )
+
+(21)
+
+Phân phối hậu nghiệm (conjugate):
+β | X, y ∼ N (mn , Sn ),
+
+Sn =
+
+S−1
+0 +
+
+1 T
+X X
+σ2
+
+−1
+
+(22)
+
+
+,
+
+mn = Sn
+
+S−1
+0 m0 +
+
+
+1 T
+X y .
+σ2
+
+(23)
+
+Ưu điểm: Cho người dùng thông tin về uncertainty quantification — khoảng tin cậy
+Bayesian (credible intervals) cho dự đoán. Sinh viên cài đặt và so sánh với OLS
+frequentist.
+
+2.5. Yêu Cầu Cài Đặt Python — Phần 2
+Yêu cầu cài đặt — Phần 2
+1. Pipeline tiền xử lý: Viết class DataPipeline xử lý missing values, encoding,
+chuẩn hóa theo thứ tự. Phải có thể fit trên train, transform trên test.
+2. So sánh 3+ mô hình: Bảng tổng hợp MAE, RMSE, R2 trên test set.
+3. Cross-validation: Dùng k-fold (khuyến nghị k = 5 hoặc k = 10) để chọn siêu
+tham số λ cho Ridge/Lasso.
+4. Phân tích phần dư: Với mô hình tốt nhất, vẽ đầy đủ 4 biểu đồ chẩn đoán.
+5. Feature importance: Vẽ biểu đồ hệ số hồi quy (sau chuẩn hóa) để giải thích mô
+hình.
+6. Nhận xét và kết luận: Giải thích kết quả theo ngữ cảnh của bộ dữ liệu.
+
+Đồ án 2 | Data Fitting và Phương pháp OLS
+
+Trang 12/17
+
+FIT – HCMUS
+
+Toán Ứng Dụng và Thống Kê
+
+2.6. Tiêu Chí Đánh Giá — Phần 2
+Tiêu chí
+
+Mô tả
+
+Điểm
+
+Chọn và mô tả dữ liệu
+
+Đúng tiêu chí, mô tả rõ nguồn gốc
+
+0.5
+
+EDA
+
+Đầy đủ thống kê mô tả, biểu đồ
+
+0.5
+
+Xử lý missing values
+
+Đúng phương pháp, có giải thích
+
+1.0
+
+Tiền xử lý tổng thể
+
+Pipeline đầy đủ, fit/transform đúng
+
+0.5
+
+Xây dựng ≥ 3 mô hình
+
+OLS, Ridge/Lasso, một mô hình khác
+
+1.5
+
+2
+
+Đánh giá trên test set
+
+MAE, RMSE, R , phân tích phần dư
+
+1.0
+
+Nhận xét và kết luận
+
+Phân tích có chiều sâu, liên hệ thực tế
+
+0.5
+
+Kỹ thuật nâng cao
+
+Kernel / Bayesian (tùy chọn, bonus)
+
++0.5
+
+Tổng Phần 2
+
+5.5 (+0.5)
+
+� Lưu ý
+Điểm kỹ thuật nâng cao (Kernel / Bayesian) là điểm bonus, tối đa cộng thêm 0.5 điểm
+vào tổng Phần 2. Điểm tổng đồ án vẫn quy về thang 10.
+
+Đồ án 2 | Data Fitting và Phương pháp OLS
+
+Trang 13/17
+
+FIT – HCMUS
+
+Toán Ứng Dụng và Thống Kê
+
+3. Yêu Cầu Chung và Hướng Dẫn Nộp Bài
+
+3.1. Cấu Trúc Báo Cáo
+Báo cáo viết bằng LATEX hoặc Markdown (xuất ra PDF), bao gồm:
+1. Trang bìa: Họ và tên, MSSV, nhóm, giảng viên hướng dẫn.
+2. Mục lục.
+3. Phần 1: Lý thuyết và minh họa.
+4. Phần 2: Ứng dụng thực tế.
+5. Kết luận: Tóm tắt kết quả, bài học rút ra, hướng mở rộng.
+6. Tài liệu tham khảo: Ít nhất 5 tài liệu.
+7. Phụ lục: Bảng số liệu, biểu đồ bổ sung (nếu có).
+
+3.2. Cấu Trúc Thư Mục Nộp Bài
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+
+Group_<ID>/
+|-- README.md
+|-- requirements.txt
+|-- report/
+|
+|-- report.pdf
+|
+`-- report.tex
+|-- part1/
+|
+|-- ols_implementation.py
+|
+|-- ridge_lasso.py
+|
+|-- residual_analysis.py
+|
+|-- cross_validation.py
+|
+`-- part1_notebook.ipynb
+`-- part2/
+|-- data/
+|
+`-- <ten_dataset>.csv
+|-- data_pipeline.py
+|-- model_comparison.py
+|-- advanced_methods.py
+`-- part2_notebook.ipynb
+
+# OLS from scratch
+
+# Theoretical demo
+
+# Original data
+# Pre-processing
+# Model compare
+# Kernel/Bayesian (if have)
+# Results analysis and discuss
+
+3.3. Yêu Cầu Kỹ Thuật
+• Sử dụng Python 3.10+, viết code rõ ràng (clean code), chú thích code nếu thật sự cần
+thiết.
+Đồ án 2 | Data Fitting và Phương pháp OLS
+
+Trang 14/17
+
+FIT – HCMUS
+
+Toán Ứng Dụng và Thống Kê
+
+• Tất cả biểu đồ phải có tiêu đề, nhãn trục, chú thích đầy đủ.
+• Mọi quyết định (chọn λ, chọn k, xử lý outlier) phải được giải thích bằng lý luận, không
+phải thử-sai ngẫu nhiên.
+• Kết quả phải tái lập được (reproducible): đặt random_state / seed cụ thể.
+• Mỗi hàm có ít nhất 2 unit test kiểm tra kết quả trên dữ liệu đã biết.
+
+3.4. Phân Công Nhóm và Đạo Đức Học Thuật
+� Lưu ý
+• Báo cáo phải ghi rõ phân công công việc của từng thành viên.
+• Giảng viên sẽ chọn lựa một số nhóm để vấn đáp nếu cần thiết.
+• Nghiêm cấm sao chép code hoặc báo cáo từ nhóm khác mà không trích dẫn nguồn.
+• Sử dụng AI (ChatGPT, Copilot, v.v.) để gợi ý là được phép, nhưng phải hiểu và
+giải thích được toàn bộ code nộp.
+• Vi phạm đạo đức học thuật dẫn đến điểm 0 toàn bộ đồ án.
+
+3.5. Thang Điểm Tổng Hợp
+Phần
+
+Nội dung
+
+Điểm tối đa
+
+Trọng số
+
+1
+
+Lý thuyết, minh họa, cài đặt OLS
+
+6.0
+
+52%
+
+2
+
+Ứng dụng dữ liệu thực
+
+5.5
+
+48%
+
++0.5
+
+—
+
+11.5 (+0.5)
+
+100%
+
+Bonus Kỹ thuật nâng cao (Kernel/Bayesian)
+Tổng cộng
+
+Điểm cuối cùng = min(Tổng / 1.15, 10), quy về thang điểm 10.
+
+Đồ án 2 | Data Fitting và Phương pháp OLS
+
+Trang 15/17
+
+FIT – HCMUS
+
+Toán Ứng Dụng và Thống Kê
+
+Tóm tắt sản phẩm nộp bài
+□ Báo cáo report.pdf (bắt buộc)
+□ Source code đầy đủ kèm README.md và requirements.txt
+□ Jupyter
+Notebooks:
+part2_notebook.ipynb
+
+part1_notebook.ipynb
+
+và
+
+□ Dữ liệu gốc: file .csv hoặc link download trong README
+□ Nộp qua: Moodle của Khoa
+□ Hạn nộp: [ngày 30/5/2026, trước 23:59]
+
+Đồ án 2 | Data Fitting và Phương pháp OLS
+
+Trang 16/17
+
+FIT – HCMUS
+
+Toán Ứng Dụng và Thống Kê
+
+Tài Liệu Tham Khảo
+
+[1] Gilbert Strang. Introduction to Linear Algebra, 6th ed. Wellesley-Cambridge Press,
+2023.
+[2] Gareth James, Daniela Witten, Trevor Hastie & Robert Tibshirani. An Introduction to
+Statistical Learning, 2nd ed. Springer, 2021. Truy cập miễn phí: https://www.statlearning.
+com
+
+[3] Trevor Hastie, Robert Tibshirani & Jerome Friedman. The Elements of Statistical Learning,
+2nd ed. Springer, 2009. Truy cập miễn phí: https://hastie.su.domains/ElemStatLearn/
+[4] Christopher M. Bishop. Pattern Recognition and Machine Learning. Springer, 2006.
+(Chương 3: Linear Models for Regression)
+[5] Kevin P. Murphy. Probabilistic Machine Learning: An Introduction. MIT Press, 2022.
+Truy cập miễn phí: https://probml.github.io/pml-book/book1.html
+[6] Jake VanderPlas. Python Data Science Handbook. O’Reilly, 2016. https://jakevdp.
+github.io/PythonDataScienceHandbook/
+[7] Wes McKinney. Python for Data Analysis, 3rd ed. O’Reilly, 2022.
+
+Đồ án 2 | Data Fitting và Phương pháp OLS
+
+Trang 17/17
+
+
