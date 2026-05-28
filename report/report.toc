@@ -1,0 +1,25 @@
+\contentsline {section}{\numberline {1}Bài Toán Data Fitting và Phương Pháp OLS}{1}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Phát Biểu Bài Toán Data Fitting Tổng Quát}{1}{subsection.1.1}%
+\contentsline {subsubsection}{\numberline {1.1.1}Đặt vấn đề}{1}{subsubsection.1.1.1}%
+\contentsline {subsubsection}{\numberline {1.1.2}Mô hình hồi quy tuyến tính}{1}{subsubsection.1.1.2}%
+\contentsline {subsection}{\numberline {1.2}Các Giả Thiết Gauss–Markov}{2}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Hàm Mất Mát RSS và Chứng Minh Nghiệm OLS}{3}{subsection.1.3}%
+\contentsline {subsubsection}{\numberline {1.3.1}Hàm mất mát RSS}{3}{subsubsection.1.3.1}%
+\contentsline {subsubsection}{\numberline {1.3.2}Chứng minh nghiệm OLS (Normal Equations)}{4}{subsubsection.1.3.2}%
+\contentsline {subsection}{\numberline {1.4}Ma Trận Chiếu (Hat Matrix)}{7}{subsection.1.4}%
+\contentsline {subsubsection}{\numberline {1.4.1}Định nghĩa và hình học}{7}{subsubsection.1.4.1}%
+\contentsline {subsubsection}{\numberline {1.4.2}Các tính chất của Hat Matrix}{8}{subsubsection.1.4.2}%
+\contentsline {subsection}{\numberline {1.5}Ước Lượng Phương Sai Nhiễu $\sigma ^2$}{9}{subsection.1.5}%
+\contentsline {subsection}{\numberline {1.6}Định Lý Gauss–Markov (BLUE)}{10}{subsection.1.6}%
+\contentsline {subsection}{\numberline {1.7}Đánh Giá Mô Hình}{11}{subsection.1.7}%
+\contentsline {subsubsection}{\numberline {1.7.1}Phân rã phương sai và hệ số xác định}{11}{subsubsection.1.7.1}%
+\contentsline {subsubsection}{\numberline {1.7.2}Kiểm định giả thuyết}{12}{subsubsection.1.7.2}%
+\contentsline {section}{\numberline {2}Cài Đặt Python}{13}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Imports, hằng số, dataclass và các hàm phụ trợ}{13}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Hàm \texttt {ols\_fit(X, y)}}{17}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}Mô tả}{17}{subsubsection.2.2.1}%
+\contentsline {subsubsection}{\numberline {2.2.2}Code}{17}{subsubsection.2.2.2}%
+\contentsline {subsection}{\numberline {2.3}Hàm \texttt {hat\_matrix(X)}}{19}{subsection.2.3}%
+\contentsline {subsubsection}{\numberline {2.3.1}Mô tả}{19}{subsubsection.2.3.1}%
+\contentsline {subsubsection}{\numberline {2.3.2}Code}{20}{subsubsection.2.3.2}%
+\contentsline {subsection}{\numberline {2.4}Kiểm thử và kiểm chứng}{22}{subsection.2.4}%

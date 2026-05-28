@@ -1,0 +1,322 @@
+\documentclass[a4paper]{article}
+\usepackage{svg}
+\usepackage{amsthm}
+\usepackage{vntex}
+\usepackage{pdflscape}
+\usepackage{subcaption} % Thêm vào preamble của main.tex
+\usepackage{rotating}
+\usepackage{a4wide,amssymb,epsfig,latexsym,multicol,array,hhline,fancyhdr}
+\usepackage{minted}
+\usepackage{booktabs} % Cho bảng đẹp
+\usepackage{longtable} % Cho bảng dài
+\usepackage{placeins}
+\usepackage{capt-of}
+\usepackage{tabularx} % Cho bảng có cột co giãn
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{float}
+\usepackage{lastpage} 
+% \usepackage[lined,boxed,commentsnumbered]{algorithm2e}
+\usepackage{enumerate}
+\usepackage{color}
+\usepackage{graphicx}					% Standard graphics package
+\usepackage{array}
+\usepackage{tabularx, caption}
+\usepackage{multirow}
+\usepackage[framemethod=tikz]{mdframed}% For highlighting paragraph backgrounds
+\usepackage{multicol}
+\usepackage{rotating}
+\usepackage{graphics}
+\usepackage{wrapfig}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{epsfig}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+\usepackage{listings}
+\usetikzlibrary{arrows,arrows.meta,snakes,backgrounds,calc}
+\usepackage{hyperref}
+\usepackage{minted}
+\usepackage{indentfirst}
+\usepackage{cases} 
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+% \usepackage[english]{babel}
+\renewcommand{\baselinestretch}{1.5}
+\usepackage[table]{xcolor}
+\usepackage[most]{tcolorbox}
+\renewcommand{\figurename}{Hình}
+\definecolor{termBG}{HTML}{0C1C23}
+\definecolor{termWhite}{HTML}{F8F8F2}
+
+\lstset{
+    language=C++,
+    basicstyle=\ttfamily\footnotesize,
+    numbers=left,
+    numberstyle=\tiny,
+    stepnumber=1,
+    numbersep=5pt,
+    backgroundcolor=\color{gray!10},
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red},
+    frame=single,
+    breaklines=true,
+}
+
+\usepackage[most]{tcolorbox}
+\newtcbox{\code}{on line, 
+    arc=2pt,                % Độ bo tròn góc
+    colback=gray!20,        % Màu nền (xám nhạt)
+    colframe=gray!20,       % Viền cùng màu nền
+    boxrule=0pt,            % Không độ dày viền
+    boxsep=0pt, left=2pt, right=2pt, top=2pt, bottom=2pt, % Khoảng cách đệm
+    fontupper=\ttfamily     % Font chữ kiểu code
+}
+
+\newtcolorbox{softbox}{
+    colback=black!3,        % Màu nền: Xám rất nhạt (3% đen)
+    colframe=black!3,       % Màu viền: Trùng màu nền (để không thấy viền)
+    arc=8pt,                % Độ bo tròn góc
+    boxrule=0pt,            % Độ dày viền = 0
+    left=10pt, right=10pt, top=8pt, bottom=8pt, % Khoảng cách lề bên trong
+    fontupper=\itshape\color{black!80} % Font chữ: Nghiêng và màu xám đậm (80% đen)
+}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\definecolor{termBG}{HTML}{0C1C23}    % Màu nền xanh đen đậm
+\definecolor{termRed}{HTML}{FF5555}   % Màu đỏ
+\definecolor{termYellow}{HTML}{F1FA8C}% Màu vàng
+\definecolor{termWhite}{HTML}{F8F8F2} % Màu chữ trắng sáng
+\definecolor{termGray}{HTML}{A9B7C6}  % Màu xám nhạt (nếu cần)
+
+\newtcolorbox{TerminalBox}{
+    colback=termBG,       
+    coltext=termWhite,    
+    boxrule=0pt,          
+    arc=3pt,              
+    left=4pt, right=4pt, top=4pt, bottom=4pt, % Giảm lề đệm xuống 4pt cho gọn
+    % QUAN TRỌNG: Dùng \tiny để chữ siêu nhỏ
+    fontupper=\ttfamily\scriptsize\linespread{1.0}\selectfont, 
+    enhanced
+}
+
+% Lệnh tắt để tô màu cho nhanh
+\newcommand{\cred}[1]{\textcolor{termRed}{#1}}
+\newcommand{\cyellow}[1]{\textcolor{termYellow}{#1}}
+
+% Cấu hình style cho C++
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize, % Font chữ kiểu máy đánh chữ, kích thước nhỏ
+    breakatwhitespace=false,         
+    breaklines=true,                 % Tự động xuống dòng nếu quá dài
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    % Hiển thị số dòng bên trái
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,                       % Độ rộng tab = 2 spaces
+    language=C++                     % Ngôn ngữ C++
+}
+
+\lstset{style=mystyle}
+\lstdefinestyle{ciscoTerminal}{style=mystyle}
+% ---------------------------------
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,      % Màu link nội bộ (mục lục, cross-reference)
+    citecolor=red,        % ← Màu citation (references) - ĐỔI THÀNH ĐỎ
+    urlcolor=blue,        % Màu URL
+    filecolor=magenta     % Màu link file
+}
+
+%%%%%%%%
+\usepackage{longtable}
+\usepackage[shortlabels]{enumitem}
+
+\setlength{\headheight}{40pt}
+\setlength{\footskip}{36pt}
+\pagestyle{fancy}
+\fancyhead{} % clear all header fields
+\fancyhead[L]{
+ \begin{tabular}{rl}
+    \begin{picture}(25,15)(0,0)
+    \put(0,-8){\includegraphics[width=8mm, height=8mm]{images/khtn.png}}
+    \end{picture}&
+	\begin{tabular}{l}
+		\textbf{\bf \ttfamily Ho Chi Minh University of Science - VNUHCM}\\
+		\textbf{\bf \ttfamily Faculty of Information Technology}
+	\end{tabular}  	
+ \end{tabular}
+}
+\fancyhead[R]{
+	\begin{tabular}{l}
+		\tiny \bf \\
+		\tiny \bf 
+	\end{tabular}  }
+\fancyfoot{} % clear all footer fields
+\makeatletter
+\newcommand{\footerfootnotetext}{\@empty}
+\newcommand{\footerfootnote}[1]{%
+    \refstepcounter{footnote}%
+    \textsuperscript{\thefootnote}%
+    \g@addto@macro\footerfootnotetext{\textsuperscript{\thefootnote} #1\space}%
+}
+\newcommand{\printfooterfootnote}{%
+    \ifx\footerfootnotetext\@empty\else
+        \footerfootnotetext\\
+    \fi
+}
+\AddToHook{shipout/after}{\global\let\footerfootnotetext\@empty}
+\makeatother
+\fancyfoot[L]{\scriptsize \ttfamily \parbox[b]{0.78\textwidth}{\printfooterfootnote Applied Mathematics in Statistics}}
+\fancyfoot[R]{\scriptsize \ttfamily Page {\thepage}}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+
+%%%
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{3}
+\makeatletter
+\newcounter {subsubsubsection}[subsubsection]
+\renewcommand\thesubsubsubsection{\thesubsubsection .\@alph\c@subsubsubsection}
+\newcommand\subsubsubsection{\@startsection{subsubsubsection}{4}{\z@}%
+                                    {-3.25ex\@plus -1ex \@minus -.2ex}%
+                                    {1.5ex \@plus .2ex}%
+                                    {\normalfont\normalsize\bfseries}}
+\newcommand*\l@subsubsubsection{\@dottedtocline{3}{10.0em}{4.1em}}
+\newcommand*{\subsubsubsectionmark}[1]{}
+\makeatother
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+	language=Matlab,
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=3,
+	numbers=left,
+	stepnumber=1,
+	numbersep=1pt,    
+	firstnumber=1,
+	numberfirstline=true
+}
+
+%  MÀU SẮC
+\definecolor{primaryblue}{RGB}{0, 70, 127}
+\definecolor{accentblue}{RGB}{52, 144, 220}
+\definecolor{lightgray}{RGB}{245, 247, 250}
+\definecolor{codegray}{RGB}{240, 240, 240}
+\definecolor{darkgray}{RGB}{80, 80, 80}
+\definecolor{successgreen}{RGB}{40, 167, 69}
+\definecolor{warnorange}{RGB}{255, 140, 0}
+
+%  HỘP LÝ THUYẾT
+\tcbuselibrary{theorems, skins, breakable}
+\tcbset{
+    defstyle/.style={
+        enhanced, breakable,
+        colback=lightgray, colframe=primaryblue,
+        fonttitle=\bfseries,
+        attach boxed title to top left={yshift=-2mm, xshift=4mm},
+        boxed title style={colback=primaryblue, colframe=primaryblue},
+        top=4mm
+    },
+    thmstyle/.style={
+        enhanced, breakable,
+        colback=blue!5!white, colframe=accentblue,
+        fonttitle=\bfseries,
+        attach boxed title to top left={yshift=-2mm, xshift=4mm},
+        boxed title style={colback=accentblue, colframe=accentblue},
+        top=4mm
+    },
+    notestyle/.style={
+        enhanced, breakable,
+        colback=yellow!10!white, colframe=warnorange,
+        fonttitle=\bfseries\color{warnorange},
+        left=2mm
+    }
+}
+\newtcbtheorem[number within=section]{mydef}{Định nghĩa}{defstyle}{def}
+\newtcbtheorem[number within=section]{mythm}{Định lý}{thmstyle}{thm}
+\newtcbtheorem[number within=section]{mylem}{Bổ đề}{thmstyle}{lem}
+\newtcbtheorem[number within=section]{myprop}{Mệnh đề}{thmstyle}{prop}
+\newtcbtheorem[number within=section]{mycor}{Hệ quả}{defstyle}{cor}
+\newenvironment{note}[1][Ghi chú]{%
+    \begin{tcolorbox}[notestyle, title=#1]}{%
+    \end{tcolorbox}}
+
+%  TOÁN HỌC
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\inner}[2]{\langle #1,\, #2 \rangle}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\proj}[2]{\operatorname{proj}_{#2}\!\left(#1\right)}
+\providecommand{\coloneqq}{\mathrel{\mathop:}=}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\col}{\operatorname{col}}
+\newcommand{\spann}{\operatorname{span}}
+\newcommand{\mat}[1]{\mathbf{#1}}
+
+\begin{document}
+
+\input{sections/title}
+
+\thispagestyle{empty}
+
+\newpage
+\renewcommand{\contentsname}{Table of Contents}
+\renewcommand{\tablename}{Table}
+\renewcommand{\figurename}{Figure}
+\renewcommand{\refname}{References}
+\renewcommand{\listfigurename}{List of Figures}
+\renewcommand{\listtablename}{List of Tables}
+
+\tableofcontents
+
+\newpage
+
+\renewcommand{\arraystretch}{1.3} % Adjust row height
+\setcounter{page}{1}
+
+\vspace{1cm}
+
+\include{sections/part1}
+
+\newpage
+\bibliographystyle{IEEEtran}
+\bibliography{ref}
+\end{document}
