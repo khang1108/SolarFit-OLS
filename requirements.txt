@@ -1,0 +1,14 @@
+numpy
+pandas
+scipy
+scikit-learn
+matplotlib
+seaborn
+requests
+beautifulsoup4
+tqdm
+xarray
+netCDF4
+lightgbm
+catboost
+jupyter

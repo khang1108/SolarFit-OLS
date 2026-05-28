@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.ipynb_checkpoints/
+
+# Local credentials / cookies
+landsaf_cookie.txt
+*cookies*.txt
+*.cookie
+
+# Large downloaded external data
+data/external/landsaf/raw/
