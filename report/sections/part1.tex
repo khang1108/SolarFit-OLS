@@ -1,1 +1,711 @@
-\input{sections/ols}
+﻿\section{Bài Toán Data Fitting và Phương Pháp OLS}
+
+\subsection{Phát Biểu Bài Toán Data Fitting Tổng Quát}
+Bài toán Data Fitting đã có nền tảng toán học và lịch sử từ lâu đời, nó luôn đi chung với sự phát triển của phương pháp \textbf{Bình Phương Tối Thiểu (OLS)}. Bài toán được hình thành được đặt ra không chỉ để thỏa mãn niềm đam mê toán học của các nhà nghiên cứu mà nó còn có mục đích rất thực tiễn trong các ngành liên quan về thiên văn học và trắc địa vào cuối thế kỷ 18 và đầu thế kỷ 19.
+\subsubsection{Đặt vấn đề}
+Vào những năm 1790, để có thể thiết lập ra hệ mét \footerfootnote{Hệ mét là hệ thống đo lường thập phân được thống nhất rộng rãi trên quốc tế. Dù có nhiều biến thể của hệ thống số liệu nổi lên vào cuối thế kỷ XIX và đầu thế kỷ XX, thuật ngữ này thường được dùng như một từ đồng nghĩa là "SI" hoặc "Hệ thống đơn vị Quốc Tế"} thì ông đã phải đo đạc chính xác chiều dài \textbf{cung kinh tuyến} từ cực Bắc đến Xích đạo đi qua Paris \cite{stigler1996}. Họ đã không trực tiếp mà họ đo một đoạn cung kinh tuyến, cụ thể là đoạn từ \textit{Runkirk} đến \textit{Barcelona}, rồi dùng mô hình toán học để suy ra độ đài \textbf{một phần tư kinh tuyến Trái Đất}.
+
+Do đó ta có thể thấy rằng, bài toán \textbf{Data Fitting} đã xuất hiện từ rất lâu và nó đã trở thành một trong những bài toán kinh điển trong Toán học và là nền tảng cho các mô hình học máy sau này. Cụ thể hơn, ta có một tập dữ liệu quan sát được
+và muốn tìm một hàm số mô tả mối quan hệ giữa đầu vào và đầu ra. Bài toán này
+được gọi chung là \textbf{data fitting} (khớp dữ liệu).
+
+\begin{mydef}{Bài toán Data Fitting tổng quát}{}
+Cho tập dữ liệu $\mathcal{D} = \{(\mat{x}_i, y_i)\}_{i=1}^n$ với
+$\mat{x}_i \in \R^p$, $y_i \in \R$. Bài toán data fitting là tìm hàm
+$f : \R^p \to \R$ trong một lớp hàm cho trước $\mathcal{F}$ sao cho
+$f$ xấp xỉ tốt nhất ánh xạ từ $\mat{x}_i$ đến $y_i$ theo một tiêu chí tối ưu:
+\[
+    \hat{f} = \arg\min_{f \in \mathcal{F}} \mathcal{L}(f;\, \mathcal{D}),
+\]
+trong đó $\mathcal{L}$ là hàm mất mát (\textit{loss function}) đo mức độ sai lệch
+giữa dự đoán của mô hình và giá trị thực.
+\end{mydef}
+
+\subsubsection{Mô hình hồi quy tuyến tính}
+Mô hình hồi quy tuyến tính là nền tảng cốt lõi trong toán học thống kê, nó có lịch sử phát triển gắn với bài toán Data Fitting và phương pháp bình phương tối thiểu. Mục tiêu của mô hình là có thể \textit{ước lượng các tham số chưa biết thông qua các dữ liệu thực nghiệm đã quan sát được} \cite{plackett1972}. Trong mô hình này, các quan sát được biểu diễn dưới dạng một \textbf{tổ hợp tuyến tính} của các biến đã biết và các \textbf{tham số ẩn}.  
+
+Giả sử ta có một chuỗi các quan sát $y_i$ phụ thuộc vào một mô hình tuyến tính $\alpha + \beta x_i$ ($i = 1, ...,n)$. Bài toán đặt ra là làm sao ta có thể ước lượng các giá trị $\hat{\alpha}$ và $\hat{\beta}$ cho các tham số $\alpha$ và $\beta$ để có thể phù hợp với bộ dữ liệu quan sát được một cách tốt nhất và ít chi phí nhất \cite{plackett1972}. Tổng quát bài toán, thì phần lớn ta sẽ có thể viết mô hình dưới dạng $Y = M\beta + \theta$ và cụ thể hơn $\mathcal{F}$ là tập
+các hàm tuyến tính theo tham số~\cite{strang2023}. Khi đó, giả thiết:
+\[
+    y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \cdots + \beta_p x_{ip}
+        + \varepsilon_i
+        = \mat{x}_i^T \boldsymbol{\beta} + \varepsilon_i,
+\]
+với $\boldsymbol{\beta} = (\beta_0, \beta_1, \ldots, \beta_p)^T \in \R^{p+1}$
+là vector tham số cần ước lượng và $\varepsilon_i$ là nhiễu ngẫu nhiên (sai số
+mô hình).
+
+Đặt ma trận thiết kế (\textit{design matrix})
+$\mat{X} \in \R^{n \times (p+1)}$ trong đó hàng thứ $i$ là
+$(1,\, x_{i1},\, \ldots,\, x_{ip})$ (cột đầu tiên toàn số 1 ứng với hệ số tự
+do $\beta_0$). Khi đó toàn bộ hệ có thể viết gọn:
+
+\begin{equation}
+    \mat{y} = \mat{X}\boldsymbol{\beta} + \boldsymbol{\varepsilon},
+    \qquad \mat{y} \in \R^n,\;
+           \mat{X} \in \R^{n \times (p+1)},\;
+           \boldsymbol{\varepsilon} \in \R^n.
+    \label{eq:linear_model}
+\end{equation}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=Stealth, scale=1.0,
+    node/.style={draw=primaryblue, rounded corners=4pt,
+                 fill=lightgray, minimum width=2.2cm,
+                 minimum height=0.85cm, font=\small}]
+  % Nodes
+  \node[node] (X)    at (0,0)   {$\mat{X} \in \R^{n\times(p+1)}$};
+  \node[node] (beta) at (4.2,0) {$\boldsymbol{\beta} \in \R^{p+1}$};
+  \node[node] (Xb)   at (8.4,0) {$\mat{X}\boldsymbol{\beta} \in \R^n$};
+  \node[node] (eps)  at (8.4,-1.6) {$\boldsymbol{\varepsilon} \in \R^n$};
+  \node[node, fill=blue!8!white, draw=accentblue]
+             (y)     at (12.0,-0.75) {$\mat{y} \in \R^n$};
+
+  % Arrows
+  \draw[->, thick, primaryblue] (X)   -- node[above,font=\footnotesize]{nhân} (beta);
+  \draw[->, thick, primaryblue] (beta)-- (Xb);
+  \draw[->, thick, accentblue]  (Xb)  -- node[right,font=\footnotesize,xshift=2pt]{$+$} (y);
+  \draw[->, thick, warnorange]  (eps) -- node[right,font=\footnotesize]{nhiễu} (y);
+\end{tikzpicture}
+\caption{Cấu trúc mô hình hồi quy tuyến tính dạng ma trận:
+$\mat{y} = \mat{X}\boldsymbol{\beta} + \boldsymbol{\varepsilon}$.
+Dữ liệu quan sát $\mat{y}$ được phân tích thành thành phần \textit{tín hiệu}
+$\mat{X}\boldsymbol{\beta}$ (xanh) và thành phần \textit{nhiễu}
+$\boldsymbol{\varepsilon}$ (cam).}
+\label{fig:linear_model}
+\end{figure}
+
+% ============================================================
+\subsection{Các Giả Thiết Gauss–Markov}
+
+Trong quá trình phát triển của phương pháp OLS, ban đầu Gauss đã đề xuất ra một cách chứng minh dựa trên nền tảng xác suất và phân phối. Nhưng mà cách chứng minh này lại có hạn chế là ép đặt phân phối sai số ban đầu phải tuân theo phân phối chuẩn hình chuông. Sau đó chính bản thân ông đã nhận ra sai lầm của mình mà từ đó đề xuất ra một cách chứng minh khác đó là Gauss-Markov dựa trên các giả thiết sau:
+
+Để ước lượng OLS có các tính chất thống kê tốt, mô hình tuyến tính~\eqref{eq:linear_model}
+cần thỏa mãn năm giả thiết Gauss--Markov sau~\cite{wooldridge2013,greene2012}. Các giả thiết này xác định khuôn khổ
+mà trong đó OLS được đảm bảo là ước lượng tốt nhất.
+
+\begin{mydef}{Các giả thiết Gauss--Markov (GM1–GM5)}{}
+\begin{enumerate}[label=\textbf{\arabic*.}, leftmargin=2.5cm, noitemsep]
+    \item \textbf{Tuyến tính:} $\mat{y} = \mat{X}\boldsymbol{\beta} + \boldsymbol{\varepsilon}$.
+          Mô hình tuyến tính theo tham số $\boldsymbol{\beta}$; cho phép áp dụng
+          đại số tuyến tính để giải bài toán tối ưu.
+
+    \item \textbf{Không hoàn hảo đa cộng tuyến:} $\rank(\mat{X}) = p + 1$,
+          tức các cột của $\mat{X}$ độc lập tuyến tính và $\mat{X}^T\mat{X}$ khả nghịch.
+          Nếu vi phạm, nghiệm OLS không xác định duy nhất.
+
+    \item \textbf{Ngoại sinh (zero conditional mean):}
+          $\E[\boldsymbol{\varepsilon} \mid \mat{X}] = \mat{0}$,
+          tức $\E[\varepsilon_i \mid \mat{x}_i] = 0$ với mọi $i$.
+          Đảm bảo không có biến quan trọng bị bỏ sót có tương quan với $\mat{X}$.
+
+    \item \textbf{Đồng phương sai (homoscedasticity):}
+          $\mathrm{Var}(\boldsymbol{\varepsilon} \mid \mat{X}) = \sigma^2\mat{I}_n$,
+          tức $\mathrm{Var}(\varepsilon_i) = \sigma^2$ và
+          $\mathrm{Cov}(\varepsilon_i, \varepsilon_j) = 0$ với $i \neq j$.
+          Nếu vi phạm (heteroscedasticity), sai số chuẩn bị lệch.
+
+    \item \textbf{Phần dư chuẩn (normality):}
+          $\boldsymbol{\varepsilon} \mid \mat{X} \sim \mathcal{N}(\mat{0},\, \sigma^2\mat{I}_n)$.
+          \emph{Điều kiện bổ sung — cần cho kiểm định $t$ và $F$ trong mẫu nhỏ;
+          với mẫu lớn có thể nới lỏng nhờ định lý giới hạn trung tâm.}
+\end{enumerate}
+\end{mydef}
+
+\begin{note}
+Giả thiết $1–4$ đủ để đảm bảo OLS là \textbf{BLUE} (Best Linear Unbiased Estimator)
+theo Định lý Gauss--Markov (xem mục~\ref{subsec:blue} bên dưới).
+Giả thiết $5$ chỉ cần thiết khi thực hiện kiểm định giả thuyết và xây dựng khoảng tin cậy.
+\end{note}
+
+% ============================================================
+\subsection{Hàm Mất Mát RSS và Chứng Minh Nghiệm OLS}
+Hàm mất mát Residual Sum of Squares được gọi là tổng bình phương các sai số, là mục tiêu cốt lõi khi các nhà toán học làm việc với bài toán Data Fitting, họ sẽ cố gắng \textbf{tối thiểu hóa} hàm mất này để có thể tạo ra mô hình tốt nhất cho tập dữ liệu mà họ có, điều này rất phổ biến trong phương pháp bình phương tối thiểu và hồi quy.
+\subsubsection{Hàm mất mát RSS}
+
+Vào khoảng năm 1805, nhà toán học Andrien-Marie Legendre đã xây dựng một hệ phương trình tuyến tính cho các quan sát mà ông có được, trong đó mỗi phương trình của hệ có một sai số $E$. Hàm mất RSS được ông ký hiệu là $S$ đại diện cho tổng bình phương của tất cả các sai số này với $S = E^2 + E'^2 + E''^2 + ...$ \cite{plackett1972}
+\begin{mydef}{Residual Sum of Squares (RSS)}{}
+Hàm mất mát của phương pháp Ordinary Least Squares (OLS) là tổng bình phương
+phần dư (\textit{Residual Sum of Squares}):
+\[
+    \mathrm{RSS}(\boldsymbol{\beta})
+    = \norm{\mat{y} - \mat{X}\boldsymbol{\beta}}_2^2
+    = \sum_{i=1}^n \bigl(y_i - \mat{x}_i^T\boldsymbol{\beta}\bigr)^2.
+\]
+OLS tìm $\hat{\boldsymbol{\beta}}$ tối thiểu hóa $\mathrm{RSS}(\boldsymbol{\beta})$.
+\end{mydef}
+
+\begin{note}[Ý nghĩa hình học]
+RSS đo tổng bình phương khoảng cách từ các điểm quan sát $y_i$ đến các giá trị
+dự đoán $\hat{y}_i = \mat{x}_i^T\boldsymbol{\beta}$ của mô hình. OLS tìm
+hyperplane tốt nhất theo nghĩa cực tiểu hóa tổng khoảng cách vuông góc theo
+chiều $y$.
+\end{note}
+
+Với sự ra đời của RSS thì bài toán OLS đã trở nên rõ ràng hơn, nó đã cung cấp một công cụ mạnh mẽ để ước lượng các tham số của mô hình hồi quy tuyến tính, từ đó giúp các nhà nghiên cứu có thể hiểu rõ hơn về mối quan hệ giữa các biến và đưa ra dự đoán chính xác hơn dựa trên dữ liệu quan sát được. \textit{(1) Tạo ra sự cân bằng và triệt tiêu sai số cực đoan}. Điều này đã được Legendre lập luận và chứng minh rằng hàm bình phương mang lại một sự cân bằng lớn giữa các sai số. Nó đưa ra điểm phạt rất lớn cho các sai số lớn từ đó mà ngăn được các phần tử ngoại lai giúp ta tìm ra trạng thái gần thực tế nhất. \textit{(2) Dễ dàng tính được bằng giải tích}. Khác với hàm giá trị tuyệt đối khác gặp khó khăn lớn trong việc tính toán thì RSS lại mang lại khả năng tính toán vô cùng thuận luận. \textit{(3) Nên tảng xác suất vững chắc}. RSS đã được Gauss chứng minh hoàn hảo thông qua thống kê, ông đã chứng minh rằng nếu các phần dư tuân theo quy luật phân phối chuẩn thì việc cực tiểu hóa hàm mát RSS hoàn toàn tương đương với \textbf{maximum likelihood} \cite{plackett1972}.
+
+\subsubsection{Chứng minh nghiệm OLS (Normal Equations)}
+Xuyên suốt lịch sử phát triển, quá trình chứng minh phương pháp Bình Phương tối thiểu là một cuộc hành trình dài từ đầu thế kỷ 19, nó đã đi từ những lập luận đại số thuần túy cho tới nền tảng xác suất và cuối cùng chỉ thật sự được chứng minh tối ưu thông qua hình học trực giao và đại số tuyến tính ma trận hiện đại.
+
+Vào những năm đầu tiên thuở sơ khai của phương pháp, nhà toán học người pháp Legendre đã đề xuất phương pháp OLS kèm theo một cách chứng minh bằng đại số thuần túy, không có yếu tố xác suất đi cùng. Để tìm được giá trị nhỏ nhất của S, ông lấy đạo hàm riêng của S theo từng ẩn số $(x, y, z, ...)$ và cho chúng bằng $0$. Nhờ đó quá trình này đã tạo ra một hệ phương trình tuyến tính mới có nghiệm duy nhất. Tuy nhiên, cách chứng minh này vẫn còn tồn đọng hạn chế là ông chỉ biện minh phương pháp này dựa trên lý luận thực nghiệm rằng bình phương sẽ phạt các sai số lớn, tạo ra \textit{'sự cân bằng'} giữa các quan sát \cite{plackett1972} mà lại không đưa ra được độ chính xác hay sai số của các hệ số tìm được.
+
+Sau đó vào năm 1809, Carl Friedrich Gauss đã đưa ra cách chứng minh của mình được xuất bản bên trong cuốn \textit{Theoria Motus Corporum Coelestium}. Ông đã đưa OLS lên một nền tảng xác suất vững chắc hơn. Gauss sửa dụng nguyên lý \textbf{Hợp lý cực đại} để chứng minh bài toán này. Ông giả sử các sai số đo đạc là các biến ngẫu nhiên độc lập, và từ đó mà đã tìm ra một quy luật phân phối sai số sao cho mà giá trị trung binh cộng chính là giá trị có xác suất xảy ra cao nhất. Điều này đã dẫn tới việc ông tìm ra hàm \textbf{Mật độ xác suất phân phối chuẩn}. Khi mà các sai số tuân theo phân phối chauanr, việc cực đại hóa hàm hợp lý hoàn toàn tương đương về mặt toán học với việc \textbf{cực tiểu hóa tổng bình phương các sai số}.
+
+Và sau Gauss đã có rất nhiều người tham gia vào chứng minh và sửa các hạn chế mà người đi trước mắc phải. Chẳng hạn như sau đó ông Laplace đã đề xuất cách chứng minh để khắc phục hạn chế của Gauss khi ông đang ép buộc sai số phải tuân theo phân phối chuẩn. Laplace đã áp dụng một phiên bản sơ khai của \textbf{Định lý giới hạn trung gian} chứng minh rằng khi số lượng quan sát là rất lớn, thì sự phân phối của tổng hoặc trung bình các sai số sẽ luôn hội tụ về phân phối chuẩn, bất kể phân phối gốc của từng sai số đơn lẻ là gì. Và từ đó mà ông đã chứng minh rằng OLS của Legendre và Gauss là phương pháp mang lại độ chính xác cao nhất cho các tập dữ liệu lớn. Sau này Gauss đã đề xuất cách chứng minh khi không biết quy luật phân phối của sai số ban đầu.
+
+Cuối cùng theo thời gian thì hiện nay ta chứng minh OLS bằng hình học trực giao và đại số ma trận, đây chính là cách được xem là tối ưu, ngắn gọn và đẹp đẽ nhất. Khi nó kết hợp \textbf{Đại số tuyến tính và Phép chiếu trực giao}, là cách tiếp cận bao trùm mọi vấn đề của OLS mà không dùng đến đạo hàm phức tạp.
+
+\begin{mythm}{Nghiệm OLS — Normal Equations}{ols_solution}
+Nếu $\mat{X}^T\mat{X}$ khả nghịch (tương đương $\rank(\mat{X}) = p+1$), bài
+toán cực tiểu hóa $\mathrm{RSS}(\boldsymbol{\beta})$ có nghiệm duy nhất:
+\[
+    \hat{\boldsymbol{\beta}}_{\mathrm{OLS}}
+    = (\mat{X}^T\mat{X})^{-1}\mat{X}^T\mat{y}.
+\]
+\end{mythm}
+
+\begin{proof}
+Khai triển RSS dưới dạng tích vô hướng để áp dụng giải tích ma trận~\cite{golub2013}:
+\begin{align*}
+    \mathrm{RSS}(\boldsymbol{\beta})
+    &= (\mat{y} - \mat{X}\boldsymbol{\beta})^T
+       (\mat{y} - \mat{X}\boldsymbol{\beta}) \\
+    &= \mat{y}^T\mat{y}
+     - \mat{y}^T\mat{X}\boldsymbol{\beta}
+     - \boldsymbol{\beta}^T\mat{X}^T\mat{y}
+     + \boldsymbol{\beta}^T\mat{X}^T\mat{X}\boldsymbol{\beta}.
+\end{align*}
+Vì $\mat{y}^T\mat{X}\boldsymbol{\beta}$ là một số thực (ma trận $1 \times 1$), nó
+bằng chuyển vị của chính nó: $\mat{y}^T\mat{X}\boldsymbol{\beta} =
+(\mat{y}^T\mat{X}\boldsymbol{\beta})^T = \boldsymbol{\beta}^T\mat{X}^T\mat{y}$.
+Do đó:
+\[
+    \mathrm{RSS}(\boldsymbol{\beta})
+    = \mat{y}^T\mat{y}
+    - 2\boldsymbol{\beta}^T\mat{X}^T\mat{y}
+    + \boldsymbol{\beta}^T\mat{X}^T\mat{X}\boldsymbol{\beta}.
+\]
+
+\medskip
+\noindent\textbf{Bước 1: Lấy gradient theo $\boldsymbol{\beta}$.}
+
+Áp dụng các công thức đạo hàm ma trận chuẩn:
+$\nabla_{\boldsymbol{\beta}}(\mat{a}^T\boldsymbol{\beta}) = \mat{a}$
+và $\nabla_{\boldsymbol{\beta}}(\boldsymbol{\beta}^T\mat{M}\boldsymbol{\beta}) = 2\mat{M}\boldsymbol{\beta}$
+(với $\mat{M}$ đối xứng — ở đây $\mat{M} = \mat{X}^T\mat{X}$ đối xứng):
+\[
+    \nabla_{\boldsymbol{\beta}}\,\mathrm{RSS}
+    = \mat{0} - 2\mat{X}^T\mat{y} + 2\mat{X}^T\mat{X}\,\boldsymbol{\beta}
+    = -2\mat{X}^T(\mat{y} - \mat{X}\boldsymbol{\beta}).
+\]
+
+\medskip
+\noindent\textbf{Bước 2: Điều kiện cần tại cực trị.}
+
+Cho gradient bằng không:
+\[
+    \nabla_{\boldsymbol{\beta}}\,\mathrm{RSS} = \mat{0}
+    \;\Longrightarrow\;
+    \mat{X}^T(\mat{y} - \mat{X}\boldsymbol{\beta}) = \mat{0}
+    \;\Longleftrightarrow\;
+    \mat{X}^T\mat{X}\,\boldsymbol{\beta} = \mat{X}^T\mat{y}.
+\]
+Đây là hệ phương trình \textbf{Normal Equations}.
+
+\medskip
+\noindent\textbf{Bước 3: Nghiệm duy nhất.}
+
+Vì $\mat{X}^T\mat{X}$ khả nghịch theo giả thiết:
+\[
+    \hat{\boldsymbol{\beta}}_{\mathrm{OLS}}
+    = (\mat{X}^T\mat{X})^{-1}\mat{X}^T\mat{y}.
+\]
+
+\medskip
+\noindent\textbf{Bước 4: Kiểm tra đây là cực tiểu (không phải cực đại hay điểm yên ngựa).}
+
+Ma trận Hessian của RSS là $\mat{H}_{\mathrm{RSS}} = 2\mat{X}^T\mat{X}$.
+Vì $\rank(\mat{X}) = p+1$, với mọi $\mat{v} \neq \mat{0}$:
+\[
+    \mat{v}^T(\mat{X}^T\mat{X})\mat{v} = (\mat{X}\mat{v})^T(\mat{X}\mat{v}) = \norm{\mat{X}\mat{v}}_2^2 > 0,
+\]
+nên Hessian xác định dương. Vậy điểm tới hạn tìm được là \textbf{cực tiểu toàn cục}
+(và là duy nhất do hàm RSS lồi chặt).
+\end{proof}
+
+\begin{mycor}{Tính chất của phần dư OLS}{}
+Phần dư OLS $\hat{\boldsymbol{\varepsilon}} = \mat{y} - \mat{X}\hat{\boldsymbol{\beta}}$
+trực giao với không gian cột của $\mat{X}$:
+\[
+    \mat{X}^T\hat{\boldsymbol{\varepsilon}} = \mat{0}.
+\]
+\end{mycor}
+
+\begin{proof}
+Từ Normal Equations:
+$\mat{X}^T\mat{X}\hat{\boldsymbol{\beta}} = \mat{X}^T\mat{y}$,
+suy ra $\mat{X}^T(\mat{y} - \mat{X}\hat{\boldsymbol{\beta}}) = \mat{0}$,
+tức là $\mat{X}^T\hat{\boldsymbol{\varepsilon}} = \mat{0}$.
+\end{proof}
+
+% ============================================================
+\subsection{Ma Trận Chiếu (Hat Matrix)}
+
+\subsubsection{Định nghĩa và hình học}
+
+\begin{mydef}{Hat Matrix (Ma trận chiếu)}{}
+Ma trận chiếu (hay hat matrix) là:
+\[
+    \mat{H} = \mat{X}(\mat{X}^T\mat{X})^{-1}\mat{X}^T \in \R^{n \times n}.
+\]
+Tên gọi ``hat'' xuất phát từ việc $\mat{H}$ biến $\mat{y}$ thành
+$\hat{\mat{y}}$ (``đội mũ'' lên $y$):
+$\hat{\mat{y}} = \mat{X}\hat{\boldsymbol{\beta}} = \mat{H}\mat{y}$.
+\end{mydef}
+
+Về mặt hình học, $\mat{H}$ thực hiện phép chiếu trực giao của $\mat{y}$ lên
+không gian cột của $\mat{X}$, ký hiệu $\mathcal{C}(\mat{X})$~\cite{trefethen1997}.
+Ma trận bù $\mat{I} - \mat{H}$ chiếu $\mat{y}$ lên không gian trực giao
+$\mathcal{C}(\mat{X})^{\perp}$, cho ra phần dư $\hat{\boldsymbol{\varepsilon}}$.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=1.5, >=Stealth]
+  % Projection plane (column space of X)
+  \fill[primaryblue!8] (-0.6,-0.2) -- (3.4,-0.2) -- (3.8,0.6) -- (-0.2,0.6) -- cycle;
+  \draw[primaryblue!50, thick]
+    (-0.6,-0.2) -- (3.4,-0.2) -- (3.8,0.6) -- (-0.2,0.6) -- cycle;
+  \node[primaryblue, font=\small\itshape] at (3.0,0.1)
+    {$\mathcal{C}(\mat{X})$};
+
+  % Origin
+  \fill[black] (1.3,0.2) circle(1.3pt);
+  \node[below left, font=\small] at (1.3,0.2) {$O$};
+
+  % y vector (out of plane)
+  \draw[->, very thick, warnorange] (1.3,0.2) -- (2.2,2.0)
+    node[right, warnorange] {$\mat{y}$};
+  \fill[warnorange] (2.2,2.0) circle(1.5pt);
+
+  % y-hat (projection on plane)
+  \draw[->, very thick, primaryblue] (1.3,0.2) -- (2.2,0.2)
+    node[below, primaryblue, yshift=-4pt] {$\hat{\mat{y}} = \mat{H}\mat{y}$};
+  \fill[primaryblue] (2.2,0.2) circle(1.5pt);
+
+  % Residual vector
+  \draw[->, dashed, thick, accentblue] (2.2,0.2) -- (2.2,2.0)
+    node[midway, right, accentblue, font=\small]
+    {$\hat{\boldsymbol{\varepsilon}} = (\mat{I}-\mat{H})\mat{y}$};
+
+  % Right angle mark
+  \draw[darkgray] (2.06,0.2) -- (2.06,0.36) -- (2.2,0.36);
+\end{tikzpicture}
+\caption{Hình học của Hat Matrix: $\mat{H}$ chiếu trực giao $\mat{y}$
+lên không gian cột $\mathcal{C}(\mat{X})$, cho ra giá trị khớp
+$\hat{\mat{y}} = \mat{H}\mat{y}$. Phần dư
+$\hat{\boldsymbol{\varepsilon}} = (\mat{I}-\mat{H})\mat{y}$ vuông góc với
+$\mathcal{C}(\mat{X})$.}
+\label{fig:hat_matrix}
+\end{figure}
+
+\subsubsection{Các tính chất của Hat Matrix}
+
+\begin{myprop}{Tính chất của $\mat{H}$}{hat_prop}~\cite{hoaglin1978}
+\begin{enumerate}[label=(\roman*), noitemsep]
+    \item \textbf{Idempotent:} $\mat{H}^2 = \mat{H}$.
+    \item \textbf{Đối xứng:} $\mat{H}^T = \mat{H}$.
+    \item \textbf{Giá trị riêng:} Chỉ nhận giá trị $0$ hoặc $1$.
+    \item \textbf{Hạng:} $\rank(\mat{H}) = p + 1$.
+    \item \textbf{Giá trị khớp và phần dư:} $\hat{\mat{y}} = \mat{H}\mat{y}$;
+          $\hat{\boldsymbol{\varepsilon}} = (\mat{I} - \mat{H})\mat{y}$.
+\end{enumerate}
+\end{myprop}
+
+\begin{proof}
+\textbf{(i) Idempotent:}
+\begin{align*}
+    \mat{H}^2
+    &= \bigl[\mat{X}(\mat{X}^T\mat{X})^{-1}\mat{X}^T\bigr]
+       \bigl[\mat{X}(\mat{X}^T\mat{X})^{-1}\mat{X}^T\bigr] \\
+    &= \mat{X}(\mat{X}^T\mat{X})^{-1}
+       \underbrace{(\mat{X}^T\mat{X})(\mat{X}^T\mat{X})^{-1}}_{=\,\mat{I}_{p+1}}
+       \mat{X}^T \\
+    &= \mat{X}(\mat{X}^T\mat{X})^{-1}\mat{X}^T = \mat{H}.
+\end{align*}
+
+\medskip
+\textbf{(ii) Đối xứng:}
+\[
+    \mat{H}^T
+    = \bigl[\mat{X}(\mat{X}^T\mat{X})^{-1}\mat{X}^T\bigr]^T
+    = \mat{X}\bigl[(\mat{X}^T\mat{X})^{-1}\bigr]^T\mat{X}^T.
+\]
+Vì $\mat{X}^T\mat{X}$ đối xứng, nghịch đảo của nó cũng đối xứng:
+$\bigl[(\mat{X}^T\mat{X})^{-1}\bigr]^T = (\mat{X}^T\mat{X})^{-1}$.
+Do đó $\mat{H}^T = \mat{H}$.
+
+\medskip
+\textbf{(iii) Giá trị riêng:} Với mọi giá trị riêng $\lambda$ và vector riêng $\mat{v}$:
+$\mat{H}\mat{v} = \lambda\mat{v}$. Nhân hai vế bởi $\mat{H}$:
+$\mat{H}^2\mat{v} = \lambda\mat{H}\mat{v}$, tức $\mat{H}\mat{v} = \lambda^2\mat{v}$.
+Suy ra $\lambda\mat{v} = \lambda^2\mat{v}$, nên $\lambda(\lambda - 1) = 0$,
+tức $\lambda \in \{0, 1\}$.
+
+\medskip
+\textbf{(iv) Hạng:} $\rank(\mat{H}) = \tr(\mat{H})$ (vì giá trị riêng chỉ là 0 hoặc 1).
+Ta có:
+$\tr(\mat{H}) = \tr\bigl(\mat{X}(\mat{X}^T\mat{X})^{-1}\mat{X}^T\bigr)
+= \tr\bigl((\mat{X}^T\mat{X})^{-1}\mat{X}^T\mat{X}\bigr) = \tr(\mat{I}_{p+1}) = p+1$.
+
+\medskip
+\textbf{(v) Giá trị khớp và phần dư:}
+Theo định nghĩa, $\hat{\mat{y}} = \mat{X}\hat{\boldsymbol{\beta}}
+= \mat{X}(\mat{X}^T\mat{X})^{-1}\mat{X}^T\mat{y} = \mat{H}\mat{y}$.
+Phần dư: $\hat{\boldsymbol{\varepsilon}} = \mat{y} - \hat{\mat{y}}
+= \mat{y} - \mat{H}\mat{y} = (\mat{I} - \mat{H})\mat{y}$.
+\end{proof}
+
+% ============================================================
+\subsection{Ước Lượng Phương Sai Nhiễu $\sigma^2$}
+
+\begin{mythm}{Ước lượng không chệch của $\sigma^2$}{}
+Dưới giả thiết Gauss--Markov (đặc biệt $\E[\boldsymbol{\varepsilon}|\mat{X}] = \mat{0}$
+và $\mathrm{Var}(\boldsymbol{\varepsilon}|\mat{X}) = \sigma^2\mat{I}_n$), ước lượng:
+\[
+    \hat{\sigma}^2
+    = \frac{\mathrm{RSS}}{n - p - 1}
+    = \frac{\norm{\mat{y} - \mat{X}\hat{\boldsymbol{\beta}}}_2^2}{n - p - 1}
+\]
+là ước lượng không chệch của $\sigma^2$, tức $\E[\hat{\sigma}^2|\mat{X}] = \sigma^2$.
+\end{mythm}
+
+\begin{proof}
+Viết $\mathrm{RSS} = \hat{\boldsymbol{\varepsilon}}^T\hat{\boldsymbol{\varepsilon}}$
+với $\hat{\boldsymbol{\varepsilon}} = (\mat{I}-\mat{H})\mat{y}
+= (\mat{I}-\mat{H})\boldsymbol{\varepsilon}$ (vì
+$(\mat{I}-\mat{H})\mat{X}\boldsymbol{\beta} = \mat{0}$).
+
+Lấy kỳ vọng:
+\begin{align*}
+    \E[\mathrm{RSS}|\mat{X}]
+    &= \E\bigl[\boldsymbol{\varepsilon}^T(\mat{I}-\mat{H})\boldsymbol{\varepsilon}
+               \big|\mat{X}\bigr]
+     = \tr\bigl((\mat{I}-\mat{H})\,\mathrm{Var}(\boldsymbol{\varepsilon}|\mat{X})\bigr) \\
+    &= \tr\bigl((\mat{I}-\mat{H})\sigma^2\mat{I}_n\bigr)
+     = \sigma^2\tr(\mat{I}-\mat{H}) \\
+    &= \sigma^2\bigl(n - \tr(\mat{H})\bigr)
+     = \sigma^2(n - p - 1).
+\end{align*}
+Bước thứ nhất dùng công thức $\E[\mat{v}^T\mat{A}\mat{v}] = \tr(\mat{A}\boldsymbol{\Sigma})$
+với $\boldsymbol{\Sigma} = \mathrm{Var}(\mat{v})$.
+Suy ra $\E[\hat{\sigma}^2|\mat{X}] = \sigma^2$.
+\end{proof}
+
+\begin{note}
+Mẫu số $n - p - 1$ là số bậc tự do còn lại sau khi ước lượng $p+1$ tham số từ
+$n$ quan sát. Nếu dùng $n$ ở mẫu, ước lượng sẽ bị chệch về phía nhỏ hơn (biased
+downward).
+\end{note}
+
+% ============================================================
+\subsection{Định Lý Gauss–Markov (BLUE)}
+\label{subsec:blue}
+
+\begin{mythm}{Gauss--Markov (BLUE)}{blue}~\cite{wooldridge2013}
+Dưới các giả thiết \textbf{GM1–GM4}, ước lượng OLS $\hat{\boldsymbol{\beta}}_{\mathrm{OLS}}$
+là ước lượng tuyến tính không chệch tốt nhất
+(\textit{Best Linear Unbiased Estimator} --- \textbf{BLUE}):
+\begin{enumerate}[label=(\roman*), noitemsep]
+    \item \textbf{Không chệch:}
+          $\E\bigl[\hat{\boldsymbol{\beta}}_{\mathrm{OLS}} \mid \mat{X}\bigr] = \boldsymbol{\beta}$.
+    \item \textbf{Ma trận phương sai:}
+          $\mathrm{Var}\!\bigl(\hat{\boldsymbol{\beta}}_{\mathrm{OLS}} \mid \mat{X}\bigr)
+          = \sigma^2(\mat{X}^T\mat{X})^{-1}$.
+    \item \textbf{Tốt nhất (phương sai nhỏ nhất):} Với mọi ước lượng tuyến tính
+          không chệch $\tilde{\boldsymbol{\beta}}$ khác,
+          $\mathrm{Var}(\tilde{\beta}_j) \geq \mathrm{Var}(\hat{\beta}_j^{\mathrm{OLS}})$
+          với mọi $j$.
+\end{enumerate}
+\end{mythm}
+
+\begin{proof}
+\textbf{(i) Tính không chệch.}
+
+Từ Normal Equations: $\hat{\boldsymbol{\beta}} = (\mat{X}^T\mat{X})^{-1}\mat{X}^T\mat{y}$.
+Thay $\mat{y} = \mat{X}\boldsymbol{\beta} + \boldsymbol{\varepsilon}$:
+\[
+    \hat{\boldsymbol{\beta}}
+    = (\mat{X}^T\mat{X})^{-1}\mat{X}^T(\mat{X}\boldsymbol{\beta} + \boldsymbol{\varepsilon})
+    = \boldsymbol{\beta} + (\mat{X}^T\mat{X})^{-1}\mat{X}^T\boldsymbol{\varepsilon}.
+\]
+Lấy kỳ vọng có điều kiện và áp dụng GM3:
+\[
+    \E[\hat{\boldsymbol{\beta}} \mid \mat{X}]
+    = \boldsymbol{\beta}
+      + (\mat{X}^T\mat{X})^{-1}\mat{X}^T
+        \underbrace{\E[\boldsymbol{\varepsilon} \mid \mat{X}]}_{=\,\mat{0}\;\text{(GM3)}}
+    = \boldsymbol{\beta}.
+\]
+
+\medskip
+\noindent\textbf{(ii) Ma trận phương sai.}
+
+Đặt $\mat{C} = (\mat{X}^T\mat{X})^{-1}\mat{X}^T$, khi đó
+$\hat{\boldsymbol{\beta}} - \boldsymbol{\beta} = \mat{C}\boldsymbol{\varepsilon}$.
+Áp dụng GM4:
+\[
+    \mathrm{Var}(\hat{\boldsymbol{\beta}} \mid \mat{X})
+    = \mat{C}\,\underbrace{\mathrm{Var}(\boldsymbol{\varepsilon} \mid \mat{X})}_{=\,\sigma^2\mat{I}_n\;\text{(GM4)}}\,\mat{C}^T
+    = \sigma^2\mat{C}\mat{C}^T
+    = \sigma^2(\mat{X}^T\mat{X})^{-1}.
+\]
+
+\medskip
+\noindent\textbf{(iii) Tính tốt nhất.}
+
+Với mọi ước lượng tuyến tính không chệch $\tilde{\boldsymbol{\beta}} = \mat{A}\mat{y}$
+(với $\mat{A}$ là ma trận hằng số), đặt $\mat{D} = \mat{A} - \mat{C}$.
+Tính không chệch đòi hỏi $\mat{D}\mat{X} = \mat{0}$, suy ra
+$\mat{C}\mat{D}^T = (\mat{X}^T\mat{X})^{-1}\mat{X}^T\mat{D}^T = \mat{0}^T = \mat{0}$. Do đó:
+\begin{align*}
+    \mathrm{Var}(\tilde{\boldsymbol{\beta}} \mid \mat{X})
+    &= \sigma^2\mat{A}\mat{A}^T
+     = \sigma^2(\mat{C} + \mat{D})(\mat{C} + \mat{D})^T \\
+    &= \sigma^2(\mat{C}\mat{C}^T + \mat{C}\mat{D}^T + \mat{D}\mat{C}^T + \mat{D}\mat{D}^T) \\
+    &= \underbrace{\sigma^2(\mat{X}^T\mat{X})^{-1}}_{\mathrm{Var}(\hat{\boldsymbol{\beta}})}
+       + \underbrace{\sigma^2\mat{D}\mat{D}^T}_{\succeq\,\mat{0}}.
+\end{align*}
+Vì $\mat{D}\mat{D}^T$ nửa xác định dương,
+$\mathrm{Var}(\tilde{\boldsymbol{\beta}}) - \mathrm{Var}(\hat{\boldsymbol{\beta}}) \succeq \mat{0}$,
+tức $\mathrm{Var}(\tilde{\beta}_j) \geq \mathrm{Var}(\hat{\beta}_j^{\mathrm{OLS}})$ với mọi $j$.
+\end{proof}
+
+% ============================================================
+\subsection{Đánh Giá Mô Hình}
+
+\subsubsection{Phân rã phương sai và hệ số xác định}
+
+Việc đánh giá mô hình bắt đầu từ việc phân tích nguồn gốc biến động của biến
+mục tiêu $\mat{y}$.
+
+\begin{mydef}{Phân rã tổng bình phương}{}
+Khi mô hình có hệ số chặn $\beta_0$, tổng bình phương toàn phần (TSS) phân rã thành:
+\[
+    \underbrace{\sum_{i=1}^n (y_i - \bar{y})^2}_{\mathrm{TSS}}
+    =
+    \underbrace{\sum_{i=1}^n (\hat{y}_i - \bar{y})^2}_{\mathrm{ESS}}
+    +
+    \underbrace{\sum_{i=1}^n (y_i - \hat{y}_i)^2}_{\mathrm{RSS}},
+\]
+trong đó $\bar{y} = \frac{1}{n}\sum_i y_i$. \textbf{TSS} là biến động toàn phần chưa có
+mô hình; \textbf{ESS} là phần mô hình giải thích được;
+\textbf{RSS} là phần chưa giải thích.
+\end{mydef}
+
+\begin{mydef}{Hệ số xác định $R^2$ và $\bar{R}^2$}{}~\cite{james2013,wooldridge2013}
+\[
+    R^2 = 1 - \frac{\mathrm{RSS}}{\mathrm{TSS}}
+    = \frac{\mathrm{ESS}}{\mathrm{TSS}}
+    \;\in\; [0,\,1].
+\]
+Vì $R^2$ luôn tăng (hoặc giữ nguyên) khi thêm bất kỳ biến nào, ta dùng
+\textbf{$\bar{R}^2$ hiệu chỉnh} để phạt việc thêm biến không có ý nghĩa:
+\[
+    \bar{R}^2
+    = 1 - \frac{\mathrm{RSS}/(n - p - 1)}{\mathrm{TSS}/(n - 1)}
+    = 1 - \frac{n - 1}{n - p - 1}(1 - R^2).
+\]
+$\bar{R}^2$ chỉ tăng khi biến mới cải thiện mô hình đủ bù đắp bậc tự do bị mất;
+$\bar{R}^2$ có thể âm khi mô hình kém hơn mô hình rỗng.
+\end{mydef}
+
+\subsubsection{Kiểm định giả thuyết}
+
+Dưới giả thiết GM5, $\hat{\boldsymbol{\beta}} \sim
+\mathcal{N}\!\bigl(\boldsymbol{\beta},\, \sigma^2(\mat{X}^T\mat{X})^{-1}\bigr)$.
+
+\begin{mythm}{Kiểm định $t$ cho từng hệ số}{}~\cite{wooldridge2013,james2013}
+Để kiểm định $H_0 : \beta_j = 0$ so với $H_1 : \beta_j \neq 0$, sử dụng thống kê:
+\[
+    t_j = \frac{\hat{\beta}_j}{\hat{\sigma}\sqrt{\bigl[(\mat{X}^T\mat{X})^{-1}\bigr]_{jj}}}
+    \;\sim\; t_{n-p-1}
+    \quad \text{dưới } H_0.
+\]
+Sai số chuẩn của $\hat{\beta}_j$ là
+$\mathrm{se}(\hat{\beta}_j) = \hat{\sigma}\sqrt{[(\mat{X}^T\mat{X})^{-1}]_{jj}}$.
+Khoảng tin cậy $(1-\alpha)$ cho $\beta_j$:
+\[
+    \hat{\beta}_j \;\pm\; t_{\alpha/2,\,n-p-1} \cdot \mathrm{se}(\hat{\beta}_j).
+\]
+\end{mythm}
+
+\begin{mythm}{Kiểm định $F$ cho toàn mô hình}{}~\cite{wooldridge2013,james2013}
+Để kiểm định $H_0 : \beta_1 = \cdots = \beta_p = 0$ (không biến nào có tác động),
+sử dụng:
+\[
+    F = \frac{(\mathrm{TSS} - \mathrm{RSS})/p}{\mathrm{RSS}/(n - p - 1)}
+    = \frac{R^2/p}{(1 - R^2)/(n - p - 1)}
+    \;\sim\; F_{p,\,n-p-1}
+    \quad \text{dưới } H_0.
+\]
+Bác bỏ $H_0$ khi $p\text{-value} = P(F_{p,n-p-1} \geq F_{\mathrm{obs}}) < \alpha$.
+\end{mythm}
+
+\begin{note}[So sánh $t$-test và $F$-test]
+Kiểm định $t$ đánh giá từng biến \emph{riêng lẻ} có điều kiện trên các biến khác;
+kiểm định $F$ đánh giá \emph{toàn bộ} mô hình cùng lúc. Khi các biến có tương quan
+cao, $t$-test của từng biến có thể yếu nhưng $F$-test vẫn có thể mạnh — hai kiểm
+định bổ sung cho nhau và cần được xem xét cùng nhau.
+\end{note}
+
+\begin{table}[H]
+\centering
+\caption{Tóm tắt các chỉ số đánh giá mô hình hồi quy}
+\label{tab:model_metrics}
+\begin{tabular}{llc}
+\toprule
+\textbf{Chỉ số} & \textbf{Công dụng chính} & \textbf{Ngưỡng kỳ vọng} \\ \midrule
+$R^2$
+    & Tỷ lệ phương sai được giải thích.
+    & Càng gần 1 càng tốt \\
+$\bar{R}^2$
+    & Lựa chọn số biến tối ưu (phạt overfitting).
+    & Tối đa hóa \\
+$t_j$-test
+    & Ý nghĩa thống kê từng hệ số $\beta_j$.
+    & $|t_j| > t_{\alpha/2,\,n-p-1}$ \\
+$F$-test
+    & Ý nghĩa tổng thể của mô hình.
+    & $p\text{-value} < \alpha$ \\
+$\hat{\sigma}$
+    & Độ chính xác tuyệt đối của dự đoán.
+    & Càng nhỏ càng tốt \\ \bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================
+\subsection{Các Vấn Đề Nâng Cao trong Data Fitting}
+
+\subsubsection{Đa cộng tuyến (Multicollinearity)}
+
+\textbf{Định nghĩa:} Đa cộng tuyến là hiện tượng xảy ra trong mô hình hồi quy bội khi hai hay nhiều biến độc lập (đặc trưng) có sự tương quan tuyến tính chặt chẽ với nhau. Điều này có nghĩa là một biến độc lập có thể được dự đoán với độ chính xác cao thông qua các biến độc lập khác trong cùng một mô hình.
+
+\textbf{Hậu quả đối với mô hình OLS:}
+\begin{itemize}
+    \item \textbf{Ma trận gần suy biến:} Khi xảy ra đa cộng tuyến hoàn hảo hoặc gần hoàn hảo, các cột của ma trận thiết kế $\mat{X}$ không còn độc lập tuyến tính. Hậu quả là định thức của ma trận $(\mat{X}^T\mat{X})$ tiến gần về 0, làm cho phép nghịch đảo $(\mat{X}^T\mat{X})^{-1}$ trong công thức nghiệm OLS trở nên cực kỳ thiếu ổn định hoặc không thể thực hiện được.
+    \item \textbf{Trọng số bị thổi phồng và sai số lớn:} Các hệ số hồi quy ước lượng ($\hat{\boldsymbol{\beta}}$) sẽ có giá trị tuyệt đối rất lớn và phương sai cực cao. Mô hình trở nên nhạy cảm quá mức: chỉ một thay đổi nhỏ trong tập dữ liệu huấn luyện cũng có thể làm thay đổi hoàn toàn dấu và độ lớn của các hệ số $\boldsymbol{\beta}$.
+    \item \textbf{Mất khả năng diễn giải:} Rất khó để đánh giá chính xác tác động độc lập của từng biến đối với biến mục tiêu $y$, làm sai lệch kết quả của các kiểm định giả thuyết (như t-test).
+\end{itemize}
+
+\textbf{Cách phát hiện bằng Hệ số phóng đại phương sai (VIF):}
+
+Để phát hiện đa cộng tuyến, phương pháp phổ biến nhất là sử dụng Hệ số phóng đại phương sai (Variance Inflation Factor - VIF) cho từng biến $j$. Công thức được định nghĩa như sau:
+
+\begin{equation}
+    \mathrm{VIF}_j = \frac{1}{1 - R_j^2}
+\end{equation}
+
+Trong đó, $R_j^2$ là hệ số xác định ($R$-squared) thu được khi sử dụng chính biến $X_j$ làm biến phụ thuộc và tiến hành hồi quy nó theo tất cả các biến độc lập còn lại.
+\begin{itemize}
+    \item Nếu $\mathrm{VIF}_j = 1$: Biến $X_j$ không có tương quan với các biến khác.
+    \item Nếu $\mathrm{VIF}_j > 10$ (hoặc $R_j^2 > 0.9$): Đây là dấu hiệu cảnh báo hiện tượng đa cộng tuyến đang ở mức độ nghiêm trọng và cần được xử lý.
+\end{itemize}
+
+\subsubsection{Hồi quy Ridge và Lasso (Regularization)}
+
+Để giải quyết vấn đề ma trận $(\mat{X}^T\mat{X})$ suy biến do đa cộng tuyến, phương pháp Hồi quy Ridge được áp dụng. Ý tưởng cốt lõi của phương pháp này là chấp nhận hy sinh một chút tính ``không chệch'' (unbiasedness) của ước lượng OLS để đổi lấy một phương sai nhỏ hơn rất nhiều, từ đó giúp mô hình tổng quát hóa tốt hơn.
+
+\textbf{Công thức toán học của Hồi quy Ridge:}
+
+Thay vì chỉ tối thiểu hóa tổng bình phương phần dư (RSS) như OLS thông thường, Hồi quy Ridge thêm vào hàm mất mát một ``khoản phạt'' (penalty term) tỷ lệ thuận với tổng bình phương các hệ số hồi quy (không bao gồm hệ số chặn $\beta_0$). Hàm mục tiêu mới trở thành:
+
+\begin{equation}
+    \hat{\boldsymbol{\beta}}_{\mathrm{ridge}} = \arg\min_{\boldsymbol{\beta}} \left\{ \norm{\mat{y} - \mat{X}\boldsymbol{\beta}}_2^2 + \lambda \norm{\boldsymbol{\beta}}_2^2 \right\}
+\end{equation}
+
+Trong đó, $\lambda \geq 0$ là siêu tham số điều chỉnh kiểm soát mức độ phạt:
+\begin{itemize}
+    \item Khi $\lambda = 0$: Khoản phạt bị triệt tiêu, Hồi quy Ridge hoàn toàn trở về mô hình OLS tiêu chuẩn.
+    \item Khi $\lambda \to \infty$: Khoản phạt trở nên vô cùng lớn, ép tất cả các hệ số $\boldsymbol{\beta}$ (trừ $\beta_0$) tiến dần về 0.
+\end{itemize}
+
+\textbf{Công thức nghiệm đóng:}
+
+Bằng cách lấy đạo hàm hàm mất mát trên theo $\boldsymbol{\beta}$ và cho bằng 0, ta thu được nghiệm phân tích của Hồi quy Ridge:
+
+\begin{equation}
+    \hat{\boldsymbol{\beta}}_{\mathrm{ridge}} = (\mat{X}^T\mat{X} + \lambda\mat{I})^{-1}\mat{X}^T\mat{y}
+\end{equation}
+
+Trong đó, $\mat{I}$ là ma trận đơn vị bậc $p+1$. Sự xuất hiện của thành phần $\lambda\mat{I}$ được cộng trực tiếp vào đường chéo chính của $(\mat{X}^T\mat{X})$ là ``chìa khóa'' giải quyết đa cộng tuyến. Nó đảm bảo ma trận $(\mat{X}^T\mat{X} + \lambda\mat{I})$ luôn luôn khả nghịch, ngay cả khi số lượng đặc trưng lớn hơn số lượng mẫu quan trắc ($p > n$) hoặc khi các biến có sự cộng tuyến hoàn hảo.
+
+\textbf{Lasso Regression ($L_1$ Regularization):}
+
+Tương tự Ridge, Lasso cũng thêm khoản phạt vào hàm mất mát OLS, nhưng sử dụng chuẩn $L_1$ thay vì $L_2$:
+
+\begin{equation}
+    \hat{\boldsymbol{\beta}}_{\mathrm{lasso}} = \arg\min_{\boldsymbol{\beta}} \left\{ \norm{\mat{y} - \mat{X}\boldsymbol{\beta}}_2^2 + \lambda \norm{\boldsymbol{\beta}}_1 \right\}
+\end{equation}
+
+Ưu điểm của Lasso so với Ridge là khả năng thực hiện \textit{feature selection} tự động bằng cách đặt một số hệ số chính xác bằng 0, giúp nhận diện các biến thực sự quan trọng trong mô hình.
+
+% ============================================================
+\section{Cài Đặt Python}
+
+\subsection{Imports, hằng số, dataclass và các hàm phụ trợ}
+
+\begin{note}[Cài Đặt]
+Mô-đun cài đặt hoàn chỉnh nằm trong \textbf{\texttt{part1/ols\_implementation.py}} bao gồm:
+\begin{itemize}
+    \item Nhập thư viện cần thiết (không sử dụng NumPy cho các hàm lõi)
+    \item Định nghĩa dataclass \texttt{OLSResult} và \texttt{HatMatrixResult} để lưu trữ kết quả
+    \item Các hàm tiện ích: \texttt{\_transpose}, \texttt{\_matmul}, \texttt{\_matvec}, \texttt{\_mat\_inv}, \texttt{\_mat\_rank}
+    \item Các hàm chính: \texttt{ols\_fit}, \texttt{hat\_matrix}, \texttt{run\_ols\_analysis}
+\end{itemize}
+\end{note}
+
+% ============================================================
+\subsection{Hàm \texttt{ols\_fit(X, y)}}
+% ============================================================
+
+\subsubsection{Mô tả}
+
+Hàm \texttt{ols\_fit} tính toán tường minh theo công thức Normal Equations:
+(1)~tính $\hat{\boldsymbol{\beta}} = (\mat{X}^T\mat{X})^{-1}\mat{X}^T\mat{y}$;
+(2)~tính phần dư và RSS; (3)~ước lượng $\hat{\sigma}^2 = \mathrm{RSS}/(n-p-1)$.
+
+\begin{note}[Lưu ý cài đặt]
+Hàm nghịch đảo \texttt{\_mat\_inv} sử dụng phương pháp Gauss--Jordan có chọn trục
+(partial pivoting) trên ma trận bổ sung $[\mat{A}\,|\,\mat{I}]$.
+\end{note}
+
+\subsubsection{Pseudo-code}
+
+Thuật toán OLS:
+        # Step 1: G = X^T X,  q = X^T y
+        Xt = _transpose(X_mat)
+        G  = _matmul(Xt, X_mat)
+        q  = _matvec(Xt, y_vec)
+
+        # Step 2: Check invertibility
+        if _mat_rank(G) < k:
+            return OLSResult(
+                method="OLS-NormalEquations", beta_hat=[], sigma2_hat=float("nan"),
+                y_hat=[], residuals=[], rss=float("nan"), dof=n - p - 1,
+                success=False, runtime_sec=perf_counter() - start,
+                message="X^T X is not invertible (multicollinearity).",
+            )
+
+        # Step 3: beta_hat = (X^T X)^{-1} X^T y
+        beta_hat = _matvec(_mat_inv(G), q)
+
+        # Step 4: Residuals and RSS
+        y_hat     = _matvec(X_mat, beta_hat)
+        residuals = _vecsub(y_vec, y_hat)
+        rss       = _dot(residuals, residuals)
+
+        # Step 5: sigma^2 = RSS / (n - p - 1)
+        dof        = n - p - 1
+        sigma2_hat = rss / dof
+

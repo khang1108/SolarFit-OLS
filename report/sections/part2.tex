@@ -1,0 +1,348 @@
+\section{Ứng Dụng Data Fitting vào Dữ Liệu Thực Tế}
+
+Phần này áp dụng các phương pháp lý thuyết từ Phần 1 vào bộ dữ liệu thực tế về chi phí du lịch tại Tanzania. Chúng tôi sẽ thực hiện quy trình hoàn chỉnh từ tải dữ liệu, tiền xử lý, xây dựng mô hình, đến đánh giá hiệu năng.
+
+% ============================================================
+\subsection{Chọn Lựa và Mô Tả Dataset}
+
+\subsubsection{Tiêu Chí Lựa Chọn Dataset}
+
+Theo yêu cầu của đề bài, dataset cần thỏa mãn các tiêu chí sau:
+
+\begin{itemize}
+    \item \textbf{Kích thước:} Ít nhất 200 mẫu huấn luyện ($n \geq 200$)
+    \item \textbf{Số lượng đặc trưng:} Ít nhất 3 biến đặc trưng ($p \geq 3$)
+    \item \textbf{Giá trị thiếu:} Có ít nhất 5\% giá trị missing ($\geq 5\%$)
+    \item \textbf{Loại vấn đề:} Bài toán hồi quy với mục tiêu continuous
+    \item \textbf{Nguồn:} Từ cuộc thi Kaggle/Zindi hoặc bộ dữ liệu công cộng đáng tin cậy
+\end{itemize}
+
+\subsubsection{Tanzania Tourism Expenditure Dataset}
+
+\begin{mydef}{Tanzania Tourism Expenditure Dataset}{}
+Dataset từ cuộc thi Zindi Platform chứa dữ liệu chi tiêu của du khách tại Tanzania, bao gồm thông tin nhân khẩu học, hành vi du lịch, và chi phí tổng cộng.
+
+\vspace{0.3cm}
+
+\textbf{Thông tin cơ bản:}
+\begin{itemize}
+    \item \textbf{Tập huấn luyện:} 4,809 mẫu (quan sát)
+    \item \textbf{Tập kiểm tra:} 1,601 mẫu (không có nhãn mục tiêu)
+    \item \textbf{Biến mục tiêu:} \code{total_cost} (chi phí tổng cộng, TZS)
+    \item \textbf{Loại biến độc lập:} 21 biến (gồm numeric và categorical)
+    \item \textbf{Phạm vi mục tiêu:} 49,000 TZS đến 99,532,875 TZS
+\end{itemize}
+
+\vspace{0.3cm}
+
+\textbf{Danh sách các đặc trưng:}
+
+Biến số (\textbf{numeric}): \code{total_female}, \code{total_male}, \code{night_mainland}, \code{night_zanzibar}
+
+Biến phân loại (\textbf{categorical}): \code{country}, \code{age_group}, \code{travel_with}, \code{purpose}, \code{main_activity}, \code{info_source}, \code{tour_arrangement}, \code{package_*} (8 biến), \code{payment_mode}, \code{first_trip_tz}, \code{most_impressing}
+\end{mydef}
+
+\subsubsection{Phân Tích Giá Trị Thiếu}
+
+Dataset thỏa mãn yêu cầu về giá trị missing:
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|r|r|}
+        \hline
+        \textbf{Cột} & \textbf{Số lượng} & \textbf{Phần trăm} \\
+        \hline
+        \code{travel_with} & 1,114 & 23.1\% \\
+        \code{most_impressing} & 313 & 6.5\% \\
+        \code{total_male} & 5 & 0.1\% \\
+        \code{total_female} & 3 & 0.06\% \\
+        \hline
+    \end{tabular}
+    \caption{Phân tích giá trị missing trong dataset huấn luyện.}
+    \label{tab:missing_values}
+\end{table}
+
+Chúng tôi thấy \code{travel_with} có 23.1\% missing (vượt quá 5\% yêu cầu) và \code{most_impressing} có 6.5\% missing. Các cột khác có missing rất ít, được xử lý bằng phương pháp imputation.
+
+% ============================================================
+\subsection{Tiền Xử Lý Dữ Liệu}
+
+\subsubsection{Xử Lý Giá Trị Thiếu}
+
+Chúng tôi áp dụng phương pháp \textbf{Mean/Mode Imputation}:
+
+\begin{enumerate}
+    \item \textbf{Biến numeric:} Điền giá trị thiếu bằng trung bình cộng (mean) của cột
+        \begin{itemize}
+            \item \code{total_female}: Điền bằng mean = 0.93
+            \item \code{total_male}: Điền bằng mean = 1.01
+        \end{itemize}
+
+    \item \textbf{Biến categorical:} Điền giá trị thiếu bằng mode (giá trị xuất hiện nhiều nhất)
+        \begin{itemize}
+            \item \code{travel_with}: Điền bằng \textit{``Alone''} (1,114 hàng)
+            \item \code{most_impressing}: Điền bằng \textit{``Friendly People''} (313 hàng)
+        \end{itemize}
+\end{enumerate}
+
+\subsubsection{Mã Hóa Biến Phân Loại}
+
+Chúng tôi sử dụng \textbf{One-Hot Encoding} để chuyển đổi các biến categorical thành numeric:
+
+\begin{itemize}
+    \item Mỗi giá trị categorical được tạo thành một cột binary (0/1)
+    \item Ví dụ: \code{country} có 70+ giá trị duy nhất tạo thành 70+ cột
+    \item Tổng cộng: 181 cột từ mã hóa (từ 17 biến categorical)
+\end{itemize}
+
+\subsubsection{Chuẩn Hóa Đặc Trưng}
+
+Chúng tôi chuẩn hóa (standardize) các biến numeric:
+
+\begin{equation}
+    x_{\text{scaled}} = \frac{x - \mu}{\sigma}
+\end{equation}
+
+Nơi $\mu$ và $\sigma$ là trung bình và độ lệch chuẩn của tập huấn luyện. Chuẩn hóa giúp:
+\begin{itemize}
+    \item Cải thiện hội tụ trong các mô hình regularized (Ridge, Lasso)
+    \item Đảm bảo các hệ số có thang đo comparable
+    \item Giảm ảnh hưởng của các biến có phạm vi khác nhau
+\end{itemize}
+
+\subsubsection{Dữ Liệu Sau Xử Lý}
+
+Sau tiền xử lý:
+\begin{itemize}
+    \item \textbf{Kích thước:} 4,809 mẫu × 186 đặc trưng (bao gồm intercept)
+    \item \textbf{Không còn giá trị thiếu} trong tập huấn luyện
+    \item \textbf{Đặc trưng numeric} đã được chuẩn hóa (mean=0, std=1)
+    \item \textbf{Đặc trưng categorical} đã được mã hóa (one-hot)
+\end{itemize}
+
+% ============================================================
+\subsection{Xây Dựng và Đánh Giá Mô Hình}
+
+\subsubsection{Mô Hình 1: OLS (Ordinary Least Squares)}
+
+\begin{mydef}{OLS Regression - Baseline Model}{}
+OLS là mô hình baseline không có regularization. Nó tối thiểu hóa tổng bình phương phần dư:
+
+\begin{equation}
+    \min_{\boldsymbol{\beta}} \|\mathbf{y} - \mathbf{X}\boldsymbol{\beta}\|_2^2
+\end{equation}
+
+\textbf{Kết quả trên tập huấn luyện:}
+\begin{itemize}
+    \item MAE: 5,645,164.48 TZS
+    \item RMSE: 9,550,143.67 TZS
+    \item R²: 0.3896
+    \item Adjusted R²: 0.3652
+\end{itemize}
+
+OLS cung cấp một baseline tốt nhưng có thể overfitting với số lượng lớn đặc trưng.
+\end{mydef}
+
+\subsubsection{Mô Hình 2: Ridge Regression ($\lambda$ = 100)}
+
+\begin{mydef}{Ridge Regression - L2 Regularization}{}
+Ridge thêm một penalty term L2 để kiểm soát độ lớn của hệ số:
+
+\begin{equation}
+    \min_{\boldsymbol{\beta}} \left\{ \|\mathbf{y} - \mathbf{X}\boldsymbol{\beta}\|_2^2 + \lambda \|\boldsymbol{\beta}\|_2^2 \right\}
+\end{equation}
+
+Với $\lambda = 100$ được chọn qua tuning.
+
+\textbf{Kết quả trên tập huấn luyện:}
+\begin{itemize}
+    \item MAE: 5,560,692.12 TZS
+    \item RMSE: 9,636,547.27 TZS
+    \item R²: 0.3785
+    \item Adjusted R²: 0.3536
+\end{itemize}
+
+Ridge giảm overfitting nhưng lại giảm nhẹ độ chính xác huấn luyện. Trong k-fold CV, Ridge cho kết quả tốt hơn OLS.
+\end{mydef}
+
+\subsubsection{Mô Hình 3: Lasso Regression ($\alpha$ = 100)}
+
+\begin{mydef}{Lasso Regression - L1 Regularization}{}
+Lasso sử dụng penalty L1 cho phép feature selection tự động:
+
+\begin{equation}
+    \min_{\boldsymbol{\beta}} \left\{ \|\mathbf{y} - \mathbf{X}\boldsymbol{\beta}\|_2^2 + \alpha \|\boldsymbol{\beta}\|_1 \right\}
+\end{equation}
+
+\textbf{Kết quả trên tập huấn luyện:}
+\begin{itemize}
+    \item MAE: 5,645,825.78 TZS
+    \item RMSE: 9,550,241.67 TZS
+    \item R²: 0.3896
+    \item Adjusted R²: 0.3652
+    \item \textbf{Nonzero coefficients:} 162 / 186 (24 coefficients = 0)
+\end{itemize}
+
+Lasso tạo một mô hình thưa (sparse) bằng cách đặt một số hệ số bằng 0, giúp feature selection.
+\end{mydef}
+
+\subsubsection{Bảng So Sánh Mô Hình}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|c|c|c|c|}
+        \hline
+        \textbf{Mô Hình} & \textbf{Train MAE} & \textbf{Train R²} & \textbf{CV R²} & \textbf{Nonzero Coef} \\
+        \hline
+        OLS & 5,645,164 & 0.3896 & 0.3395 & 186 \\
+        Ridge($\lambda=100$) & 5,560,692 & 0.3785 & 0.3501 & 186 \\
+        Lasso($\alpha=100$) & 5,645,826 & 0.3896 & --- & 162 \\
+        \hline
+    \end{tabular}
+    \caption{So sánh hiệu năng của các mô hình trên tập huấn luyện và cross-validation.}
+    \label{tab:model_comparison}
+\end{table}
+
+\textbf{Nhận xét:}
+\begin{itemize}
+    \item \textbf{Ridge} có CV R² tốt nhất (0.3501) cho thấy khả năng generalization tốt hơn OLS
+    \item \textbf{Lasso} giảm số lượng đặc trưng xuống 162 (từ 186), mô hình thưa hơn
+    \item OLS overfitting (Train R² = 0.3896 nhưng CV R² = 0.3395)
+\end{itemize}
+
+% ============================================================
+\subsection{Cross-Validation và Lựa Chọn Siêu Tham Số}
+
+\subsubsection{K-Fold Cross-Validation}
+
+Chúng tôi sử dụng 5-fold cross-validation để đánh giá mô hình:
+
+\begin{equation}
+    \text{CV Score} = \frac{1}{k} \sum_{i=1}^{k} \text{Score}_i(\text{test fold } i)
+\end{equation}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|c|c|c|}
+        \hline
+        \textbf{Mô Hình} & \textbf{CV MAE} & \textbf{CV RMSE} & \textbf{CV R²} \\
+        \hline
+        OLS & 5,886,021 ± 148,515 & 9,908,397 ± 571,182 & 0.3395 ± 0.0362 \\
+        Ridge($\lambda=100$) & 5,636,144 ± 200,197 & 9,831,182 ± 624,638 & 0.3501 ± 0.0381 \\
+        \hline
+    \end{tabular}
+    \caption{Kết quả 5-fold cross-validation (mean ± std).}
+    \label{tab:cv_results}
+\end{table}
+
+Ridge Regression đạt R² tốt nhất trên cross-validation, chứng tỏ khả năng tổng quát hóa tốt hơn OLS.
+
+\subsubsection{Lựa Chọn Siêu Tham Số $\lambda$ cho Ridge}
+
+Chúng tôi tuning $\lambda$ bằng 5-fold CV trên một lưới giá trị:
+
+\begin{equation}
+    \lambda^* = \arg\max_{\lambda} \text{CV-R}^2(\lambda)
+\end{equation}
+
+Kết quả:
+\begin{itemize}
+    \item $\lambda = 1$: CV R² = 0.3434
+    \item $\lambda = 10$: CV R² = 0.3491
+    \item $\lambda = 100$: CV R² = 0.3501 \quad \textbf{(Best)}
+    \item $\lambda = 1000$: CV R² = 0.3253
+    \item $\lambda = 10000$: CV R² = 0.2063
+\end{itemize}
+
+$\lambda = 100$ được chọn vì đạt CV R² cao nhất.
+
+% ============================================================
+\subsection{Phân Tích Tầm Quan Trọng Đặc Trưng}
+
+\subsubsection{Top 10 Đặc Trưng (OLS)}
+
+Xếp hạng 10 đặc trưng hàng đầu theo magnitude của hệ số:
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|r|l|c|}
+        \hline
+        \textbf{Hạng} & \textbf{Đặc Trưng} & \textbf{|Hệ Số|} \\
+        \hline
+        1. & \code{country\_GEORGIA} & 13,889,256 \\
+        2. & \code{country\_COSTARICA} & 13,023,821 \\
+        3. & \code{country\_MADAGASCAR} & 10,511,733 \\
+        4. & \code{country\_MORROCO} & 9,876,223 \\
+        5. & \code{country\_DOMINICA} & 8,969,454 \\
+        6. & \code{country\_ARGENTINA} & 8,502,415 \\
+        7. & \code{country\_PAKISTAN} & 8,484,792 \\
+        8. & \code{country\_NIGER} & 8,476,597 \\
+        9. & \code{country\_DENMARK} & 8,225,280 \\
+        10. & \code{country\_TUNISIA} & 7,662,950 \\
+        \hline
+    \end{tabular}
+    \caption{Top 10 đặc trưng có ảnh hưởng lớn nhất đến dự đoán chi phí.}
+    \label{tab:feature_importance}
+\end{table}
+
+\textbf{Nhận xét:}
+\begin{itemize}
+    \item Các biến \textbf{quốc gia} (country) là những đặc trưng quan trọng nhất
+    \item Chi phí du lịch phụ thuộc mạnh vào quốc gia khách đến từ đâu
+    \item Các biến khác như hoạt động chính (main\_activity), phương thức thanh toán (payment\_mode) cũng có ảnh hưởng đáng chú ý
+\end{itemize}
+
+% ============================================================
+\subsection{Kết Luận và Đề Xuất}
+
+\subsubsection{Kết Luận Chính}
+
+Chúng tôi đã áp dụng thành công ba mô hình hồi quy (OLS, Ridge, Lasso) vào bộ dữ liệu du lịch Tanzania:
+
+\begin{enumerate}
+    \item \textbf{OLS Baseline:} R² = 0.3896 (training), nhưng overfitting (CV R² = 0.3395)
+
+    \item \textbf{Ridge Regression:} Mô hình tốt nhất với CV R² = 0.3501, cho thấy khả năng generalization tốt hơn
+
+    \item \textbf{Lasso Regression:} Tạo mô hình thưa (sparse) với 162/186 nonzero coefficients, hỗ trợ feature selection
+\end{enumerate}
+
+\textbf{Quan sát:}
+\begin{itemize}
+    \item Quốc gia du khách là yếu tố dự đoán quan trọng nhất cho chi phí
+    \item R² \$\approx$ 0.34 cho thấy cần thêm đặc trưng hoặc phương pháp mô hình phức tạp hơn
+    \item Tiền xử lý dữ liệu (imputation, encoding, scaling) rất quan trọng
+\end{itemize}
+
+\subsubsection{Đề Xuất Cải Thiện}
+
+\begin{enumerate}
+    \item \textbf{Feature Engineering:}
+        \begin{itemize}
+            \item Tạo đặc trưng tương tác (interactions) giữa quốc gia và hoạt động chính
+            \item Tạo đặc trưng polynomial hoặc spline cho các biến numeric
+        \end{itemize}
+
+    \item \textbf{Mô Hình Nâng Cao:}
+        \begin{itemize}
+            \item Elastic Net kết hợp L1 và L2 penalty
+            \item Kernel Ridge Regression cho relationship phi tuyến
+            \item Gradient Boosting (XGBoost, LightGBM) để khám phá pattern phức tạp
+        \end{itemize}
+
+    \item \textbf{Xử Lý Dữ Liệu:}
+        \begin{itemize}
+            \item Thử phương pháp imputation khác (regression imputation, MICE)
+            \item Phát hiện và xử lý outliers tốt hơn
+            \item Kiểm tra vai trò của các biến ít được sử dụng
+        \end{itemize}
+
+    \item \textbf{Đánh Giá Mô Hình:}
+        \begin{itemize}
+            \item Sử dụng stratified k-fold để cân bằng các lớp
+            \item Kiểm tra hiệu năng trên test set nếu nhãn công khai
+            \item Phân tích độc lập residuals (heteroscedasticity, autocorrelation)
+        \end{itemize}
+\end{enumerate}
+
+% ============================================================

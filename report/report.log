@@ -1,7 +1,6 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026/Arch Linux) (preloaded format=pdflatex 2026.4.7)  28 MAY 2026 13:52
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026/Arch Linux) (preloaded format=pdflatex 2026.4.7)  28 MAY 2026 17:52
 entering extended mode
- \write18 enabled.
- file:line:error style messages enabled.
+ restricted \write18 enabled.
  %&-line parsing enabled.
 **report.tex
 (./report.tex
@@ -91,25 +90,7 @@ File: pdftex.def 2025/09/29 v1.2d Graphics/color driver for pdftex
 )
 (/usr/share/texmf-dist/tex/latex/tools/shellesc.sty
 Package: shellesc 2023/07/08 v1.0d unified shell escape interface for LaTeX
-Package shellesc Info: Unrestricted shell escape enabled on input line 75.
-)
-(/usr/share/texmf-dist/tex/latex/ifplatform/ifplatform.sty
-Package: ifplatform 2017/10/13 v0.4a Testing for the operating system
-
-(/usr/share/texmf-dist/tex/generic/catchfile/catchfile.sty
-Package: catchfile 2019/12/09 v1.8 Catch the contents of a file (HO)
-
-(/usr/share/texmf-dist/tex/generic/etexcmds/etexcmds.sty
-Package: etexcmds 2019/12/15 v1.7 Avoid name clashes with e-TeX commands (HO)
-))
-(/usr/share/texmf-dist/tex/generic/iftex/ifluatex.sty
-Package: ifluatex 2019/10/25 v1.5 ifluatex legacy package. Use iftex instead.
-)
-runsystem(uname -s > "report.w18")...executed.
-
- (./report.w18)
-runsystem(rm -- "report.w18")...executed.
-
+Package shellesc Info: Restricted shell escape enabled on input line 77.
 )
 \c@svg@param@lastpage=\count283
 \svg@box=\box53
@@ -587,6 +568,12 @@ Package: fancyhdr 2025/02/07 v5.2 Extensive control of page headers and footers
 (/usr/share/texmf-dist/tex/latex/minted/minted.sty
 Package: minted 2026/03/03 v3.8.0 Yet another Pygments shim for LaTeX
 
+(/usr/share/texmf-dist/tex/generic/catchfile/catchfile.sty
+Package: catchfile 2019/12/09 v1.8 Catch the contents of a file (HO)
+
+(/usr/share/texmf-dist/tex/generic/etexcmds/etexcmds.sty
+Package: etexcmds 2019/12/15 v1.7 Avoid name clashes with e-TeX commands (HO)
+))
 (/usr/share/texmf-dist/tex/latex/etoolbox/etoolbox.sty
 Package: etoolbox 2025/10/02 v2.5m e-TeX tools for LaTeX (JAW)
 \etb@tempcnta=\count308
@@ -1588,7 +1575,7 @@ File: lstlang1.sty 2025/11/14 1.11b listings language file
 \c@tcb@cnt@myprop=\count438
 \c@tcb@cnt@mycor=\count439
  (./report.aux
-(./sections/part1.aux))
+(./sections/part1.aux) (./sections/part2.aux))
 \openout1 = `report.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 294.
@@ -1699,7 +1686,7 @@ Package hyperref Info: Link coloring ON on input line 294.
 \openout5 = `report.out'.
 
  (./sections/title.tex
-<images/khtn.png, id=143, 597.9138pt x 597.9138pt>
+<images/khtn.png, id=248, 597.9138pt x 597.9138pt>
 File: images/khtn.png Graphic file (type png)
 <use images/khtn.png>
 Package pdftex.def Info: images/khtn.png  used on input line 12.
@@ -1730,30 +1717,41 @@ Overfull \hbox (10.14047pt too wide) in paragraph at lines 20--31
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map} <./images/khtn.png>])
 (./report.toc
-LaTeX Font Info:    Trying to load font information for T5+cmtt on input line 1
-9.
+LaTeX Font Info:    Trying to load font information for T5+cmtt on input line 2
+2.
  (/usr/share/texmf-dist/tex/latex/vntex/t5cmtt.fd
 File: t5cmtt.fd 1999/05/25 v2.5h Standard LaTeX font definitions
-))
-\tf@toc=\write6
-\openout6 = `report.toc'.
-
-
+)
 pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has 
 been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.310 \newpage
-               [1]
+l.32 ...enditure Dataset}{26}{subsubsection.3.1.2}
+                                                  % [1])
+\tf@toc=\write6
+\openout6 = `report.toc'.
+
+File: images/khtn.png Graphic file (type png)
+<use images/khtn.png>
+Package pdftex.def Info: images/khtn.png  used on input line 310.
+(pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
+LaTeX Font Info:    Font shape `T5/cmtt/bx/n' in size <10> not available
+(Font)              Font shape `T5/cmtt/m/n' tried instead on input line 310.
+ [2]
 \openout2 = `sections/part1.aux'.
 
- (./sections/part1.tex (./sections/ols.tex
+
+(./sections/part1.tex
+
+LaTeX Warning: Citation `stigler1996' on page 1 undefined on input line 6.
+
+
+LaTeX Warning: Citation `plackett1972' on page 1 undefined on input line 25.
+
 File: images/khtn.png Graphic file (type png)
 <use images/khtn.png>
 Package pdftex.def Info: images/khtn.png  used on input line 27.
 (pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
-LaTeX Font Info:    Font shape `T5/cmtt/bx/n' in size <10> not available
-(Font)              Font shape `T5/cmtt/m/n' tried instead on input line 27.
 
 Underfull \hbox (badness 10000) has occurred while \output is active
 []$[]$ \T5/cmtt/m/n/7 H� m�t l� h� th�ng ^^_o l��ng th�p ph�n ^^_��c th�ng nh�t
@@ -1776,6 +1774,12 @@ l.27 G
 [1
 
 ]
+
+LaTeX Warning: Citation `plackett1972' on page 2 undefined on input line 27.
+
+
+LaTeX Warning: Citation `strang2023' on page 2 undefined on input line 28.
+
 LaTeX Font Info:    Font shape `U/lasy/b/n' in size <7> not available
 (Font)              Font shape `U/lasy/m/n' tried instead on input line 32.
 LaTeX Font Info:    Font shape `U/lasy/b/n' in size <5> not available
@@ -1784,39 +1788,70 @@ LaTeX Font Info:    Font shape `U/lasy/b/n' in size <9> not available
 (Font)              Font shape `U/lasy/m/n' tried instead on input line 59.
 LaTeX Font Info:    Font shape `U/lasy/b/n' in size <6> not available
 (Font)              Font shape `U/lasy/m/n' tried instead on input line 59.
+
+LaTeX Warning: Citation `wooldridge2013' on page 2 undefined on input line 85.
+
+
+LaTeX Warning: Citation `greene2012' on page 2 undefined on input line 85.
+
 File: images/khtn.png Graphic file (type png)
 <use images/khtn.png>
 Package pdftex.def Info: images/khtn.png  used on input line 114.
 (pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
- [2]
+
+pdfTeX warning (ext4): destination with the same identifier (name{page.2}) has 
+been already used, duplicate ignored
+<to be read again> 
+                   \relax 
+l.114 \end{mydef}
+                  [2]
 
 LaTeX Warning: Command \textendash invalid in math mode on input line 117.
+
+
+LaTeX Warning: Citation `plackett1972' on page 3 undefined on input line 127.
 
 File: images/khtn.png Graphic file (type png)
 <use images/khtn.png>
 Package pdftex.def Info: images/khtn.png  used on input line 137.
 (pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
 [3]
+
+LaTeX Warning: Citation `plackett1972' on page 4 undefined on input line 146.
+
 File: images/khtn.png Graphic file (type png)
 <use images/khtn.png>
 Package pdftex.def Info: images/khtn.png  used on input line 151.
 (pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
- [4]
+[4]
+
+LaTeX Warning: Citation `plackett1972' on page 5 undefined on input line 151.
+
 File: images/khtn.png Graphic file (type png)
 <use images/khtn.png>
 Package pdftex.def Info: images/khtn.png  used on input line 166.
 (pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
- [5]
+[5]
+
+LaTeX Warning: Citation `golub2013' on page 6 undefined on input line 169.
+
 File: images/khtn.png Graphic file (type png)
 <use images/khtn.png>
 Package pdftex.def Info: images/khtn.png  used on input line 232.
 (pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
- [6]
+[6]
+
+LaTeX Warning: Citation `trefethen1997' on page 7 undefined on input line 268.
+
 File: images/khtn.png Graphic file (type png)
 <use images/khtn.png>
 Package pdftex.def Info: images/khtn.png  used on input line 311.
 (pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
- [7]
+[7]
+
+LaTeX Warning: Citation `hoaglin1978' on page 8 undefined on input line 314.
+
+
 Overfull \hbox (19.6181pt too wide) in paragraph at lines 356--360
 []\T5/cmr/bx/n/10 (iv) H�ng: $[]\OT1/cmr/m/n/10 (\OT1/cmr/bx/n/10 H\OT1/cmr/m/n
 /10 ) = [](\OT1/cmr/bx/n/10 H\OT1/cmr/m/n/10 )$ \T5/cmr/m/n/10 (v� gi� tr� ri�n
@@ -1846,6 +1881,10 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 (hyperref)                removing `math shift' on input line 370.
 
+
+LaTeX Warning: Citation `wooldridge2013' on page 9 undefined on input line 415.
+
+
 File: images/khtn.png Graphic file (type png)
 <use images/khtn.png>
 Package pdftex.def Info: images/khtn.png  used on input line 430.
@@ -1856,149 +1895,1303 @@ File: images/khtn.png Graphic file (type png)
 Package pdftex.def Info: images/khtn.png  used on input line 478.
 (pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
  [10]
+
+LaTeX Warning: Citation `james2013' on page 11 undefined on input line 506.
+
+
+LaTeX Warning: Citation `wooldridge2013' on page 11 undefined on input line 506
+.
+
 File: images/khtn.png Graphic file (type png)
 <use images/khtn.png>
 Package pdftex.def Info: images/khtn.png  used on input line 521.
 (pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
- [11]
+[11]
+
+LaTeX Warning: Citation `wooldridge2013' on page 12 undefined on input line 528
+.
+
+
+LaTeX Warning: Citation `james2013' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Citation `wooldridge2013' on page 12 undefined on input line 543
+.
+
+
+LaTeX Warning: Citation `james2013' on page 12 undefined on input line 543.
+
 File: images/khtn.png Graphic file (type png)
 <use images/khtn.png>
 Package pdftex.def Info: images/khtn.png  used on input line 586.
 (pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
- [12]
-Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
-nput line 592.
+[12]
 File: images/khtn.png Graphic file (type png)
 <use images/khtn.png>
-Package pdftex.def Info: images/khtn.png  used on input line 616.
+Package pdftex.def Info: images/khtn.png  used on input line 611.
 (pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
- [13]
+ [13{/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
 File: images/khtn.png Graphic file (type png)
 <use images/khtn.png>
-Package pdftex.def Info: images/khtn.png  used on input line 652.
+Package pdftex.def Info: images/khtn.png  used on input line 645.
 (pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
- [14]
-File: images/khtn.png Graphic file (type png)
-<use images/khtn.png>
-Package pdftex.def Info: images/khtn.png  used on input line 688.
-(pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
- [15]
-File: images/khtn.png Graphic file (type png)
-<use images/khtn.png>
-Package pdftex.def Info: images/khtn.png  used on input line 724.
-(pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
- [16]
-LaTeX Font Info:    Font shape `T5/cmtt/bx/n' in size <12> not available
-(Font)              Font shape `T5/cmtt/m/n' tried instead on input line 740.
 
-Overfull \hbox (22.05695pt too wide) in paragraph at lines 745--748
+[14]
+LaTeX Font Info:    Font shape `T5/cmtt/bx/n' in size <12> not available
+(Font)              Font shape `T5/cmtt/m/n' tried instead on input line 669.
+
+Overfull \hbox (22.05695pt too wide) in paragraph at lines 674--677
 []\T5/cmr/m/n/10 H�m \T5/cmtt/m/n/10 ols_fit \T5/cmr/m/n/10 t�nh to�n t��ng min
 h theo c�ng th�c Nor-mal Equa-tions: (1) t�nh $[] \OT1/cmr/m/n/10 = (\OT1/cmr/b
 x/n/10 X[]X\OT1/cmr/m/n/10 )[]\OT1/cmr/bx/n/10 X[]y$\T5/cmr/m/n/10 ;
  []
 
+! You can't use `macro parameter character #' in horizontal mode.
+l.686         #
+                Step 1: G = X^T X,  q = X^T y
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.686         # Step 1: G = X^
+                              T X,  q = X^T y
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.690 
+      
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+
+Overfull \hbox (21.74173pt too wide) in paragraph at lines 685--690
+[]\T5/cmr/m/n/10 Thu�t to�n OLS:  Step 1: G = X$[]\OML/cmm/m/it/10 X; q \OT1/cm
+r/m/n/10 = \OML/cmm/m/it/10 X[]yXt \OT1/cmr/m/n/10 =[] \OML/cmm/m/it/10 ranspos
+e\OT1/cmr/m/n/10 (\OML/cmm/m/it/10 X[]at\OT1/cmr/m/n/10 )\OML/cmm/m/it/10 G \OT
+1/cmr/m/n/10 =[] \OML/cmm/m/it/10 atmul\OT1/cmr/m/n/10 (\OML/cmm/m/it/10 Xt; X[
+]at\OT1/cmr/m/n/10 )\OML/cmm/m/it/10 q \OT1/cmr/m/n/10 =[]
+ []
+
+! You can't use `macro parameter character #' in vertical mode.
+l.691         #
+                Step 2: Check invertibility
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
 File: images/khtn.png Graphic file (type png)
 <use images/khtn.png>
-Package pdftex.def Info: images/khtn.png  used on input line 764.
+Package pdftex.def Info: images/khtn.png  used on input line 691.
 (pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
-[17]
-File: images/khtn.png Graphic file (type png)
-<use images/khtn.png>
-Package pdftex.def Info: images/khtn.png  used on input line 799.
-(pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
- [18]
-File: images/khtn.png Graphic file (type png)
-<use images/khtn.png>
-Package pdftex.def Info: images/khtn.png  used on input line 837.
-(pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
- [19]
-File: images/khtn.png Graphic file (type png)
-<use images/khtn.png>
-Package pdftex.def Info: images/khtn.png  used on input line 874.
-(pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
- [20]
-File: images/khtn.png Graphic file (type png)
-<use images/khtn.png>
-Package pdftex.def Info: images/khtn.png  used on input line 906.
-(pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
- [21{/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
-File: images/khtn.png Graphic file (type png)
-<use images/khtn.png>
-Package pdftex.def Info: images/khtn.png  used on input line 943.
-(pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
- [22]))
+[15]
+! Missing $ inserted.
+<inserted text> 
+                $
+l.692         if _
+                  mat_rank(G) < k:
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.699 
+      
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! You can't use `macro parameter character #' in vertical mode.
+l.700         #
+                Step 3: beta_hat = (X^T X)^{-1} X^T y
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.700         # Step 3: beta_
+                             hat = (X^T X)^{-1} X^T y
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.702 
+      
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! You can't use `macro parameter character #' in vertical mode.
+l.703         #
+                Step 4: Residuals and RSS
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.704         y_
+                hat     = _matvec(X_mat, beta_hat)
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.707 
+      
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+
+Overfull \hbox (5.95158pt too wide) in paragraph at lines 703--707
+[]\T5/cmr/m/n/10 Step 4: Resid-u-als and RSS y$[]\OML/cmm/m/it/10 at \OT1/cmr/m
+/n/10 =[] \OML/cmm/m/it/10 atvec\OT1/cmr/m/n/10 (\OML/cmm/m/it/10 X[]at; beta[]
+at\OT1/cmr/m/n/10 )\OML/cmm/m/it/10 residuals \OT1/cmr/m/n/10 =[] \OML/cmm/m/it
+/10 ecsub\OT1/cmr/m/n/10 (\OML/cmm/m/it/10 y[]ec; y[]at\OT1/cmr/m/n/10 )\OML/cm
+m/m/it/10 rss \OT1/cmr/m/n/10 =[]
+ []
+
+! You can't use `macro parameter character #' in vertical mode.
+l.708         #
+                Step 5: sigma^2 = RSS / (n - p - 1)
+Sorry, but I'm not programmed to handle this case;
+I'll just pretend that you didn't ask for it.
+If you're in the wrong mode, you might be able to
+return to the right one by typing `I}' or `I$' or `I\par'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.708         # Step 5: sigma^
+                              2 = RSS / (n - p - 1)
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.711 
+      
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+)
 File: images/khtn.png Graphic file (type png)
 <use images/khtn.png>
 Package pdftex.def Info: images/khtn.png  used on input line 317.
 (pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
- [23] (./report.bbl)
+ [16]
+\openout2 = `sections/part2.aux'.
+
+ (./sections/part2.tex
+! Missing $ inserted.
+<inserted text> 
+                $
+l.31 ...tbf{Biến mục tiêu:} \code{total_cost}
+                                                   (chi phí tổng cộng, ...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ... total_cost\tcb@insert@after@upper }
+                                                  
+l.31 ...tbf{Biến mục tiêu:} \code{total_cost}
+                                                   (chi phí tổng cộng, ...
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.31 ...tbf{Biến mục tiêu:} \code{total_cost}
+                                                   (chi phí tổng cộng, ...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.31 ...tbf{Biến mục tiêu:} \code{total_cost}
+                                                   (chi phí tổng cộng, ...
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.40 ...�� (\textbf{numeric}): \code{total_female}
+                                                  , \code{total_male}, \code...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ...otal_female\tcb@insert@after@upper }
+                                                  
+l.40 ...�� (\textbf{numeric}): \code{total_female}
+                                                  , \code{total_male}, \code...
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.40 ...�� (\textbf{numeric}): \code{total_female}
+                                                  , \code{total_male}, \code...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.40 ...�� (\textbf{numeric}): \code{total_female}
+                                                  , \code{total_male}, \code...
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.40 ...}): \code{total_female}, \code{total_male}
+                                                  , \code{night_mainland}, \...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ... total_male\tcb@insert@after@upper }
+                                                  
+l.40 ...}): \code{total_female}, \code{total_male}
+                                                  , \code{night_mainland}, \...
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.40 ...}): \code{total_female}, \code{total_male}
+                                                  , \code{night_mainland}, \...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.40 ...}): \code{total_female}, \code{total_male}
+                                                  , \code{night_mainland}, \...
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.40 ..., \code{total_male}, \code{night_mainland}
+                                                  , \code{night_zanzibar}
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ...ht_mainland\tcb@insert@after@upper }
+                                                  
+l.40 ..., \code{total_male}, \code{night_mainland}
+                                                  , \code{night_zanzibar}
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.40 ..., \code{total_male}, \code{night_mainland}
+                                                  , \code{night_zanzibar}
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.40 ..., \code{total_male}, \code{night_mainland}
+                                                  , \code{night_zanzibar}
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.40 ...ode{night_mainland}, \code{night_zanzibar}
+                                                  
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ...ht_zanzibar\tcb@insert@after@upper }
+                                                  
+l.40 ...ode{night_mainland}, \code{night_zanzibar}
+                                                  
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.40 ...ode{night_mainland}, \code{night_zanzibar}
+                                                  
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.40 ...ode{night_mainland}, \code{night_zanzibar}
+                                                  
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.42 ...orical}): \code{country}, \code{age_group}
+                                                  , \code{travel_with}, \cod...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ...r age_group\tcb@insert@after@upper }
+                                                  
+l.42 ...orical}): \code{country}, \code{age_group}
+                                                  , \code{travel_with}, \cod...
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.42 ...orical}): \code{country}, \code{age_group}
+                                                  , \code{travel_with}, \cod...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.42 ...orical}): \code{country}, \code{age_group}
+                                                  , \code{travel_with}, \cod...
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.42 ...try}, \code{age_group}, \code{travel_with}
+                                                  , \code{purpose}, \code{ma...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ...travel_with\tcb@insert@after@upper }
+                                                  
+l.42 ...try}, \code{age_group}, \code{travel_with}
+                                                  , \code{purpose}, \code{ma...
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.42 ...try}, \code{age_group}, \code{travel_with}
+                                                  , \code{purpose}, \code{ma...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.42 ...try}, \code{age_group}, \code{travel_with}
+                                                  , \code{purpose}, \code{ma...
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.42 ...ith}, \code{purpose}, \code{main_activity}
+                                                  , \code{info_source}, \cod...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ...in_activity\tcb@insert@after@upper }
+                                                  
+l.42 ...ith}, \code{purpose}, \code{main_activity}
+                                                  , \code{info_source}, \cod...
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.42 ...ith}, \code{purpose}, \code{main_activity}
+                                                  , \code{info_source}, \cod...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.42 ...ith}, \code{purpose}, \code{main_activity}
+                                                  , \code{info_source}, \cod...
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.42 ..., \code{main_activity}, \code{info_source}
+                                                  , \code{tour_arrangement},...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ...info_source\tcb@insert@after@upper }
+                                                  
+l.42 ..., \code{main_activity}, \code{info_source}
+                                                  , \code{tour_arrangement},...
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.42 ..., \code{main_activity}, \code{info_source}
+                                                  , \code{tour_arrangement},...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.42 ..., \code{main_activity}, \code{info_source}
+                                                  , \code{tour_arrangement},...
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.42 ...code{info_source}, \code{tour_arrangement}
+                                                  , \code{package_*} (8 bi�...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ...arrangement\tcb@insert@after@upper }
+                                                  
+l.42 ...code{info_source}, \code{tour_arrangement}
+                                                  , \code{package_*} (8 bi�...
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.42 ...code{info_source}, \code{tour_arrangement}
+                                                  , \code{package_*} (8 bi�...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.42 ...code{info_source}, \code{tour_arrangement}
+                                                  , \code{package_*} (8 bi�...
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.42 ... \code{tour_arrangement}, \code{package_*}
+                                                   (8 biến), \code{payment...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ...r package_*\tcb@insert@after@upper }
+                                                  
+l.42 ... \code{tour_arrangement}, \code{package_*}
+                                                   (8 biến), \code{payment...
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.42 ... \code{tour_arrangement}, \code{package_*}
+                                                   (8 biến), \code{payment...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.42 ... \code{tour_arrangement}, \code{package_*}
+                                                   (8 biến), \code{payment...
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.42 ...package_*} (8 biến), \code{payment_mode}
+                                                  , \code{first_trip_tz}, \c...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ...ayment_mode\tcb@insert@after@upper }
+                                                  
+l.42 ...package_*} (8 biến), \code{payment_mode}
+                                                  , \code{first_trip_tz}, \c...
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.42 ...package_*} (8 biến), \code{payment_mode}
+                                                  , \code{first_trip_tz}, \c...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.42 ...package_*} (8 biến), \code{payment_mode}
+                                                  , \code{first_trip_tz}, \c...
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.42 ... \code{payment_mode}, \code{first_trip_tz}
+                                                  , \code{most_impressing}
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ...rst_trip_tz\tcb@insert@after@upper }
+                                                  
+l.42 ... \code{payment_mode}, \code{first_trip_tz}
+                                                  , \code{most_impressing}
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.42 ... \code{payment_mode}, \code{first_trip_tz}
+                                                  , \code{most_impressing}
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.42 ... \code{payment_mode}, \code{first_trip_tz}
+                                                  , \code{most_impressing}
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.42 ...ode{first_trip_tz}, \code{most_impressing}
+                                                  
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ..._impressing\tcb@insert@after@upper }
+                                                  
+l.42 ...ode{first_trip_tz}, \code{most_impressing}
+                                                  
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.42 ...ode{first_trip_tz}, \code{most_impressing}
+                                                  
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.42 ...ode{first_trip_tz}, \code{most_impressing}
+                                                  
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+
+Underfull \hbox (badness 7888) in paragraph at lines 42--43
+[]\T5/cmr/m/n/10 Bi�n ph�n lo�i (\T5/cmr/bx/n/10 categorical\T5/cmr/m/n/10 ): [
+], [], [], [],
+ []
+
+File: images/khtn.png Graphic file (type png)
+<use images/khtn.png>
+Package pdftex.def Info: images/khtn.png  used on input line 43.
+(pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
+[17
+
+
+
+]
+! Missing $ inserted.
+<inserted text> 
+                $
+l.55         \code{travel_with}
+                                & 1,114 & 23.1\% \\
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ...travel_with\tcb@insert@after@upper }
+                                                  
+l.55         \code{travel_with}
+                                & 1,114 & 23.1\% \\
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.55         \code{travel_with}
+                                & 1,114 & 23.1\% \\
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.55         \code{travel_with}
+                                & 1,114 & 23.1\% \\
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.56         \code{most_impressing}
+                                    & 313 & 6.5\% \\
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ..._impressing\tcb@insert@after@upper }
+                                                  
+l.56         \code{most_impressing}
+                                    & 313 & 6.5\% \\
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.56         \code{most_impressing}
+                                    & 313 & 6.5\% \\
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.56         \code{most_impressing}
+                                    & 313 & 6.5\% \\
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.57         \code{total_male}
+                               & 5 & 0.1\% \\
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ... total_male\tcb@insert@after@upper }
+                                                  
+l.57         \code{total_male}
+                               & 5 & 0.1\% \\
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.57         \code{total_male}
+                               & 5 & 0.1\% \\
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.57         \code{total_male}
+                               & 5 & 0.1\% \\
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.58         \code{total_female}
+                                 & 3 & 0.06\% \\
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ...otal_female\tcb@insert@after@upper }
+                                                  
+l.58         \code{total_female}
+                                 & 3 & 0.06\% \\
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.58         \code{total_female}
+                                 & 3 & 0.06\% \\
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.58         \code{total_female}
+                                 & 3 & 0.06\% \\
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.65 Chúng tôi thấy \code{travel_with}
+                                           có 23.1\% missing (vượt quá ...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ...travel_with\tcb@insert@after@upper }
+                                                  
+l.65 Chúng tôi thấy \code{travel_with}
+                                           có 23.1\% missing (vượt quá ...
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.65 Chúng tôi thấy \code{travel_with}
+                                           có 23.1\% missing (vượt quá ...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.65 Chúng tôi thấy \code{travel_with}
+                                           có 23.1\% missing (vượt quá ...
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.65 ...5\% yêu cầu) và \code{most_impressing}
+                                                   có 6.5\% missing. Các c...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ..._impressing\tcb@insert@after@upper }
+                                                  
+l.65 ...5\% yêu cầu) và \code{most_impressing}
+                                                   có 6.5\% missing. Các c...
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.65 ...5\% yêu cầu) và \code{most_impressing}
+                                                   có 6.5\% missing. Các c...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.65 ...5\% yêu cầu) và \code{most_impressing}
+                                                   có 6.5\% missing. Các c...
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.77             \item \code{total_female}
+                                          : Điền bằng mean = 0.93
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ...otal_female\tcb@insert@after@upper }
+                                                  
+l.77             \item \code{total_female}
+                                          : Điền bằng mean = 0.93
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.77             \item \code{total_female}
+                                          : Điền bằng mean = 0.93
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.77             \item \code{total_female}
+                                          : Điền bằng mean = 0.93
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.78             \item \code{total_male}
+                                        : Điền bằng mean = 1.01
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ... total_male\tcb@insert@after@upper }
+                                                  
+l.78             \item \code{total_male}
+                                        : Điền bằng mean = 1.01
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.78             \item \code{total_male}
+                                        : Điền bằng mean = 1.01
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.78             \item \code{total_male}
+                                        : Điền bằng mean = 1.01
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.83             \item \code{travel_with}
+                                         : Điền bằng \textit{``Alone''}...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ...travel_with\tcb@insert@after@upper }
+                                                  
+l.83             \item \code{travel_with}
+                                         : Điền bằng \textit{``Alone''}...
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.83             \item \code{travel_with}
+                                         : Điền bằng \textit{``Alone''}...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.83             \item \code{travel_with}
+                                         : Điền bằng \textit{``Alone''}...
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.84             \item \code{most_impressing}
+                                             : Điền bằng \textit{``Frie...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<argument> ..._impressing\tcb@insert@after@upper }
+                                                  
+l.84             \item \code{most_impressing}
+                                             : Điền bằng \textit{``Frie...
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.84             \item \code{most_impressing}
+                                             : Điền bằng \textit{``Frie...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.84             \item \code{most_impressing}
+                                             : Điền bằng \textit{``Frie...
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+File: images/khtn.png Graphic file (type png)
+<use images/khtn.png>
+Package pdftex.def Info: images/khtn.png  used on input line 94.
+(pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
+[18]
+File: images/khtn.png Graphic file (type png)
+<use images/khtn.png>
+Package pdftex.def Info: images/khtn.png  used on input line 144.
+(pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
+ [19]
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 146.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `\lambda' on input line 146.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 146.
+
+File: images/khtn.png Graphic file (type png)
+<use images/khtn.png>
+Package pdftex.def Info: images/khtn.png  used on input line 166.
+(pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
+[20]
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 168.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `\alpha' on input line 168.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 168.
+
+File: images/khtn.png Graphic file (type png)
+<use images/khtn.png>
+Package pdftex.def Info: images/khtn.png  used on input line 211.
+(pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
+[21]
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 240.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `\lambda' on input line 240.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 240.
+
+File: images/khtn.png Graphic file (type png)
+<use images/khtn.png>
+Package pdftex.def Info: images/khtn.png  used on input line 286.
+(pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
+[22]
+File: images/khtn.png Graphic file (type png)
+<use images/khtn.png>
+Package pdftex.def Info: images/khtn.png  used on input line 308.
+(pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
+ [23]
+! Missing $ inserted.
+<inserted text> 
+                $
+l.313     \item R² \$\approx
+                             $ 0.34 cho thấy cần thêm đặc trưng ho�...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+)
+File: images/khtn.png Graphic file (type png)
+<use images/khtn.png>
+Package pdftex.def Info: images/khtn.png  used on input line 321.
+(pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
+ [24]
+No file report.bbl.
 
 Package caption Warning: Unused \captionsetup[sub] on input line 17.
 See the caption package documentation for explanation.
 
-File: images/khtn.png Graphic file (type png)
-<use images/khtn.png>
-Package pdftex.def Info: images/khtn.png  used on input line 322.
-(pdftex.def)             Requested size: 22.7538pt x 22.7538pt.
-[24
-\def\@LN@column{1}
+runsystem(latexminted cleantemp  --timestamp 20260528175209 E98D2F001DA5678B394
+82EFBDF5770DC)...executed safely (allowed).
 
 
-]
-runsystem(latexminted cleantemp  --timestamp 20260528135200 E98D2F001DA5678B394
-82EFBDF5770DC)...executed.
-
- 
 enddocument/afterlastpage (AED): lastpage setting LastPage.
-(./report.aux (./sections/part1.aux))
+(./report.aux (./sections/part1.aux) (./sections/part2.aux))
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
-Package rerunfilecheck Info: File `report.out' has not changed.
-(rerunfilecheck)             Checksum: EF55E3FCB89FB71B7DC79E2136D0C683;5029.
+
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+
+Package rerunfilecheck Warning: File `report.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `report.out':
+(rerunfilecheck)             Before: C494293B5980928D23ADD3FDBB399B66;10995
+(rerunfilecheck)             After:  642D59E890D43D29E92A5D132CF41AEA;10487.
  ) 
 Here is how much of TeX's memory you used:
- 51244 strings out of 468995
- 1181788 string characters out of 5460436
- 2199008 words of memory out of 5000000
- 78722 multiletter control sequences out of 15000+600000
- 655910 words of font info for 116 fonts, out of 8000000 for 9000
+ 49577 strings out of 468995
+ 1163704 string characters out of 5460436
+ 2016419 words of memory out of 5000000
+ 77349 multiletter control sequences out of 15000+600000
+ 655977 words of font info for 116 fonts, out of 8000000 for 9000
  264 hyphenation exceptions out of 8191
- 100i,26n,116p,1482b,2684s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/
-texmf-dist/fonts/type1/public/amsfonts/cm/cmbx7.pfb></usr/share/texmf-dist/font
-s/type1/public/amsfonts/cm/cmbx9.pfb></usr/share/texmf-dist/fonts/type1/public/
-amsfonts/cm/cmex10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cm
-mi10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr
-/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/share/texmf-di
-st/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/share/texmf-dist/fonts/type1/
-public/amsfonts/cm/cmmi7.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts
-/cm/cmmi9.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmib10.pfb
-></usr/share/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmmib7.pfb></usr/sh
-are/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmmib9.pfb></usr/share/texmf
--dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texmf-dist/fonts/typ
-e1/public/amsfonts/cm/cmr5.pfb></usr/share/texmf-dist/fonts/type1/public/amsfon
-ts/cm/cmr6.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb><
-/usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/texmf
--dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/share/texmf-dist/fonts/type
-1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfo
-nts/cm/cmsy6.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pf
-b></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/share/t
-exmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/share/texmf-dist
-/fonts/type1/public/cm-super/sftt0900.pfb></usr/share/texmf-dist/fonts/type1/vn
-tex/vnr/vnbx10.pfb></usr/share/texmf-dist/fonts/type1/vntex/vnr/vnbx12.pfb></us
-r/share/texmf-dist/fonts/type1/vntex/vnr/vnr10.pfb></usr/share/texmf-dist/fonts
-/type1/vntex/vnr/vnr5.pfb></usr/share/texmf-dist/fonts/type1/vntex/vnr/vnr7.pfb
-></usr/share/texmf-dist/fonts/type1/vntex/vnr/vnr8.pfb></usr/share/texmf-dist/f
-onts/type1/vntex/vnr/vnti10.pfb></usr/share/texmf-dist/fonts/type1/vntex/vnr/vn
-tt10.pfb></usr/share/texmf-dist/fonts/type1/vntex/vnr/vntt12.pfb></usr/share/te
-xmf-dist/fonts/type1/vntex/vnr/vntt8.pfb></usr/share/texmf-dist/fonts/type1/vnt
-ex/vnr/vntt9.pfb>
-Output written on report.pdf (26 pages, 677889 bytes).
+ 100i,26n,116p,1461b,1386s stack positions out of 10000i,1000n,20000p,200000b,200000s
+
+pdfTeX warning (dest): name{subsection.2.4} has been referenced but does not ex
+ist, replaced by a fixed one
+
+
+pdfTeX warning (dest): name{subsubsection.2.3.2} has been referenced but does n
+ot exist, replaced by a fixed one
+
+
+pdfTeX warning (dest): name{subsubsection.2.3.1} has been referenced but does n
+ot exist, replaced by a fixed one
+
+
+pdfTeX warning (dest): name{subsection.2.3} has been referenced but does not ex
+ist, replaced by a fixed one
+
+</usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmbx7.pfb></usr/share/texmf-dist/fonts/
+type1/public/amsfonts/cm/cmbx9.pfb></usr/share/texmf-dist/fonts/type1/public/am
+sfonts/cm/cmex10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi
+10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/s
+hare/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/share/texmf-dist
+/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/share/texmf-dist/fonts/type1/pu
+blic/amsfonts/cm/cmmi7.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/c
+m/cmmi9.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmib10.pfb><
+/usr/share/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmmib7.pfb></usr/shar
+e/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmmib9.pfb></usr/share/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texmf-dist/fonts/type1
+/public/amsfonts/cm/cmr5.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts
+/cm/cmr6.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></u
+sr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/share/texmf-dist/fonts/type1/
+public/amsfonts/cm/cmsy10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfont
+s/cm/cmsy6.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb>
+</usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/share/tex
+mf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/share/texmf-dist/f
+onts/type1/public/cm-super/sfbx1000.pfb></usr/share/texmf-dist/fonts/type1/publ
+ic/cm-super/sfrm1000.pfb></usr/share/texmf-dist/fonts/type1/vntex/vnr/vnbx10.pf
+b></usr/share/texmf-dist/fonts/type1/vntex/vnr/vnbx12.pfb></usr/share/texmf-dis
+t/fonts/type1/vntex/vnr/vnr10.pfb></usr/share/texmf-dist/fonts/type1/vntex/vnr/
+vnr7.pfb></usr/share/texmf-dist/fonts/type1/vntex/vnr/vnr8.pfb></usr/share/texm
+f-dist/fonts/type1/vntex/vnr/vnti10.pfb></usr/share/texmf-dist/fonts/type1/vnte
+x/vnr/vntt10.pfb></usr/share/texmf-dist/fonts/type1/vntex/vnr/vntt12.pfb></usr/
+share/texmf-dist/fonts/type1/vntex/vnr/vntt8.pfb>
+Output written on report.pdf (27 pages, 685625 bytes).
 PDF statistics:
- 953 PDF objects out of 1000 (max. 8388607)
- 818 compressed objects within 9 object streams
- 423 named destinations out of 1000 (max. 500000)
- 362 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 688 PDF objects out of 1000 (max. 8388607)
+ 557 compressed objects within 6 object streams
+ 137 named destinations out of 1000 (max. 500000)
+ 570 words of extra memory for PDF output out of 10000 (max. 10000000)
 

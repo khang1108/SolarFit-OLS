@@ -14,12 +14,34 @@
 \contentsline {subsection}{\numberline {1.7}Đánh Giá Mô Hình}{11}{subsection.1.7}%
 \contentsline {subsubsection}{\numberline {1.7.1}Phân rã phương sai và hệ số xác định}{11}{subsubsection.1.7.1}%
 \contentsline {subsubsection}{\numberline {1.7.2}Kiểm định giả thuyết}{12}{subsubsection.1.7.2}%
-\contentsline {section}{\numberline {2}Cài Đặt Python}{13}{section.2}%
-\contentsline {subsection}{\numberline {2.1}Imports, hằng số, dataclass và các hàm phụ trợ}{13}{subsection.2.1}%
-\contentsline {subsection}{\numberline {2.2}Hàm \texttt {ols\_fit(X, y)}}{17}{subsection.2.2}%
-\contentsline {subsubsection}{\numberline {2.2.1}Mô tả}{17}{subsubsection.2.2.1}%
-\contentsline {subsubsection}{\numberline {2.2.2}Code}{17}{subsubsection.2.2.2}%
-\contentsline {subsection}{\numberline {2.3}Hàm \texttt {hat\_matrix(X)}}{19}{subsection.2.3}%
-\contentsline {subsubsection}{\numberline {2.3.1}Mô tả}{19}{subsubsection.2.3.1}%
-\contentsline {subsubsection}{\numberline {2.3.2}Code}{20}{subsubsection.2.3.2}%
-\contentsline {subsection}{\numberline {2.4}Kiểm thử và kiểm chứng}{22}{subsection.2.4}%
+\contentsline {subsection}{\numberline {1.8}Các Vấn Đề Nâng Cao trong Data Fitting}{13}{subsection.1.8}%
+\contentsline {subsubsection}{\numberline {1.8.1}Đa cộng tuyến (Multicollinearity)}{13}{subsubsection.1.8.1}%
+\contentsline {subsubsection}{\numberline {1.8.2}Hồi quy Ridge và Lasso (Regularization)}{14}{subsubsection.1.8.2}%
+\contentsline {section}{\numberline {2}Cài Đặt Python}{15}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Imports, hằng số, dataclass và các hàm phụ trợ}{15}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Hàm \texttt {ols\_fit(X, y)}}{15}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}Mô tả}{15}{subsubsection.2.2.1}%
+\contentsline {subsubsection}{\numberline {2.2.2}Pseudo-code}{16}{subsubsection.2.2.2}%
+\contentsline {section}{\numberline {3}Ứng Dụng Data Fitting vào Dữ Liệu Thực Tế}{17}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Chọn Lựa và Mô Tả Dataset}{17}{subsection.3.1}%
+\contentsline {subsubsection}{\numberline {3.1.1}Tiêu Chí Lựa Chọn Dataset}{17}{subsubsection.3.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.2}Tanzania Tourism Expenditure Dataset}{17}{subsubsection.3.1.2}%
+\contentsline {subsubsection}{\numberline {3.1.3}Phân Tích Giá Trị Thiếu}{18}{subsubsection.3.1.3}%
+\contentsline {subsection}{\numberline {3.2}Tiền Xử Lý Dữ Liệu}{18}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}Xử Lý Giá Trị Thiếu}{18}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2}Mã Hóa Biến Phân Loại}{19}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3}Chuẩn Hóa Đặc Trưng}{19}{subsubsection.3.2.3}%
+\contentsline {subsubsection}{\numberline {3.2.4}Dữ Liệu Sau Xử Lý}{19}{subsubsection.3.2.4}%
+\contentsline {subsection}{\numberline {3.3}Xây Dựng và Đánh Giá Mô Hình}{20}{subsection.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.1}Mô Hình 1: OLS (Ordinary Least Squares)}{20}{subsubsection.3.3.1}%
+\contentsline {subsubsection}{\numberline {3.3.2}Mô Hình 2: Ridge Regression ($\lambda $ = 100)}{20}{subsubsection.3.3.2}%
+\contentsline {subsubsection}{\numberline {3.3.3}Mô Hình 3: Lasso Regression ($\alpha $ = 100)}{21}{subsubsection.3.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.4}Bảng So Sánh Mô Hình}{21}{subsubsection.3.3.4}%
+\contentsline {subsection}{\numberline {3.4}Cross-Validation và Lựa Chọn Siêu Tham Số}{22}{subsection.3.4}%
+\contentsline {subsubsection}{\numberline {3.4.1}K-Fold Cross-Validation}{22}{subsubsection.3.4.1}%
+\contentsline {subsubsection}{\numberline {3.4.2}Lựa Chọn Siêu Tham Số $\lambda $ cho Ridge}{22}{subsubsection.3.4.2}%
+\contentsline {subsection}{\numberline {3.5}Phân Tích Tầm Quan Trọng Đặc Trưng}{23}{subsection.3.5}%
+\contentsline {subsubsection}{\numberline {3.5.1}Top 10 Đặc Trưng (OLS)}{23}{subsubsection.3.5.1}%
+\contentsline {subsection}{\numberline {3.6}Kết Luận và Đề Xuất}{23}{subsection.3.6}%
+\contentsline {subsubsection}{\numberline {3.6.1}Kết Luận Chính}{23}{subsubsection.3.6.1}%
+\contentsline {subsubsection}{\numberline {3.6.2}Đề Xuất Cải Thiện}{24}{subsubsection.3.6.2}%
