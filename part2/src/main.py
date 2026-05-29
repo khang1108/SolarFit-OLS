@@ -1,15 +1,29 @@
 """
-=============================================================================
-Day 1 EDA — Missing Values & Numeric Features (Tanzania Tourism Expenditure)
-Task owner : trongnghia090406@gmail.com
-Dataset    : Tanzania Tourism Expenditure (4.8K train, 1.6K test rows)
-Target     : total_cost (TZS)
-Ref        : Toan_UDTK_Project_2 — Section 2.2.1, 2.2.2, 2.2.3
-=============================================================================
-Cách chạy:
-    python main.py
-Yêu cầu: Train_new.csv và Test_new.csv nằm trong thư mục data/
-=============================================================================
+Module phân tích khám phá dữ liệu (EDA) chuyên sâu cho bộ dữ liệu Tanzania
+Tourism Expenditure, tập trung vào các biến liên tục và giá trị khuyết.
+
+Module này thực hiện EDA theo trình tự logic từ tổng quan đến chi tiết: đầu
+tiên kiểm tra chất lượng dữ liệu thô (missing values, duplicates), sau đó
+mô tả thống kê và phát hiện outlier, tiếp theo là kiểm định đa cộng tuyến
+(VIF), và cuối cùng là phát hiện distribution shift giữa train và test set
+bằng kiểm định Kolmogorov-Smirnov. Mỗi bước đưa ra quyết định thiết kế cụ
+thể được ghi lại tường minh và trực tiếp ảnh hưởng đến cách xây dựng
+DataPipeline trong data_pipeline.py.
+
+Kết quả phân tích được tóm tắt trong bảng quyết định cuối script và dẫn
+đến ba quyết định tiền xử lý chính: (1) dùng log1p transform cho target
+total_cost vì skew = 2.97, (2) điền khuyết travel_with bằng nhãn "Unknown"
+thay vì xóa hàng vì tỷ lệ missing 23% quá cao cho listwise deletion, (3)
+giữ nguyên outlier trong target vì chúng là dữ liệu hợp lệ phản ánh chi phí
+tour trọn gói cao cấp thực tế.
+
+Module tạo 7 biểu đồ PNG trong thư mục outputs/ phục vụ báo cáo học thuật.
+Các biến CONFIG ở đầu file kiểm soát đường dẫn và danh sách đặc trưng để
+dễ dàng điều chỉnh khi cấu trúc thư mục thay đổi.
+
+Tác giả: trongnghia090406@gmail.com
+Tham chiếu: Toan_UDTK_Project_2 — Mục 2.2.1, 2.2.2, 2.2.3
+Cách chạy: python main.py (yêu cầu Train.csv và Test.csv trong thư mục data/)
 """
 
 import os
@@ -29,9 +43,9 @@ np.random.seed(42)
 # CONFIG
 # ════════════════════════════════════════════════════════════════
 DATA_DIR   = "data"
-OUTPUT_DIR = "."
-TRAIN_FILE = "Train_new.csv"
-TEST_FILE  = "Test_new.csv"
+OUTPUT_DIR = "outputs"
+TRAIN_FILE = "Train.csv"
+TEST_FILE  = "Test.csv"
 
 TARGET   = "total_cost"
 ID_COL   = "ID"
@@ -93,6 +107,21 @@ print("1. MISSING VALUES AUDIT (Xác định cột thiếu ≥ 5%)")
 print(SEP)
 
 def missing_report(df, label):
+    """Tạo bảng thống kê giá trị khuyết và in kết quả có định dạng rõ ràng.
+
+    Hàm này tổng hợp số lượng và tỷ lệ phần trăm missing cho từng cột, sắp
+    xếp giảm dần theo tỷ lệ để các cột cần chú ý nhất nằm trên cùng. Kết quả
+    này là cơ sở để phân tích cơ chế missing (MCAR/MAR/MNAR) và lựa chọn
+    chiến lược xử lý phù hợp cho từng cột.
+
+    Args:
+        df: DataFrame cần kiểm tra, có thể là train hoặc test set.
+        label: Nhãn in trong log để phân biệt kết quả của hai tập dữ liệu.
+
+    Returns:
+        DataFrame chứa các cột có ít nhất một giá trị khuyết, với hai cột
+        "missing_count" và "missing_pct(%)", đã sắp xếp giảm dần theo tỷ lệ.
+    """
     miss     = df.isnull().sum()
     miss_pct = (miss / len(df) * 100).round(4)
     report   = pd.DataFrame({"missing_count": miss, "missing_pct(%)": miss_pct})
@@ -155,8 +184,8 @@ for col in NUM_FEAT:
     iqr_out  = ((s < q1 - 1.5*iqr_val) | (s > q3 + 1.5*iqr_val)).sum()
     z_scores = np.abs(stats.zscore(s.dropna()))
     z_out    = (z_scores > 3).sum()
-    
-    # Pearson correlation with target (drop NaN để tính)
+
+    # Dùng dropna() khi tính tương quan để tránh NaN làm hỏng kết quả Pearson
     clean_df = train[[col, TARGET]].dropna()
     corr_    = clean_df.corr().iloc[0, 1]
     
@@ -262,11 +291,14 @@ print(f"{SEP}")
 print("6. VIF — MULTICOLLINEARITY CHECK (Kiểm đa cộng tuyến biến liên tục)")
 print(SEP)
 
-# Drop rows with NaN in numeric features for VIF calculation
+# Xóa hàng có NaN trước khi tính VIF vì hồi quy phụ cần ma trận hoàn chỉnh,
+# không thể có missing trong biến predictor
 vif_df = train[NUM_FEAT].dropna()
 X_vif  = vif_df.values
 vif_scores = {}
 for j, col in enumerate(NUM_FEAT):
+    # Công thức VIF_j = 1 / (1 - R²_j) trong đó R²_j là hệ số xác định khi
+    # hồi quy biến j lên tất cả các biến còn lại; VIF > 10 báo hiệu đa cộng tuyến
     X_other = np.delete(X_vif, j, axis=1)
     y_col   = X_vif[:, j]
     lr      = LinearRegression().fit(X_other, y_col)
@@ -333,76 +365,99 @@ SHORT = {
     TARGET           : "cost",
 }
 
-# ── Figure 1: Target + Histograms + Correlation Heatmap ──────────
-fig1 = plt.figure(figsize=(20, 22))
-fig1.suptitle("EDA — Target, Histogram & Correlation Heatmap (Tanzania Tourism)",
-              fontsize=15, fontweight="bold", y=0.99)
-gs1 = gridspec.GridSpec(4, 3, figure=fig1, hspace=0.50, wspace=0.35)
+# ── Figure 1a: Target Distribution (Original, Log, Boxplot) ────────
+fig1a, axes = plt.subplots(1, 3, figsize=(16, 5))
+fig1a.suptitle("Target Distribution Analysis: total_cost (TZS)",
+               fontsize=13, fontweight="bold")
 
 # Target — original
-ax = fig1.add_subplot(gs1[0, 0])
-ax.hist(tgt, bins=60, color="#2196F3", edgecolor="white", alpha=0.85)
-ax.set_title(f"Target: {TARGET}\n[original]  skew={tgt.skew():.2f}")
-ax.set_xlabel("TZS"); ax.set_ylabel("Count")
-ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"{x/1e6:.1f}M"))
-ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"{x/1e3:.0f}K"))
+ax = axes[0]
+ax.hist(tgt, bins=60, color="#2196F3", edgecolor="white", alpha=0.85, linewidth=1.2)
+ax.set_title(f"Original Distribution\nSkewness: {tgt.skew():.2f}", fontsize=11, fontweight="bold")
+ax.set_xlabel("total_cost (TZS)", fontsize=10)
+ax.set_ylabel("Frequency", fontsize=10)
+ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"{x/1e6:.0f}M"))
+ax.grid(axis="y", alpha=0.3)
 
 # Target — log1p
-ax = fig1.add_subplot(gs1[0, 1])
+ax = axes[1]
 log_tgt = np.log1p(tgt)
-ax.hist(log_tgt, bins=60, color="#4CAF50", edgecolor="white", alpha=0.85)
-ax.set_title(f"Target: log1p(total_cost)\nskew {tgt.skew():.2f} → {log_tgt.skew():.2f}")
-ax.set_xlabel("log1p(TZS)"); ax.set_ylabel("Count")
+ax.hist(log_tgt, bins=60, color="#4CAF50", edgecolor="white", alpha=0.85, linewidth=1.2)
+ax.set_title(f"Log-Transformed Distribution\nSkewness: {log_tgt.skew():.2f} (reduced from {tgt.skew():.2f})",
+             fontsize=11, fontweight="bold")
+ax.set_xlabel("log1p(total_cost)", fontsize=10)
+ax.set_ylabel("Frequency", fontsize=10)
+ax.grid(axis="y", alpha=0.3)
 
 # Target — boxplot
-ax = fig1.add_subplot(gs1[0, 2])
+ax = axes[2]
 bp = ax.boxplot(tgt, vert=True, patch_artist=True,
-                boxprops=dict(facecolor="#2196F3", alpha=0.7),
-                medianprops=dict(color="red", linewidth=2),
-                flierprops=dict(marker=".", markersize=1, alpha=0.3, color="#F44336"))
-ax.set_title(f"Target Boxplot\nIQR outliers: {out_iqr.sum():,} ({out_iqr.mean()*100:.1f}%)")
-ax.set_ylabel("TZS"); ax.set_xticks([])
-ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"{x/1e6:.1f}M"))
+                boxprops=dict(facecolor="#2196F3", alpha=0.7, linewidth=1.5),
+                medianprops=dict(color="red", linewidth=2.5),
+                whiskerprops=dict(linewidth=1.5),
+                capprops=dict(linewidth=1.5),
+                flierprops=dict(marker="o", markersize=4, alpha=0.5, color="#F44336"))
+ax.set_title(f"Boxplot Summary\nOutliers (IQR): {out_iqr.sum():,} ({out_iqr.mean()*100:.1f}%)",
+             fontsize=11, fontweight="bold")
+ax.set_ylabel("total_cost (TZS)", fontsize=10)
+ax.set_xticklabels([TARGET])
+ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"{x/1e6:.0f}M"))
+ax.grid(axis="y", alpha=0.3)
 
-# Feature histograms (4 features + 2 placeholders)
-for i, (col, color) in enumerate(zip(NUM_FEAT, COLORS)):
-    row     = 1 + i // 3
-    col_idx = i % 3
-    ax      = fig1.add_subplot(gs1[row, col_idx])
-    data    = train[col].dropna()
-    ax.hist(data, bins=50, color=color, edgecolor="white", alpha=0.85)
-    ax.set_title(f"{SHORT[col]}\nskew={data.skew():.2f} | unique={data.nunique()}")
-    ax.set_xlabel(col, fontsize=8)
-    ax.set_ylabel("Count")
+fig1a.tight_layout()
+out1a = os.path.join(OUTPUT_DIR, "fig_target_distribution.png")
+fig1a.savefig(out1a, dpi=150, bbox_inches="tight")
+plt.close(fig1a)
+print(f"  ✅ Saved: {out1a}")
 
-# Placeholders for empty grid slots to maintain layout
-for i in range(len(NUM_FEAT), 6):
-    row     = 1 + i // 3
-    col_idx = i % 3
-    ax      = fig1.add_subplot(gs1[row, col_idx])
-    ax.text(0.5, 0.5, "Placeholder", ha="center", va="center", color="gray", alpha=0.5)
-    ax.axis("off")
+# ── Figure 1b: Numeric Features Histograms (2x2) ─────────────────────
+fig1b, axes = plt.subplots(2, 2, figsize=(14, 10))
+fig1b.suptitle("Numeric Features Distribution", fontsize=13, fontweight="bold")
+axes = axes.flatten()
 
-# Correlation heatmap (bottom row, full width)
-ax_heat = fig1.add_subplot(gs1[3, :])
+for idx, (col, color) in enumerate(zip(NUM_FEAT, COLORS)):
+    ax = axes[idx]
+    data = train[col].dropna()
+    ax.hist(data, bins=50, color=color, edgecolor="white", alpha=0.85, linewidth=1.2)
+    ax.set_title(f"{SHORT[col]} (n={len(data):,})\nSkewness: {data.skew():.2f}",
+                 fontsize=11, fontweight="bold")
+    ax.set_xlabel(col, fontsize=10)
+    ax.set_ylabel("Frequency", fontsize=10)
+    ax.grid(axis="y", alpha=0.3)
+
+fig1b.tight_layout()
+out1b = os.path.join(OUTPUT_DIR, "fig_numeric_histograms.png")
+fig1b.savefig(out1b, dpi=150, bbox_inches="tight")
+plt.close(fig1b)
+print(f"  ✅ Saved: {out1b}")
+
+# ── Figure 1c: Correlation Heatmap (Full Width) ────────────────────
+fig1c, ax = plt.subplots(figsize=(12, 8))
 corr_cols   = NUM_FEAT + [TARGET]
 corr_matrix = train[corr_cols].corr()
 short_names = [SHORT[c] for c in corr_cols]
-im = ax_heat.imshow(corr_matrix.values, cmap="coolwarm", vmin=-1, vmax=1, aspect="auto")
-ax_heat.set_xticks(range(len(short_names))); ax_heat.set_xticklabels(short_names, fontsize=9)
-ax_heat.set_yticks(range(len(short_names))); ax_heat.set_yticklabels(short_names, fontsize=9)
-ax_heat.set_title("Correlation Heatmap (Numeric Features + Target)", fontsize=11)
+
+im = ax.imshow(corr_matrix.values, cmap="coolwarm", vmin=-1, vmax=1, aspect="auto")
+ax.set_xticks(range(len(short_names)))
+ax.set_xticklabels(short_names, fontsize=11, fontweight="bold")
+ax.set_yticks(range(len(short_names)))
+ax.set_yticklabels(short_names, fontsize=11, fontweight="bold")
+ax.set_title("Correlation Matrix: Numeric Features & Target", fontsize=13, fontweight="bold", pad=15)
+
 for i in range(len(short_names)):
     for j in range(len(short_names)):
         val = corr_matrix.values[i, j]
-        ax_heat.text(j, i, f"{val:.2f}", ha="center", va="center",
-                     color="white" if abs(val) > 0.55 else "black", fontsize=8)
-fig1.colorbar(im, ax=ax_heat, fraction=0.02, pad=0.02)
+        ax.text(j, i, f"{val:.2f}", ha="center", va="center",
+                color="white" if abs(val) > 0.55 else "black", fontsize=10, fontweight="bold")
 
-out1 = os.path.join(OUTPUT_DIR, "day1_fig1_target_hist_heatmap.png")
-fig1.savefig(out1, dpi=120, bbox_inches="tight")
-plt.close(fig1)
-print(f"  ✅ Saved: {out1}")
+cbar = fig1c.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+cbar.set_label("Pearson Correlation", fontsize=11, fontweight="bold")
+
+fig1c.tight_layout()
+out1c = os.path.join(OUTPUT_DIR, "fig_correlation_heatmap.png")
+fig1c.savefig(out1c, dpi=150, bbox_inches="tight")
+plt.close(fig1c)
+print(f"  ✅ Saved: {out1c}")
 
 
 # ── Figure 2: Boxplots (phát hiện outlier trực quan) ─────────────
@@ -430,55 +485,66 @@ plt.close(fig2)
 print(f"  ✅ Saved: {out2}")
 
 
-# ── Figure 3: VIF + Correlation-with-target + KS shift ───────────
-fig3, axes3 = plt.subplots(1, 3, figsize=(20, 6))
-fig3.suptitle("EDA — VIF | Correlation with Target | Train-Test Shift",
-              fontsize=13, fontweight="bold")
-
-# VIF
-ax = axes3[0]
+# ── Figure 3a: VIF Scores ─────────────────────────────────────────
+fig3a, ax = plt.subplots(figsize=(10, 6))
 vif_feats  = [SHORT[f] for f in vif_scores]
 vif_vals   = list(vif_scores.values())
 vif_colors = ["#F44336" if v > 10 else ("#FF9800" if v > 5 else "#4CAF50") for v in vif_vals]
-bars = ax.barh(vif_feats, vif_vals, color=vif_colors, edgecolor="white")
-ax.axvline(5,  color="orange", linestyle="--", linewidth=1.2, label="VIF=5 (moderate)")
-ax.axvline(10, color="red",    linestyle="--", linewidth=1.2, label="VIF=10 (high)")
-ax.set_title("VIF Scores"); ax.set_xlabel("VIF"); ax.legend(fontsize=8)
+bars = ax.barh(vif_feats, vif_vals, color=vif_colors, edgecolor="white", linewidth=1.5)
+ax.axvline(5,  color="orange", linestyle="--", linewidth=2, label="VIF=5 (moderate)", alpha=0.7)
+ax.axvline(10, color="red",    linestyle="--", linewidth=2, label="VIF=10 (high)", alpha=0.7)
+ax.set_xlabel("VIF Score", fontsize=12, fontweight="bold")
+ax.set_title("Variance Inflation Factor (Multicollinearity Detection)", fontsize=13, fontweight="bold")
+ax.legend(fontsize=11, loc="lower right")
+ax.grid(axis="x", alpha=0.3)
 for bar, val in zip(bars, vif_vals):
     ax.text(val + 0.05, bar.get_y() + bar.get_height()/2,
-            f"{val:.2f}", va="center", fontsize=9)
+            f"{val:.2f}", va="center", fontsize=10, fontweight="bold")
+fig3a.tight_layout()
+out3a = os.path.join(OUTPUT_DIR, "fig_vif_scores.png")
+fig3a.savefig(out3a, dpi=150, bbox_inches="tight")
+plt.close(fig3a)
+print(f"  ✅ Saved: {out3a}")
 
-# Correlation with target
-ax = axes3[1]
+# ── Figure 3b: Correlation with Target ─────────────────────────────
+fig3b, ax = plt.subplots(figsize=(10, 6))
 corr_vals   = [train[[c, TARGET]].dropna().corr().iloc[0, 1] for c in NUM_FEAT]
 corr_colors = ["#F44336" if v < 0 else "#4CAF50" for v in corr_vals]
 corr_labels = [SHORT[c] for c in NUM_FEAT]
-bars = ax.barh(corr_labels, corr_vals, color=corr_colors, edgecolor="white")
-ax.axvline(0, color="black", linewidth=0.8)
-ax.set_title("Pearson r with Target"); ax.set_xlabel("Pearson r")
+bars = ax.barh(corr_labels, corr_vals, color=corr_colors, edgecolor="white", linewidth=1.5)
+ax.axvline(0, color="black", linewidth=1.5)
+ax.set_xlabel("Pearson Correlation Coefficient", fontsize=12, fontweight="bold")
+ax.set_title("Feature Correlation with Target (total_cost)", fontsize=13, fontweight="bold")
+ax.grid(axis="x", alpha=0.3)
 for bar, val in zip(bars, corr_vals):
-    xpos = val + (0.01 if val >= 0 else -0.01)
+    xpos = val + (0.02 if val >= 0 else -0.02)
     ax.text(xpos, bar.get_y() + bar.get_height()/2,
             f"{val:.3f}", va="center",
-            ha="left" if val >= 0 else "right", fontsize=9)
+            ha="left" if val >= 0 else "right", fontsize=10, fontweight="bold")
+fig3b.tight_layout()
+out3b = os.path.join(OUTPUT_DIR, "fig_correlation_target.png")
+fig3b.savefig(out3b, dpi=150, bbox_inches="tight")
+plt.close(fig3b)
+print(f"  ✅ Saved: {out3b}")
 
-# KS shift
-ax = axes3[2]
+# ── Figure 3c: KS Statistic (Train-Test Shift) ─────────────────────
+fig3c, ax = plt.subplots(figsize=(10, 6))
 ks_vals  = [r["KS_stat"] for r in ks_rows]
 ks_labs  = [SHORT[r["feature"]] for r in ks_rows]
 ks_cols  = ["#F44336" if r["p_value"] < 0.05 else "#4CAF50" for r in ks_rows]
-bars = ax.barh(ks_labs, ks_vals, color=ks_cols, edgecolor="white")
-ax.set_title("KS Statistic — Train vs Test\n(red = p<0.05, shift detected)")
-ax.set_xlabel("KS Statistic")
+bars = ax.barh(ks_labs, ks_vals, color=ks_cols, edgecolor="white", linewidth=1.5)
+ax.set_xlabel("KS Statistic", fontsize=12, fontweight="bold")
+ax.set_title("Kolmogorov-Smirnov Test: Train-Test Distribution Shift\n(Red = p<0.05, significant shift detected)",
+             fontsize=13, fontweight="bold")
+ax.grid(axis="x", alpha=0.3)
 for bar, val in zip(bars, ks_vals):
     ax.text(val + 0.0005, bar.get_y() + bar.get_height()/2,
-            f"{val:.4f}", va="center", fontsize=9)
-
-fig3.tight_layout()
-out3 = os.path.join(OUTPUT_DIR, "day1_fig3_vif_corr_shift.png")
-fig3.savefig(out3, dpi=120, bbox_inches="tight")
-plt.close(fig3)
-print(f"  ✅ Saved: {out3}")
+            f"{val:.4f}", va="center", fontsize=10, fontweight="bold")
+fig3c.tight_layout()
+out3c = os.path.join(OUTPUT_DIR, "fig_ks_shift.png")
+fig3c.savefig(out3c, dpi=150, bbox_inches="tight")
+plt.close(fig3c)
+print(f"  ✅ Saved: {out3c}")
 
 print(f"\n{'='*65}")
 print("✅  Day 1 EDA — Missing Values & Numeric Features: HOÀN THÀNH")

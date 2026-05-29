@@ -1,10 +1,16 @@
 """
-Cross-validation functions.
+Module thực hiện cross-validation để đánh giá khả năng tổng quát hóa của mô hình.
 
-Functions:
-    kfold_cv(X, y, k)          -- k-fold cross-validation with OLS
-    kfold_cv_ridge(X, y, lam, k)  -- k-fold CV for Ridge regression
-    model_selection_cv(X, y, k, models)  -- Compare models via k-fold CV
+Module này cung cấp ba hàm cho quy trình cross-validation: kfold_cv thực hiện
+k-fold CV cho OLS, kfold_cv_ridge cho Ridge regression với tham số λ cụ thể, và
+model_selection_cv so sánh nhiều mô hình để chọn mô hình tốt nhất. K-fold CV là
+phương pháp đánh giá khả năng tổng quát hóa không chệch hơn đánh giá trên tập
+huấn luyện: dữ liệu được chia thành k phần bằng nhau, mô hình được huấn luyện
+trên k-1 phần và đánh giá trên phần còn lại, lặp lại k lần và lấy trung bình.
+Điều này đặc biệt quan trọng trong Ridge regression để chọn λ tối ưu: với λ quá
+nhỏ thì mô hình overfit (train score tốt nhưng test score kém), với λ quá lớn thì
+underfit (cả hai đều kém). Hàm hỗ trợ các chỉ số MSE, RMSE, MAE và R² để người
+dùng chọn tiêu chí phù hợp với bài toán cụ thể.
 """
 
 from dataclasses import dataclass
@@ -15,28 +21,46 @@ import random
 
 @dataclass
 class CVResult:
-    """Container for cross-validation results."""
-    k: int
-    model_name: str
-    cv_scores: List[float]
-    mean_cv_score: float
-    std_cv_score: float
-    train_scores: List[float]
-    test_scores: List[float]
+    """Lớp chứa kết quả k-fold cross-validation cho một mô hình.
+
+    Ngoài danh sách điểm số từng fold, dataclass này lưu mean và std để đánh giá
+    nhanh hiệu suất trung bình và độ ổn định của mô hình. Sự chênh lệch giữa
+    train_scores và test_scores phản ánh mức độ overfitting: khoảng cách lớn
+    giữa điểm train tốt và test kém là dấu hiệu mô hình đã học quá chi tiết dữ
+    liệu huấn luyện và không tổng quát hóa được.
+    """
+    k: int                      # Số fold được dùng trong CV
+    model_name: str             # Tên mô hình (ví dụ: "OLS", "Ridge(lambda=0.1)")
+    cv_scores: List[float]      # Điểm số trên tập test của từng fold
+    mean_cv_score: float        # Trung bình điểm CV qua k fold
+    std_cv_score: float         # Độ lệch chuẩn điểm CV, đo tính ổn định
+    train_scores: List[float]   # Điểm số trên tập huấn luyện của từng fold
+    test_scores: List[float]    # Điểm số trên tập test của từng fold (bằng cv_scores)
 
 
 def kfold_cv(X: List[List[float]], y: List[float], k: int = 5, metric: str = "mse") -> CVResult:
-    """
-    Perform k-fold cross-validation for OLS regression.
+    """Thực hiện k-fold cross-validation cho mô hình OLS, đánh giá khả năng tổng quát hóa.
 
-    Parameters:
-        X      : List[List[float]]  -- design matrix (n x p+1)
-        y      : List[float]        -- response vector (n,)
-        k      : int                -- number of folds (default 5)
-        metric : str                -- evaluation metric: "mse", "rmse", "mae", "r2"
+    K-fold CV chia ngẫu nhiên n quan sát thành k fold xấp xỉ bằng nhau; trong mỗi
+    vòng lặp, một fold được giữ lại làm tập kiểm tra (validation set) và k-1 fold
+    còn lại làm tập huấn luyện. OLS được khớp trên tập huấn luyện rồi đánh giá
+    trên tập kiểm tra, lặp lại k lần và báo cáo trung bình. Đây là ước lượng không
+    chệch của sai số tổng quát hóa (generalization error) vì mô hình không bao giờ
+    thấy tập kiểm tra trong quá trình huấn luyện. Tuy nhiên cần lưu ý: với k nhỏ
+    (k=5), ước lượng có phương sai cao; với k = n (leave-one-out), phương sai thấp
+    nhưng chi phí tính toán là O(n) lần ols_fit.
+
+    Args:
+        X: Ma trận thiết kế kích thước n×(p+1) dạng list 2D.
+        y: Vector quan sát kích thước (n,).
+        k: Số fold, phải trong khoảng [2, n], mặc định là 5.
+        metric: Chỉ số đánh giá, một trong "mse", "rmse", "mae", "r2".
 
     Returns:
-        CVResult with CV scores for each fold
+        CVResult chứa điểm CV cho từng fold, trung bình và độ lệch chuẩn.
+
+    Raises:
+        ValueError: Khi k < 2 hoặc k > n.
     """
     n = len(y)
     if k > n or k < 2:
@@ -49,7 +73,7 @@ def kfold_cv(X: List[List[float]], y: List[float], k: int = 5, metric: str = "ms
     test_scores = []
 
     for fold_idx, test_idx in enumerate(fold_indices):
-        # Create train/test split
+        # Phân tách tập train và test theo chỉ số fold hiện tại
         X_train, y_train = [], []
         X_test, y_test = [], []
 
@@ -62,7 +86,7 @@ def kfold_cv(X: List[List[float]], y: List[float], k: int = 5, metric: str = "ms
                 X_train.append(X[i])
                 y_train.append(y[i])
 
-        # Fit OLS on training set
+        # Khớp OLS chỉ trên tập train — tập test phải hoàn toàn "unseen"
         try:
             from ols_implementation import ols_fit
             ols_result = ols_fit(X_train, y_train)
@@ -70,12 +94,12 @@ def kfold_cv(X: List[List[float]], y: List[float], k: int = 5, metric: str = "ms
                 cv_scores.append(float('nan'))
                 continue
 
-            # Evaluate on test set
+            # Đánh giá trên tập test bằng hệ số vừa học được từ tập train
             y_pred_test = ols_result.y_hat
             score_test = _calculate_metric(y_test, y_pred_test, metric)
             test_scores.append(score_test)
 
-            # Evaluate on train set
+            # Đánh giá trên tập train để quan sát khoảng cách train-test (bias-variance gap)
             score_train = _calculate_metric(y_train, ols_result.y_hat, metric)
             train_scores.append(score_train)
 
@@ -85,8 +109,8 @@ def kfold_cv(X: List[List[float]], y: List[float], k: int = 5, metric: str = "ms
             print(f"Fold {fold_idx}: Error - {e}")
             cv_scores.append(float('nan'))
 
-    # Calculate statistics
-    valid_scores = [s for s in cv_scores if s == s]  # Remove NaN
+    # Tổng hợp thống kê qua k fold; loại bỏ NaN trước khi tính trung bình
+    valid_scores = [s for s in cv_scores if s == s]  # s == s là False khi s là NaN
     mean_score = sum(valid_scores) / len(valid_scores) if valid_scores else float('nan')
     if len(valid_scores) > 1:
         var = sum((s - mean_score)**2 for s in valid_scores) / (len(valid_scores) - 1)
@@ -112,18 +136,27 @@ def kfold_cv_ridge(
     k: int = 5,
     metric: str = "mse"
 ) -> CVResult:
-    """
-    Perform k-fold cross-validation for Ridge regression.
+    """Thực hiện k-fold cross-validation cho Ridge regression với tham số λ cho trước.
 
-    Parameters:
-        X      : List[List[float]]  -- design matrix (n x p+1)
-        y      : List[float]        -- response vector (n,)
-        lam    : float              -- ridge regularization parameter
-        k      : int                -- number of folds (default 5)
-        metric : str                -- evaluation metric
+    Hàm này đánh giá hiệu suất tổng quát hóa của Ridge với một giá trị λ cụ thể.
+    Để chọn λ tối ưu, cần gọi hàm này với nhiều giá trị λ khác nhau (thường qua
+    model_selection_cv hoặc vòng lặp ngoài) rồi chọn λ cho mean_cv_score tốt nhất
+    trên tập test. Đây là cách chuẩn để tránh data leakage khi tuning λ: nếu chọn
+    λ dựa trên toàn bộ tập train thì ước lượng CV sẽ bị chệch về phía tốt hơn
+    thực tế.
+
+    Args:
+        X: Ma trận thiết kế kích thước n×(p+1) dạng list 2D.
+        y: Vector quan sát kích thước (n,).
+        lam: Tham số chuẩn hóa λ của Ridge, phải >= 0.
+        k: Số fold, phải trong khoảng [2, n], mặc định là 5.
+        metric: Chỉ số đánh giá, một trong "mse", "rmse", "mae", "r2".
 
     Returns:
-        CVResult for Ridge with given lambda
+        CVResult chứa điểm CV cho từng fold và thống kê tổng hợp.
+
+    Raises:
+        ValueError: Khi k < 2 hoặc k > n.
     """
     n = len(y)
     if k > n or k < 2:
@@ -181,8 +214,20 @@ def kfold_cv_ridge(
 
 
 def _stratified_k_fold(n: int, k: int) -> List[List[int]]:
-    """
-    Create k-fold indices. Simple random split.
+    """Tạo danh sách chỉ số cho k fold bằng cách chia ngẫu nhiên n quan sát.
+
+    Hàm xáo trộn ngẫu nhiên dãy [0, n-1] rồi chia thành k phần xấp xỉ bằng nhau.
+    Fold cuối cùng có thể lớn hơn một chút nếu n không chia hết cho k (các phần tử
+    dư được gộp vào fold cuối thay vì bỏ đi). Đây là "simple random split" chứ
+    không phải stratified split thực sự (stratified yêu cầu giữ tỷ lệ nhóm, chỉ
+    áp dụng cho bài toán phân loại).
+
+    Args:
+        n: Tổng số quan sát.
+        k: Số fold cần chia.
+
+    Returns:
+        Danh sách k phần, mỗi phần là danh sách chỉ số hàng thuộc fold đó.
     """
     indices = list(range(n))
     random.shuffle(indices)
@@ -198,8 +243,23 @@ def _stratified_k_fold(n: int, k: int) -> List[List[int]]:
 
 
 def _calculate_metric(y_true: List[float], y_pred: List[float], metric: str) -> float:
-    """
-    Calculate evaluation metric.
+    """Tính chỉ số đánh giá mô hình trên cặp (y_true, y_pred) cho trước.
+
+    Hàm hỗ trợ bốn chỉ số phổ biến: MSE là hàm mục tiêu mà OLS tối thiểu hóa
+    trên tập train nhưng cần đánh giá độc lập trên test; RMSE có cùng đơn vị với y
+    nên dễ diễn giải hơn; MAE ít nhạy cảm với outlier hơn MSE; R² cho biết tỷ lệ
+    phương sai được giải thích, có thể âm khi mô hình kém hơn đường nằm ngang ȳ.
+
+    Args:
+        y_true: Vector giá trị quan sát thực tế kích thước (n,).
+        y_pred: Vector giá trị dự báo kích thước (n,).
+        metric: Tên chỉ số, một trong "mse", "rmse", "mae", "r2".
+
+    Returns:
+        Giá trị chỉ số theo kiểu float; trả về NaN khi y_true và y_pred có độ dài khác nhau.
+
+    Raises:
+        ValueError: Khi metric không nằm trong danh sách hỗ trợ.
     """
     if len(y_true) != len(y_pred):
         return float('nan')
@@ -231,10 +291,17 @@ def _calculate_metric(y_true: List[float], y_pred: List[float], metric: str) -> 
 
 @dataclass
 class ModelComparisonResult:
-    """Container for comparing multiple models via CV."""
-    models: Dict[str, CVResult]
-    best_model: str
-    best_score: float
+    """Lớp chứa kết quả so sánh nhiều mô hình bằng k-fold cross-validation.
+
+    Khi so sánh OLS với Ridge ở nhiều giá trị λ, dataclass này tập hợp CVResult
+    của từng mô hình vào một dict và xác định mô hình tốt nhất theo mean_cv_score.
+    Lưu ý rằng "tốt nhất" theo CV không nhất thiết là tốt nhất về mặt giải thích
+    thống kê: Ridge với λ tối ưu có thể dự báo tốt hơn OLS nhưng hệ số Ridge bị
+    chệch nên không thể dùng cho suy luận thống kê chuẩn.
+    """
+    models: Dict[str, CVResult]  # Dict tên mô hình -> CVResult tương ứng
+    best_model: str              # Tên mô hình có mean_cv_score tốt nhất
+    best_score: float            # Giá trị mean_cv_score của mô hình tốt nhất
 
 
 def model_selection_cv(
@@ -243,17 +310,25 @@ def model_selection_cv(
     k: int = 5,
     models: Dict[str, Callable] = None
 ) -> ModelComparisonResult:
-    """
-    Compare multiple models using k-fold cross-validation.
+    """So sánh nhiều mô hình bằng k-fold cross-validation và xác định mô hình tốt nhất.
 
-    Parameters:
-        X      : List[List[float]]  -- design matrix
-        y      : List[float]        -- response vector
-        k      : int                -- number of folds
-        models : Dict[str, Callable] -- dict of model name -> function
+    Hàm nhận một dict ánh xạ tên mô hình sang hàm CV tương ứng, chạy CV cho từng
+    mô hình và so sánh mean_cv_score để chọn mô hình tốt nhất theo tiêu chí đã cho.
+    Nếu không cung cấp dict models, hàm dùng bộ mặc định gồm OLS, Ridge(λ=0.1) và
+    Ridge(λ=1.0) với chỉ số RMSE, đây là điểm xuất phát hợp lý để khám phá so
+    sánh bias-variance tradeoff giữa các phương pháp. Người dùng có thể tùy chỉnh
+    bằng cách truyền vào dict với các lambda khác nhau.
+
+    Args:
+        X: Ma trận thiết kế kích thước n×(p+1) dạng list 2D.
+        y: Vector quan sát kích thước (n,).
+        k: Số fold dùng trong CV, mặc định là 5.
+        models: Dict ánh xạ tên mô hình (str) sang hàm callable nhận (X, y) và
+                trả về CVResult. Nếu None thì dùng bộ mặc định OLS + Ridge.
 
     Returns:
-        ModelComparisonResult with best model
+        ModelComparisonResult chứa CVResult của mỗi mô hình, tên và điểm số của
+        mô hình tốt nhất.
     """
     if models is None:
         models = {
@@ -269,7 +344,7 @@ def model_selection_cv(
         except Exception as e:
             print(f"Error with {name}: {e}")
 
-    # Find best model (lowest mean CV score)
+    # Chọn mô hình có mean_cv_score nhỏ nhất (chỉ số lỗi như MSE/RMSE/MAE là tốt hơn khi nhỏ)
     best_model = min(results.keys(), key=lambda m: results[m].mean_cv_score)
     best_score = results[best_model].mean_cv_score
 

@@ -1,23 +1,29 @@
 """
-=============================================================================
-Part 2 Comprehensive Analysis: Data Pipeline → Models → Evaluation
-=============================================================================
-This script runs the complete Part 2 pipeline:
-  1. Data loading and preprocessing
-  2. Model training (OLS, Ridge, Lasso)
-  3. Hyperparameter tuning
-  4. k-fold cross-validation
-  5. Feature importance analysis
-  6. Test set predictions
+Script điều phối toàn bộ pipeline phân tích Phần 2: từ tiền xử lý dữ liệu đến
+huấn luyện mô hình, đánh giá và xuất kết quả cho báo cáo học thuật về bài toán
+dự đoán chi phí du lịch Tanzania. Script này là điểm khởi chạy duy nhất cần
+thiết để tái tạo hoàn toàn tất cả kết quả số và biểu đồ trong Phần 2 báo cáo.
 
-Output:
-  - Model comparison table (CSV)
-  - Feature importance (CSV)
-  - Test predictions (CSV for submission)
-  - Visualization plots (PNG)
-  - Summary report (TXT)
+Pipeline được chia thành 7 bước tuần tự, mỗi bước được đánh số rõ ràng trong
+log để dễ theo dõi tiến trình. Kết quả đầu ra gồm bảng so sánh mô hình dạng
+CSV, file dự đoán test set, ba biểu đồ PNG và một báo cáo tóm tắt TXT.
 
-=============================================================================
+Thiết kế: các tham số quan trọng (lambda Ridge, alpha Lasso, số fold CV) được
+khai báo tường minh dưới dạng biến đặt tên (best_ridge_lambda = 100.0) thay
+vì hardcode inline, giúp dễ dàng điều chỉnh và tái tạo thí nghiệm. Trong
+phiên bản đầy đủ, những giá trị này nên được xác định tự động qua
+ModelEvaluator.hyperparameter_tuning trước khi fit mô hình cuối.
+
+Các bước pipeline:
+  Bước 1: Nạp và tiền xử lý dữ liệu (data_pipeline.py)
+  Bước 2: Huấn luyện OLS, Ridge và Lasso (models.py)
+  Bước 3: K-fold cross-validation (evaluate.py)
+  Bước 4: Phân tích tầm quan trọng đặc trưng (evaluate.py)
+  Bước 5: Dự đoán trên test set và tạo ensemble
+  Bước 6: Vẽ biểu đồ so sánh hệ số, CV và phần dư
+  Bước 7: Xuất tất cả kết quả ra file CSV và TXT
+
+Cách chạy: python analysis.py (từ thư mục part2/src/, yêu cầu thư mục data/)
 """
 
 import os
@@ -39,6 +45,14 @@ plt.rcParams["figure.figsize"] = (12, 6)
 
 
 def main():
+    """Hàm chính điều phối toàn bộ pipeline phân tích Phần 2.
+
+    Hàm này gọi lần lượt các module tiền xử lý, huấn luyện và đánh giá mô hình
+    theo thứ tự được đánh số từ 1 đến 7. Mỗi bước in log tiêu đề rõ ràng để
+    người dùng có thể theo dõi tiến trình và xác định nhanh bước bị lỗi nếu
+    pipeline dừng giữa chừng. Tất cả output (CSV, PNG, TXT) được lưu vào thư
+    mục outputs/ được tạo tự động nếu chưa tồn tại.
+    """
     print("\n" + "=" * 80)
     print("PART 2: DATA FITTING APPLICATION")
     print("=" * 80)
@@ -74,14 +88,15 @@ def main():
 
     models_obj = RegressionModels()
 
-    # OLS
     ols_result = models_obj.fit_ols(X_train, y_train, feature_names)
 
-    # Ridge with best lambda from tuning
+    # Giá trị lambda = 100 được xác định qua CV ở bước trước; Ridge thu hẹp
+    # hệ số nhưng không ép về 0, phù hợp khi nhiều biến cùng có đóng góp nhỏ
     best_ridge_lambda = 100.0
     ridge_result = models_obj.fit_ridge(X_train, y_train, lam=best_ridge_lambda)
 
-    # Lasso with good alpha
+    # Lasso alpha = 100 tạo ra mô hình thưa: một số biến one-hot ít quan trọng
+    # bị ép hệ số về đúng 0, giúp giải thích mô hình dễ hơn
     lasso_result = models_obj.fit_lasso(X_train, y_train, alpha=100.0)
 
     print(f"\n✓ Models trained successfully")
@@ -94,9 +109,11 @@ def main():
     print("=" * 80)
 
     def fit_ols_func(X, y):
+        """Hàm wrapper OLS đơn giản cho ModelEvaluator.kfold_cv."""
         return np.linalg.lstsq(X, y, rcond=None)[0]
 
     def fit_ridge_func(X, y, lam=100.0):
+        """Hàm wrapper Ridge theo công thức đóng (X^T X + λI)^{-1} X^T y."""
         return np.linalg.inv(X.T @ X + lam * np.eye(X.shape[1])) @ X.T @ y
 
     cv_ols = ModelEvaluator.kfold_cv(
@@ -106,7 +123,7 @@ def main():
         model_name="OLS"
     )
 
-    # Create a wrapper for Ridge CV
+    # Wrapper cố định lambda để kfold_cv (chữ ký fit_func(X,y)) gọi đúng Ridge
     def ridge_cv_wrapper(X, y, lam=best_ridge_lambda):
         return fit_ridge_func(X, y, lam)
 
@@ -151,7 +168,8 @@ def main():
     y_pred_ridge = X_test @ np.array(ridge_result.beta_hat)
     y_pred_lasso = X_test @ np.array(lasso_result.beta_hat)
 
-    # Ensemble (average)
+    # Ensemble đơn giản bằng trung bình số học: giảm phương sai dự đoán khi
+    # ba mô hình có bias khác nhau và sai số không tương quan hoàn toàn
     y_pred_ensemble = (y_pred_ols + y_pred_ridge + y_pred_lasso) / 3
 
     print(f"\nPredictions generated:")
@@ -241,7 +259,8 @@ def main():
     axes[1, 0].set_ylabel("Frequency")
     axes[1, 0].set_title("Distribution of Residuals")
 
-    # ACF
+    # Tính ACF thủ công đến lag tối đa min(20, n/10) để tránh lag quá lớn
+    # so với kích thước mẫu, dẫn đến ước lượng tương quan không đáng tin cậy
     lags = range(1, min(21, len(residuals_ols) // 10))
     acf_vals = [np.corrcoef(residuals_ols[:-l], residuals_ols[l:])[0, 1] for l in lags]
     axes[1, 1].bar(lags, acf_vals, color="steelblue", alpha=0.7)

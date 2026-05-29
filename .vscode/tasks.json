@@ -6,6 +6,7 @@
             "type": "shell",
             "command": "latexmk",
             "args": [
+                "-lualatex",
                 "-pdf",
                 "-shell-escape",
                 "-interaction=nonstopmode",

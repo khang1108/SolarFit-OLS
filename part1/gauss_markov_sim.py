@@ -1,9 +1,16 @@
 """
-Gauss-Markov theorem verification via Monte Carlo simulation.
+Module kiểm chứng Định lý Gauss-Markov bằng mô phỏng Monte Carlo.
 
-Functions:
-    simulate_gauss_markov(X, beta_true, sigma, n_simulations)
-    -- Verify E[beta_hat] = beta and OLS has minimum variance property
+Định lý Gauss-Markov phát biểu rằng ước lượng OLS β̂ là BLUE (Best Linear
+Unbiased Estimator) — tức là trong số tất cả ước lượng tuyến tính không chệch,
+OLS có phương sai nhỏ nhất — khi bốn giả thiết GM1-GM4 thỏa mãn: (GM1) mô hình
+tuyến tính y = Xβ + ε, (GM2) X có full column rank, (GM3) kỳ vọng nhiễu bằng
+không E[ε|X] = 0, (GM4) phương sai đồng nhất Var(ε|X) = σ²I. Module này kiểm
+chứng tính chất không chệch E[β̂] = β qua hàm simulate_gauss_markov bằng cách
+lặp lại nhiều lần thí nghiệm Monte Carlo với cùng X cố định nhưng nhiễu ε khác
+nhau, đồng thời kiểm tra các giả thiết GM trên dữ liệu thực qua hàm
+verify_assumptions. Hàm _calculate_theoretical_variance tính phương sai lý thuyết
+Var(β̂) = σ²(X'X)^{-1} để so sánh với phương sai mẫu từ mô phỏng.
 """
 
 from dataclasses import dataclass
@@ -14,17 +21,24 @@ import random
 
 @dataclass
 class GaussMarkovSimulation:
-    """Container for Gauss-Markov simulation results."""
-    n_simulations: int
-    beta_true: List[float]
-    beta_mean: List[float]
-    beta_std: List[float]
-    bias_estimate: List[float]
-    mse_estimate: List[float]
-    theoretical_var: List[float]
-    unbiased_verified: bool
-    minimum_var_verified: bool
-    message: str
+    """Lớp chứa kết quả mô phỏng Monte Carlo kiểm chứng Định lý Gauss-Markov.
+
+    Dataclass này lưu trữ đầy đủ kết quả thống kê từ n_simulations lần chạy OLS,
+    cho phép so sánh trực tiếp giữa phân phối mẫu của β̂ (được ước lượng từ mô
+    phỏng) và phân phối lý thuyết (được dự đoán từ Var(β̂) = σ²(X'X)^{-1}). Trường
+    bias_estimate kiểm chứng GM3 (không chệch), trong khi việc so sánh beta_std với
+    căn bậc hai của theoretical_var kiểm chứng tính hiệu quả (efficiency) của OLS.
+    """
+    n_simulations: int           # Số lần lặp Monte Carlo
+    beta_true: List[float]       # Vector tham số thực β dùng trong mô phỏng
+    beta_mean: List[float]       # E[β̂] ước lượng từ mô phỏng, kỳ vọng bằng β_true
+    beta_std: List[float]        # sqrt(Var(β̂)) mẫu từ mô phỏng
+    bias_estimate: List[float]   # Ước lượng bias = E[β̂] - β_true, kỳ vọng gần 0
+    mse_estimate: List[float]    # MSE mẫu = bias² + Var(β̂), kỳ vọng = Var lý thuyết khi không chệch
+    theoretical_var: List[float] # Phương sai lý thuyết σ²(X'X)^{-1}_{jj}
+    unbiased_verified: bool      # True nếu bias nằm trong 3 sai số chuẩn
+    minimum_var_verified: bool   # True nếu tính minimum variance được xác nhận
+    message: str                 # Báo cáo tóm tắt kết quả kiểm chứng
 
 
 def simulate_gauss_markov(

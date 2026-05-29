@@ -503,7 +503,7 @@ mô hình; \textbf{ESS} là phần mô hình giải thích được;
 \textbf{RSS} là phần chưa giải thích.
 \end{mydef}
 
-\begin{mydef}{Hệ số xác định $R^2$ và $\bar{R}^2$}{}~\cite{james2013,wooldridge2013}
+\begin{mydef}{Hệ số xác định $R^2$ và $\bar{R}^2$}{}
 \[
     R^2 = 1 - \frac{\mathrm{RSS}}{\mathrm{TSS}}
     = \frac{\mathrm{ESS}}{\mathrm{TSS}}
@@ -525,7 +525,7 @@ $\bar{R}^2$ có thể âm khi mô hình kém hơn mô hình rỗng.
 Dưới giả thiết GM5, $\hat{\boldsymbol{\beta}} \sim
 \mathcal{N}\!\bigl(\boldsymbol{\beta},\, \sigma^2(\mat{X}^T\mat{X})^{-1}\bigr)$.
 
-\begin{mythm}{Kiểm định $t$ cho từng hệ số}{}~\cite{wooldridge2013,james2013}
+\begin{mythm}{Kiểm định $t$ cho từng hệ số}{}
 Để kiểm định $H_0 : \beta_j = 0$ so với $H_1 : \beta_j \neq 0$, sử dụng thống kê:
 \[
     t_j = \frac{\hat{\beta}_j}{\hat{\sigma}\sqrt{\bigl[(\mat{X}^T\mat{X})^{-1}\bigr]_{jj}}}
@@ -540,7 +540,7 @@ Khoảng tin cậy $(1-\alpha)$ cho $\beta_j$:
 \]
 \end{mythm}
 
-\begin{mythm}{Kiểm định $F$ cho toàn mô hình}{}~\cite{wooldridge2013,james2013}
+\begin{mythm}{Kiểm định $F$ cho toàn mô hình}{}
 Để kiểm định $H_0 : \beta_1 = \cdots = \beta_p = 0$ (không biến nào có tác động),
 sử dụng:
 \[
@@ -587,83 +587,61 @@ $\hat{\sigma}$
 % ============================================================
 \subsection{Các Vấn Đề Nâng Cao trong Data Fitting}
 
-\subsubsection{Đa cộng tuyến (Multicollinearity)}
+Phương pháp OLS, mặc dù là một công cụ mạnh mẽ với các tính chất thống kê tuyệt vời dưới các giả thiết Gauss--Markov, lại gặp phải những hạn chế đáng kể khi áp dụng vào các bài toán thực tế. Các vấn đề này nảy sinh từ những hiện tượng như sự tương quan mạnh giữa các biến (đa cộng tuyến), sự quá khớp dữ liệu, hay khi số lượng biến vượt quá số lượng quan sát. Để vượt qua những thách thức này, các phương pháp hiện đại đã kế thừa và phát triển từ OLS qua kỹ thuật chính quy hóa (regularization), điều này đánh dấu một bước tiến quan trọng trong lịch sử của phương pháp ước lượng tham số.
 
-\textbf{Định nghĩa:} Đa cộng tuyến là hiện tượng xảy ra trong mô hình hồi quy bội khi hai hay nhiều biến độc lập (đặc trưng) có sự tương quan tuyến tính chặt chẽ với nhau. Điều này có nghĩa là một biến độc lập có thể được dự đoán với độ chính xác cao thông qua các biến độc lập khác trong cùng một mô hình.
+\subsubsection{Đa cộng tuyến và Tác động của nó}
 
-\textbf{Hậu quả đối với mô hình OLS:}
-\begin{itemize}
-    \item \textbf{Ma trận gần suy biến:} Khi xảy ra đa cộng tuyến hoàn hảo hoặc gần hoàn hảo, các cột của ma trận thiết kế $\mat{X}$ không còn độc lập tuyến tính. Hậu quả là định thức của ma trận $(\mat{X}^T\mat{X})$ tiến gần về 0, làm cho phép nghịch đảo $(\mat{X}^T\mat{X})^{-1}$ trong công thức nghiệm OLS trở nên cực kỳ thiếu ổn định hoặc không thể thực hiện được.
-    \item \textbf{Trọng số bị thổi phồng và sai số lớn:} Các hệ số hồi quy ước lượng ($\hat{\boldsymbol{\beta}}$) sẽ có giá trị tuyệt đối rất lớn và phương sai cực cao. Mô hình trở nên nhạy cảm quá mức: chỉ một thay đổi nhỏ trong tập dữ liệu huấn luyện cũng có thể làm thay đổi hoàn toàn dấu và độ lớn của các hệ số $\boldsymbol{\beta}$.
-    \item \textbf{Mất khả năng diễn giải:} Rất khó để đánh giá chính xác tác động độc lập của từng biến đối với biến mục tiêu $y$, làm sai lệch kết quả của các kiểm định giả thuyết (như t-test).
-\end{itemize}
+Trong thực tế, khi xử lý dữ liệu từ nhiều nguồn khác nhau, ta thường phát hiện rằng các biến độc lập không thực sự độc lập tuyến tính với nhau. Hiện tượng này, được gọi là \textbf{đa cộng tuyến}, xảy ra khi hai hay nhiều biến độc lập có mối liên hệ tuyến tính chặt chẽ, nghĩa là một biến có thể được dự đoán với độ chính xác cao qua các biến khác. Đây là một trong những vấn đề cốt lõi mà các nhà thống kê phải đối mặt~\cite{marquardt1970}, vì nó vi phạm trực tiếp giả thiết GM2 về tính độc lập tuyến tính của các cột ma trận thiết kế.
 
-\textbf{Cách phát hiện bằng Hệ số phóng đại phương sai (VIF):}
+\begin{mydef}{Đa cộng tuyến (Multicollinearity)}{}
+Đa cộng tuyến xảy ra khi ma trận thiết kế $\mat{X}$ có các cột gần như phụ thuộc tuyến tính, tức là $\rank(\mat{X}) < p+1$ (hoặc tiến gần đến giới hạn này). Khi đó, không tồn tại nghịch đảo của $\mat{X}^T\mat{X}$, hoặc nếu tồn tại, nó sẽ có mặt các phần tử rất lớn, dẫn đến ước lượng OLS trở nên không ổn định về mặt số học.
+\end{mydef}
 
-Để phát hiện đa cộng tuyến, phương pháp phổ biến nhất là sử dụng Hệ số phóng đại phương sai (Variance Inflation Factor - VIF) cho từng biến $j$. Công thức được định nghĩa như sau:
+Hậu quả của đa cộng tuyến đối với mô hình OLS là vô cùng nghiêm trọng, vì nó tác động đến mọi khía cạnh của ước lượng và suy diễn thống kê. Thứ nhất, khi các cột của $\mat{X}$ gần như phụ thuộc tuyến tính, định thức của ma trận $(\mat{X}^T\mat{X})$ tiến gần về 0, làm cho phép nghịch đảo trở nên cực kỳ thiếu ổn định. Thứ hai, các hệ số hồi quy ước lượng $\hat{\boldsymbol{\beta}}$ sẽ có giá trị tuyệt đối rất lớn với phương sai cực cao, một hiện tượng gọi là ``thổi phồng hệ số''. Điều này có nghĩa là những thay đổi rất nhỏ trong dữ liệu huấn luyện có thể dẫn đến những thay đổi hoàn toàn trong dấu và độ lớn của các hệ số, làm cho mô hình trở nên vô cùng nhạy cảm với nhiễu. Thứ ba, đa cộng tuyến phá hủy khả năng diễn giải của mô hình, vì ta không còn có thể phân tách tác động độc lập của từng biến đối với biến mục tiêu, do đó các kiểm định giả thuyết (như t-test) trở nên không đáng tin cậy.
 
+\begin{note}[Phát hiện Đa cộng tuyến qua Hệ số Phóng đại Phương sai]
+Để phát hiện đa cộng tuyến, phương pháp phổ biến nhất là sử dụng \textbf{Hệ số phóng đại phương sai} (Variance Inflation Factor, VIF). Cho mỗi biến $X_j$, ta tính:
 \begin{equation}
-    \mathrm{VIF}_j = \frac{1}{1 - R_j^2}
+    \mathrm{VIF}_j = \frac{1}{1 - R_j^2},
 \end{equation}
+trong đó $R_j^2$ là hệ số xác định khi hồi quy $X_j$ theo tất cả các biến độc lập còn lại. Giá trị $\mathrm{VIF}_j = 1$ chỉ rằng biến $X_j$ không tương quan với các biến khác, trong khi $\mathrm{VIF}_j > 10$ (tương ứng $R_j^2 > 0.9$) cảnh báo mức độ đa cộng tuyến nghiêm trọng cần xử lý ngay.
+\end{note}
 
-Trong đó, $R_j^2$ là hệ số xác định ($R$-squared) thu được khi sử dụng chính biến $X_j$ làm biến phụ thuộc và tiến hành hồi quy nó theo tất cả các biến độc lập còn lại.
-\begin{itemize}
-    \item Nếu $\mathrm{VIF}_j = 1$: Biến $X_j$ không có tương quan với các biến khác.
-    \item Nếu $\mathrm{VIF}_j > 10$ (hoặc $R_j^2 > 0.9$): Đây là dấu hiệu cảnh báo hiện tượng đa cộng tuyến đang ở mức độ nghiêm trọng và cần được xử lý.
-\end{itemize}
+\subsubsection{Hồi quy được chuẩn hóa (Regularized Regression)}
 
-\subsubsection{Hồi quy Ridge và Lasso (Regularization)}
+Để giải quyết bài toán đa cộng tuyến cũng như các vấn đề về quá khớp dữ liệu, các nhà thống kê đã phát triển một lớp các phương pháp gọi chung là \textbf{chuẩn hóa} (regularization). Ý tưởng cốt lõi của chính quy hóa, mà các phương pháp hiện đại như Ridge, Lasso, Elastic Net đều tuân theo, là chấp nhận hy sinh một chút độ chính xác đối với tập dữ liệu huấn luyện (tính không chệch của ước lượng) để đổi lấy sự ổn định lớn và khả năng tổng quát hóa tốt hơn. Điều này phản ánh một sự cân bằng cơ bản trong học máy giữa độ chệch (bias) và phương sai (variance), được gọi là \textit{bias--variance tradeoff}.
 
-Để giải quyết vấn đề ma trận $(\mat{X}^T\mat{X})$ suy biến do đa cộng tuyến, phương pháp Hồi quy Ridge được áp dụng. Ý tưởng cốt lõi của phương pháp này là chấp nhận hy sinh một chút tính ``không chệch'' (unbiasedness) của ước lượng OLS để đổi lấy một phương sai nhỏ hơn rất nhiều, từ đó giúp mô hình tổng quát hóa tốt hơn.
+Lịch sử phát triển của chính quy hóa bắt đầu từ những năm 1970, khi các nhà toán học và thống kê học nhận ra rằng OLS, mặc dù không chệch, lại có phương sai rất lớn khi đa cộng tuyến xảy ra. Phương pháp \textbf{Ridge Regression}, được đề xuất bởi Hoerl và Kennard~\cite{hoerl1970}, là một trong những phương pháp chính quy hóa sớm nhất và quan trọng nhất. Ý tưởng cơ bản là thêm vào hàm mất mát OLS một ``khoản phạt'' tỷ lệ thuận với chuẩn $L_2$ bình phương của vector hệ số, từ đó buộc các hệ số phải nhỏ hơn. Khoảng hai mươi năm sau, vào năm 1996, phương pháp \textbf{Lasso Regression}, được Tibshirani phát triển~\cite{tibshirani1996}, đã mở ra một hướng mới bằng cách sử dụng chuẩn $L_1$ thay vì $L_2$. Đặc biệt quan trọng là Lasso có khả năng thực hiện tự động lựa chọn biến (feature selection) bằng cách đặt một số hệ số chính xác bằng không.
 
-\textbf{Công thức toán học của Hồi quy Ridge:}
-
-Thay vì chỉ tối thiểu hóa tổng bình phương phần dư (RSS) như OLS thông thường, Hồi quy Ridge thêm vào hàm mất mát một ``khoản phạt'' (penalty term) tỷ lệ thuận với tổng bình phương các hệ số hồi quy (không bao gồm hệ số chặn $\beta_0$). Hàm mục tiêu mới trở thành:
-
+\begin{mydef}{Hồi quy Ridge (Ridge Regression)}{}
+Hồi quy Ridge giải bài toán tối ưu:
 \begin{equation}
-    \hat{\boldsymbol{\beta}}_{\mathrm{ridge}} = \arg\min_{\boldsymbol{\beta}} \left\{ \norm{\mat{y} - \mat{X}\boldsymbol{\beta}}_2^2 + \lambda \norm{\boldsymbol{\beta}}_2^2 \right\}
+    \hat{\boldsymbol{\beta}}_{\mathrm{ridge}} = \arg\min_{\boldsymbol{\beta}} \left\{ \norm{\mat{y} - \mat{X}\boldsymbol{\beta}}_2^2 + \lambda \norm{\boldsymbol{\beta}}_2^2 \right\},
 \end{equation}
-
-Trong đó, $\lambda \geq 0$ là siêu tham số điều chỉnh kiểm soát mức độ phạt:
-\begin{itemize}
-    \item Khi $\lambda = 0$: Khoản phạt bị triệt tiêu, Hồi quy Ridge hoàn toàn trở về mô hình OLS tiêu chuẩn.
-    \item Khi $\lambda \to \infty$: Khoản phạt trở nên vô cùng lớn, ép tất cả các hệ số $\boldsymbol{\beta}$ (trừ $\beta_0$) tiến dần về 0.
-\end{itemize}
-
-\textbf{Công thức nghiệm đóng:}
-
-Bằng cách lấy đạo hàm hàm mất mát trên theo $\boldsymbol{\beta}$ và cho bằng 0, ta thu được nghiệm phân tích của Hồi quy Ridge:
-
+trong đó $\lambda \geq 0$ là tham số chính quy hóa kiểm soát mức độ phạt trên magnitude của các hệ số. Nghiệm dạng đóng là:
 \begin{equation}
-    \hat{\boldsymbol{\beta}}_{\mathrm{ridge}} = (\mat{X}^T\mat{X} + \lambda\mat{I})^{-1}\mat{X}^T\mat{y}
+    \hat{\boldsymbol{\beta}}_{\mathrm{ridge}} = \left(\mat{X}^T\mat{X} + \lambda\mat{I}\right)^{-1}\mat{X}^T\mat{y}.
 \end{equation}
+\end{mydef}
 
-Trong đó, $\mat{I}$ là ma trận đơn vị bậc $p+1$. Sự xuất hiện của thành phần $\lambda\mat{I}$ được cộng trực tiếp vào đường chéo chính của $(\mat{X}^T\mat{X})$ là ``chìa khóa'' giải quyết đa cộng tuyến. Nó đảm bảo ma trận $(\mat{X}^T\mat{X} + \lambda\mat{I})$ luôn luôn khả nghịch, ngay cả khi số lượng đặc trưng lớn hơn số lượng mẫu quan trắc ($p > n$) hoặc khi các biến có sự cộng tuyến hoàn hảo.
+Sự thêm vào thành phần $\lambda\mat{I}$ vào đường chéo chính của ma trận $(\mat{X}^T\mat{X})$ là chìa khóa để giải quyết vấn đề đa cộng tuyến. Bằng cách này, ma trận $(\mat{X}^T\mat{X} + \lambda\mat{I})$ luôn khả nghịch, ngay cả khi ma trận gốc $\mat{X}^T\mat{X}$ là suy biến hoặc gần suy biến. Hơn nữa, Ridge Regression có thể xử lý trường hợp $p > n$ (số biến vượt quá số quan sát), một tình huống mà OLS thông thường không thể làm được. Tuy nhiên, nhược điểm của Ridge là nó không loại bỏ biến nào hoàn toàn, vì các hệ số chỉ được co lại về 0 mà không bao giờ thực sự bằng 0 (trừ khi $\lambda \to \infty$).
 
-\textbf{Lasso Regression ($L_1$ Regularization):}
-
-Tương tự Ridge, Lasso cũng thêm khoản phạt vào hàm mất mát OLS, nhưng sử dụng chuẩn $L_1$ thay vì $L_2$:
-
+\begin{mydef}{Hồi quy Lasso ($L_1$ Regularization)}{}
+Hồi quy Lasso (Least Absolute Shrinkage and Selection Operator) giải bài toán:
 \begin{equation}
-    \hat{\boldsymbol{\beta}}_{\mathrm{lasso}} = \arg\min_{\boldsymbol{\beta}} \left\{ \norm{\mat{y} - \mat{X}\boldsymbol{\beta}}_2^2 + \lambda \norm{\boldsymbol{\beta}}_1 \right\}
+    \hat{\boldsymbol{\beta}}_{\mathrm{lasso}} = \arg\min_{\boldsymbol{\beta}} \left\{ \norm{\mat{y} - \mat{X}\boldsymbol{\beta}}_2^2 + \lambda \norm{\boldsymbol{\beta}}_1 \right\},
 \end{equation}
+trong đó $\norm{\boldsymbol{\beta}}_1 = \sum_{j=0}^{p} |\beta_j|$ là chuẩn $L_1$. Không giống Ridge, Lasso không có nghiệm dạng đóng và phải được giải bằng các thuật toán tối ưu lặp (ví dụ như coordinate descent).
+\end{mydef}
 
-Ưu điểm của Lasso so với Ridge là khả năng thực hiện \textit{feature selection} tự động bằng cách đặt một số hệ số chính xác bằng 0, giúp nhận diện các biến thực sự quan trọng trong mô hình.
+Ưu điểm sáng suốt nhất của Lasso so với Ridge là khả năng thực hiện \textbf{lựa chọn biến tự động} (automatic feature selection). Vì bản chất hình học của chuẩn $L_1$, các hệ số của Lasso có xu hướng chính xác bằng 0 khi giá trị $\lambda$ đủ lớn, điều này có nghĩa là một số biến được loại bỏ hoàn toàn khỏi mô hình. Đây là một lợi thế to lớn trong những ứng dụng nơi mà ta muốn tìm ra tập con nhỏ các biến thực sự quan trọng trong số một tập hợp lớn các ứng cử viên. Tuy nhiên, khi các biến có sự tương quan cao, Lasso có thể chọn một cách tùy ý giữa chúng, lựa chọn một biến này và loại bỏ biến kia. Để khắc phục hạn chế này, \textbf{Elastic Net} đã được phát triển bởi Zou và Hastie~\cite{zou2005} như một sự kết hợp của Ridge và Lasso, sử dụng một kết hợp lồi của chuẩn $L_1$ và $L_2$ để đạt được những lợi ích của cả hai phương pháp.
+
+\begin{note}[Lựa chọn Tham số Chính quy hóa]
+Trong thực tế, việc lựa chọn giá trị tối ưu của tham số $\lambda$ là một bước quan trọng và có ảnh hưởng lớn đến hiệu suất của mô hình. Phương pháp phổ biến nhất là sử dụng \textbf{kiểm chứng chéo} (cross-validation), nơi mà dữ liệu được chia thành các tập con, mô hình được huấn luyện trên một phần và đánh giá trên phần còn lại, quy trình này lặp đi lặp lại với các giá trị $\lambda$ khác nhau. Giá trị $\lambda$ được chọn là giá trị làm cực tiểu hóa lỗi kiểm chứng chéo, từ đó đảm bảo rằng mô hình có khả năng tổng quát hóa tốt nhất trên dữ liệu chưa thấy.
+\end{note}
 
 % ============================================================
 \section{Cài Đặt Python}
-
-\subsection{Imports, hằng số, dataclass và các hàm phụ trợ}
-
-\begin{note}[Cài Đặt]
-Mô-đun cài đặt hoàn chỉnh nằm trong \textbf{\texttt{part1/ols\_implementation.py}} bao gồm:
-\begin{itemize}
-    \item Nhập thư viện cần thiết (không sử dụng NumPy cho các hàm lõi)
-    \item Định nghĩa dataclass \texttt{OLSResult} và \texttt{HatMatrixResult} để lưu trữ kết quả
-    \item Các hàm tiện ích: \texttt{\_transpose}, \texttt{\_matmul}, \texttt{\_matvec}, \texttt{\_mat\_inv}, \texttt{\_mat\_rank}
-    \item Các hàm chính: \texttt{ols\_fit}, \texttt{hat\_matrix}, \texttt{run\_ols\_analysis}
-\end{itemize}
-\end{note}
 
 % ============================================================
 \subsection{Hàm \texttt{ols\_fit(X, y)}}
@@ -682,30 +660,136 @@ Hàm nghịch đảo \texttt{\_mat\_inv} sử dụng phương pháp Gauss--Jorda
 
 \subsubsection{Pseudo-code}
 
-Thuật toán OLS:
-        # Step 1: G = X^T X,  q = X^T y
-        Xt = _transpose(X_mat)
-        G  = _matmul(Xt, X_mat)
-        q  = _matvec(Xt, y_vec)
+\begin{algorithm}[H]
+\caption{Ordinary Least Squares (OLS) via Normal Equations}
+\begin{algorithmic}[1]
+\Require $\mathbf{X} \in \mathbb{R}^{n \times p}$, $\mathbf{y} \in \mathbb{R}^n$
+\Ensure $\boldsymbol{\beta}, \hat{\sigma}^2, \hat{\mathbf{y}}, \mathbf{r}$
+\State $\mathbf{G} \gets \mathbf{X}^T\mathbf{X}$, $\mathbf{q} \gets \mathbf{X}^T\mathbf{y}$ \Comment{form normal equations}
+\If{$\text{rank}(\mathbf{G}) < p$}
+    \State \Return \textsc{FAIL} (singular $\mathbf{X}^T\mathbf{X}$, multicollinearity detected)
+\EndIf
+\State $\boldsymbol{\beta} \gets \mathbf{G}^{-1}\mathbf{q}$ \Comment{solve normal equations}
+\State $\hat{\mathbf{y}} \gets \mathbf{X}\boldsymbol{\beta}$ \Comment{fitted values}
+\State $\mathbf{r} \gets \mathbf{y} - \hat{\mathbf{y}}$ \Comment{residuals}
+\State $\text{RSS} \gets \|\mathbf{r}\|_2^2$ \Comment{residual sum of squares}
+\State $d \gets n - p$ \Comment{degrees of freedom}
+\State $\hat{\sigma}^2 \gets \frac{\text{RSS}}{d}$ \Comment{error variance estimate}
+\State \Return $(\boldsymbol{\beta}, \hat{\sigma}^2, \hat{\mathbf{y}}, \mathbf{r})$
 
-        # Step 2: Check invertibility
-        if _mat_rank(G) < k:
-            return OLSResult(
-                method="OLS-NormalEquations", beta_hat=[], sigma2_hat=float("nan"),
-                y_hat=[], residuals=[], rss=float("nan"), dof=n - p - 1,
-                success=False, runtime_sec=perf_counter() - start,
-                message="X^T X is not invertible (multicollinearity).",
-            )
+\end{algorithmic}
+\end{algorithm}
 
-        # Step 3: beta_hat = (X^T X)^{-1} X^T y
-        beta_hat = _matvec(_mat_inv(G), q)
+\subsubsection{Hàm \texttt{hat\_matrix(X)}}
 
-        # Step 4: Residuals and RSS
-        y_hat     = _matvec(X_mat, beta_hat)
-        residuals = _vecsub(y_vec, y_hat)
-        rss       = _dot(residuals, residuals)
+Hàm này tính toán ma trận hình chiếu (hat matrix) $\mat{H} = \mat{X}(\mat{X}^T\mat{X})^{-1}\mat{X}^T$, là công cụ chẩn đoán quan trọng trong phân tích hồi quy. Nó dùng để phát hiện outliers thông qua leverage points và kiểm tra các tính chất lý thuyết như tính lũy đẳng (idempotent) $\mat{H}^2 = \mat{H}$ và tính đối xứng.
 
-        # Step 5: sigma^2 = RSS / (n - p - 1)
-        dof        = n - p - 1
-        sigma2_hat = rss / dof
+\begin{algorithm}[H]
+\caption{Hat Matrix Computation and Property Verification}
+\begin{algorithmic}[1]
+\Require $\mathbf{X} \in \mathbb{R}^{n \times p}$
+\Ensure $\mathbf{H} \in \mathbb{R}^{n \times n}$, symmetry error, idempotent error, rank, trace
+\State $\mathbf{G}_{\text{inv}} \gets (\mathbf{X}^T\mathbf{X})^{-1}$
+\State $\mathbf{H} \gets \mathbf{X} \cdot \mathbf{G}_{\text{inv}} \cdot \mathbf{X}^T$
+\State $\text{sym\_error} \gets \|\mathbf{H} - \mathbf{H}^T\|_\infty$ \Comment{check symmetry}
+\State $\text{idem\_error} \gets \|\mathbf{H}^2 - \mathbf{H}\|_F$ \Comment{check idempotency}
+\State $\text{rank}(\mathbf{H}) \gets p$ \Comment{expected rank = number of features}
+\State $\text{trace}(\mathbf{H}) \gets \text{sum of diagonal elements}$ \Comment{should equal p}
+\State \Return $(\mathbf{H}, \text{sym\_error}, \text{idem\_error}, \text{rank}, \text{trace})$
+\end{algorithmic}
+\end{algorithm}
 
+\subsection{Chuẩn hóa Ridge Regression}
+
+Bên cạnh OLS thông thường, phần cài đặt Python cũng cung cấp phương pháp Ridge Regression để xử lý đa cộng tuyến. Hàm \texttt{ridge\_fit(X, y, lambda)} giải bài toán tối ưu:
+\[
+    \hat{\boldsymbol{\beta}}_{\mathrm{ridge}} = \arg\min_{\boldsymbol{\beta}} \left\{ \|\mat{y} - \mat{X}\boldsymbol{\beta}\|_2^2 + \lambda \|\boldsymbol{\beta}\|_2^2 \right\},
+\]
+với công thức nghiệm đóng $\hat{\boldsymbol{\beta}}_{\mathrm{ridge}} = (\mat{X}^T\mat{X} + \lambda\mat{I})^{-1}\mat{X}^T\mat{y}$.
+
+\begin{algorithm}[H]
+\caption{Ridge Regression}
+\begin{algorithmic}[1]
+\Require $\mathbf{X} \in \mathbb{R}^{n \times p}$, $\mathbf{y} \in \mathbb{R}^n$, $\lambda \geq 0$
+\Ensure $\boldsymbol{\beta}_{\text{ridge}}, \text{RSS}, \text{penalty}$
+\If{$\lambda < 0$}
+    \State \Return \textsc{FAIL} (lambda must be non-negative)
+\EndIf
+\State $\mathbf{G} \gets \mathbf{X}^T\mathbf{X}$
+\State $\mathbf{G}_{\text{ridge}} \gets \mathbf{G} + \lambda \mathbf{I}$ \Comment{add penalty to diagonal}
+\State $\mathbf{q} \gets \mathbf{X}^T\mathbf{y}$
+\State $\boldsymbol{\beta}_{\text{ridge}} \gets \mathbf{G}_{\text{ridge}}^{-1} \mathbf{q}$
+\State $\hat{\mathbf{y}} \gets \mathbf{X} \boldsymbol{\beta}_{\text{ridge}}$
+\State $\text{RSS} \gets \|\mathbf{y} - \hat{\mathbf{y}}\|_2^2$
+\State $\text{penalty} \gets \lambda \|\boldsymbol{\beta}_{\text{ridge}}\|_2^2$ \Comment{exclude intercept}
+\State $L_{\text{total}} \gets \text{RSS} + \text{penalty}$
+\State \Return $(\boldsymbol{\beta}_{\text{ridge}}, \text{RSS}, \text{penalty}, L_{\text{total}})$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Đánh giá Mô hình}
+
+Để đánh giá chất lượng mô hình, hàm \texttt{model\_metrics(y, y\_hat, p)} tính toán các chỉ số quan trọng như $R^2$, $\bar{R}^2$, RSS, TSS, thống kê $F$, và RMSE.
+
+\begin{algorithm}[H]
+\caption{Model Evaluation Metrics}
+\begin{algorithmic}[1]
+\Require $\mathbf{y} \in \mathbb{R}^n$, $\hat{\mathbf{y}} \in \mathbb{R}^n$, $p$ (number of features)
+\Ensure $R^2, \bar{R}^2, \text{RSS}, \text{TSS}, F\text{-statistic}, \text{RMSE}$
+\State $\bar{y} \gets \frac{1}{n}\sum_{i=1}^n y_i$ \Comment{sample mean}
+\State $\text{RSS} \gets \sum_{i=1}^n (y_i - \hat{y}_i)^2$ \Comment{residual sum of squares}
+\State $\text{TSS} \gets \sum_{i=1}^n (y_i - \bar{y})^2$ \Comment{total sum of squares}
+\State $\text{ESS} \gets \text{TSS} - \text{RSS}$ \Comment{explained sum of squares}
+\State $R^2 \gets 1 - \frac{\text{RSS}}{\text{TSS}}$ \Comment{coefficient of determination}
+\State $\bar{R}^2 \gets 1 - \frac{\text{RSS}/(n-p-1)}{\text{TSS}/(n-1)}$ \Comment{adjusted $R^2$}
+\State $F \gets \frac{\text{ESS}/p}{\text{RSS}/(n-p-1)}$ \Comment{$F$-statistic for overall fit}
+\State $\text{RMSE} \gets \sqrt{\frac{\text{RSS}}{n}}$ \Comment{root mean squared error}
+\State \Return $(R^2, \bar{R}^2, \text{RSS}, \text{TSS}, F, \text{RMSE})$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Suy diễn Thống kê cho Hệ số}
+
+Hàm \texttt{coef\_inference(X, y, beta\_hat, sigma2)} tính toán sai số chuẩn, thống kê $t$, giá trị $p$, và khoảng tin cậy cho mỗi hệ số hồi quy, cho phép kiểm định giả thuyết $H_0 : \beta_j = 0$.
+
+\begin{algorithm}[H]
+\caption{Coefficient Inference: Standard Errors, $t$-Statistics, $p$-Values, CI}
+\begin{algorithmic}[1]
+\Require $\mathbf{X} \in \mathbb{R}^{n \times p}$, $\mathbf{y} \in \mathbb{R}^n$, $\hat{\boldsymbol{\beta}}$, $\hat{\sigma}^2$, $\alpha = 0.05$
+\Ensure $\text{SE}, t\text{-stats}, p\text{-values}, \text{CI lower/upper}$
+\State $\mathbf{G} \gets \mathbf{X}^T\mathbf{X}$
+\State $\mathbf{G}^{-1} \gets (\mathbf{X}^T\mathbf{X})^{-1}$ \Comment{variance-covariance matrix proportional}
+\For{$j = 0$ to $p$}
+    \State $\text{SE}_j \gets \hat{\sigma}\sqrt{(\mathbf{G}^{-1})_{jj}}$ \Comment{standard error}
+    \State $t_j \gets \frac{\hat{\beta}_j}{\text{SE}_j}$ \Comment{$t$-statistic}
+    \State $p_j \gets 2 \cdot P(t_{n-p-1} \geq |t_j|)$ \Comment{two-tailed $p$-value}
+    \State $t_{\alpha/2} \gets t\text{-quantile}(1 - \alpha/2, n-p-1)$
+    \State $\text{CI}_{\text{lower},j} \gets \hat{\beta}_j - t_{\alpha/2} \cdot \text{SE}_j$
+    \State $\text{CI}_{\text{upper},j} \gets \hat{\beta}_j + t_{\alpha/2} \cdot \text{SE}_j$
+\EndFor
+\State \Return $(\text{SE}, t\text{-stats}, p\text{-values}, \text{CI}_{\text{lower}}, \text{CI}_{\text{upper}})$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Phát hiện Đa cộng tuyến qua VIF}
+
+Hàm \texttt{vif(X)} tính toán Hệ số Phóng đại Phương sai cho mỗi biến, công cụ tiêu chuẩn để phát hiện đa cộng tuyến. Giá trị $\mathrm{VIF}_j > 10$ cảnh báo mức độ nghiêm trọng.
+
+\begin{algorithm}[H]
+\caption{Variance Inflation Factor (VIF)}
+\begin{algorithmic}[1]
+\Require $\mathbf{X} \in \mathbb{R}^{n \times p}$
+\Ensure $\text{VIF}_j$ for each column $j$
+\For{$j = 0$ to $p-1$}
+    \State $X_{-j} \gets $ columns of $\mathbf{X}$ except column $j$
+    \State Fit regression: $X_j \sim X_{-j}$ to get $R_j^2$
+    \State $\text{VIF}_j \gets \frac{1}{1 - R_j^2}$ \Comment{variance inflation factor}
+    \If{$\text{VIF}_j = 1$}
+        \State Column $j$ has no correlation with others
+    \ElsIf{$\text{VIF}_j > 10$}
+        \State \textbf{WARNING:} Serious multicollinearity detected
+    \EndIf
+\EndFor
+\State \Return $(\text{VIF}_0, \text{VIF}_1, \ldots, \text{VIF}_{p-1})$
+\end{algorithmic}
+\end{algorithm}
