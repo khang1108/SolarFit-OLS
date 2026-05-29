@@ -29,16 +29,19 @@ class CVResult:
     giữa điểm train tốt và test kém là dấu hiệu mô hình đã học quá chi tiết dữ
     liệu huấn luyện và không tổng quát hóa được.
     """
-    k: int                      # Số fold được dùng trong CV
-    model_name: str             # Tên mô hình (ví dụ: "OLS", "Ridge(lambda=0.1)")
-    cv_scores: List[float]      # Điểm số trên tập test của từng fold
-    mean_cv_score: float        # Trung bình điểm CV qua k fold
-    std_cv_score: float         # Độ lệch chuẩn điểm CV, đo tính ổn định
-    train_scores: List[float]   # Điểm số trên tập huấn luyện của từng fold
-    test_scores: List[float]    # Điểm số trên tập test của từng fold (bằng cv_scores)
+
+    k: int  # Số fold được dùng trong CV
+    model_name: str  # Tên mô hình (ví dụ: "OLS", "Ridge(lambda=0.1)")
+    cv_scores: List[float]  # Điểm số trên tập test của từng fold
+    mean_cv_score: float  # Trung bình điểm CV qua k fold
+    std_cv_score: float  # Độ lệch chuẩn điểm CV, đo tính ổn định
+    train_scores: List[float]  # Điểm số trên tập huấn luyện của từng fold
+    test_scores: List[float]  # Điểm số trên tập test của từng fold (bằng cv_scores)
 
 
-def kfold_cv(X: List[List[float]], y: List[float], k: int = 5, metric: str = "mse") -> CVResult:
+def kfold_cv(
+    X: List[List[float]], y: List[float], k: int = 5, metric: str = "mse"
+) -> CVResult:
     """Thực hiện k-fold cross-validation cho mô hình OLS, đánh giá khả năng tổng quát hóa.
 
     K-fold CV chia ngẫu nhiên n quan sát thành k fold xấp xỉ bằng nhau; trong mỗi
@@ -89,13 +92,19 @@ def kfold_cv(X: List[List[float]], y: List[float], k: int = 5, metric: str = "ms
         # Khớp OLS chỉ trên tập train — tập test phải hoàn toàn "unseen"
         try:
             from ols_implementation import ols_fit
+
             ols_result = ols_fit(X_train, y_train)
             if not ols_result.success:
-                cv_scores.append(float('nan'))
+                cv_scores.append(float("nan"))
                 continue
 
-            # Đánh giá trên tập test bằng hệ số vừa học được từ tập train
-            y_pred_test = ols_result.y_hat
+            # Tính dự báo trên tập test bằng hệ số vừa học từ tập train;
+            # ols_result.y_hat là predictions trên TRAIN nên không dùng trực tiếp được
+            beta = ols_result.beta_hat
+            y_pred_test: List[float] = [
+                sum((X_test[i][j] * beta[j] for j in range(len(beta))), 0.0)
+                for i in range(len(X_test))
+            ]
             score_test = _calculate_metric(y_test, y_pred_test, metric)
             test_scores.append(score_test)
 
@@ -107,16 +116,16 @@ def kfold_cv(X: List[List[float]], y: List[float], k: int = 5, metric: str = "ms
 
         except Exception as e:
             print(f"Fold {fold_idx}: Error - {e}")
-            cv_scores.append(float('nan'))
+            cv_scores.append(float("nan"))
 
     # Tổng hợp thống kê qua k fold; loại bỏ NaN trước khi tính trung bình
     valid_scores = [s for s in cv_scores if s == s]  # s == s là False khi s là NaN
-    mean_score = sum(valid_scores) / len(valid_scores) if valid_scores else float('nan')
+    mean_score = sum(valid_scores) / len(valid_scores) if valid_scores else float("nan")
     if len(valid_scores) > 1:
-        var = sum((s - mean_score)**2 for s in valid_scores) / (len(valid_scores) - 1)
+        var = sum((s - mean_score) ** 2 for s in valid_scores) / (len(valid_scores) - 1)
         std_score = sqrt(var)
     else:
-        std_score = float('nan')
+        std_score = float("nan")
 
     return CVResult(
         k=k,
@@ -130,11 +139,7 @@ def kfold_cv(X: List[List[float]], y: List[float], k: int = 5, metric: str = "ms
 
 
 def kfold_cv_ridge(
-    X: List[List[float]],
-    y: List[float],
-    lam: float,
-    k: int = 5,
-    metric: str = "mse"
+    X: List[List[float]], y: List[float], lam: float, k: int = 5, metric: str = "mse"
 ) -> CVResult:
     """Thực hiện k-fold cross-validation cho Ridge regression với tham số λ cho trước.
 
@@ -180,27 +185,36 @@ def kfold_cv_ridge(
 
         try:
             from regularization import ridge_fit
+
             ridge_result = ridge_fit(X_train, y_train, lam)
             if not ridge_result.success:
-                cv_scores.append(float('nan'))
+                cv_scores.append(float("nan"))
                 continue
 
-            # Predict on test set
-            y_pred_test = [sum(X_test[i][j] * ridge_result.coefficients[j]
-                              for j in range(len(ridge_result.coefficients)))
-                          for i in range(len(X_test))]
+            # Tính dự báo trên tập test từ hệ số Ridge vừa học được trên tập train
+            y_pred_test: List[float] = [
+                sum(
+                    (X_test[i][j] * ridge_result.coefficients[j]
+                     for j in range(len(ridge_result.coefficients))),
+                    0.0,
+                )
+                for i in range(len(X_test))
+            ]
 
             score = _calculate_metric(y_test, y_pred_test, metric)
             cv_scores.append(score)
 
-        except Exception as e:
-            cv_scores.append(float('nan'))
+        except Exception:
+            cv_scores.append(float("nan"))
 
     valid_scores = [s for s in cv_scores if s == s]
-    mean_score = sum(valid_scores) / len(valid_scores) if valid_scores else float('nan')
-    var = sum((s - mean_score)**2 for s in valid_scores) / (len(valid_scores) - 1) \
-        if len(valid_scores) > 1 else float('nan')
-    std_score = sqrt(var) if var == var else float('nan')
+    mean_score = sum(valid_scores) / len(valid_scores) if valid_scores else float("nan")
+    var = (
+        sum((s - mean_score) ** 2 for s in valid_scores) / (len(valid_scores) - 1)
+        if len(valid_scores) > 1
+        else float("nan")
+    )
+    std_score = sqrt(var) if var == var else float("nan")
 
     return CVResult(
         k=k,
@@ -262,15 +276,15 @@ def _calculate_metric(y_true: List[float], y_pred: List[float], metric: str) -> 
         ValueError: Khi metric không nằm trong danh sách hỗ trợ.
     """
     if len(y_true) != len(y_pred):
-        return float('nan')
+        return float("nan")
 
     n = len(y_true)
 
     if metric == "mse":
-        return sum((y_true[i] - y_pred[i])**2 for i in range(n)) / n
+        return sum((y_true[i] - y_pred[i]) ** 2 for i in range(n)) / n
 
     elif metric == "rmse":
-        mse = sum((y_true[i] - y_pred[i])**2 for i in range(n)) / n
+        mse = sum((y_true[i] - y_pred[i]) ** 2 for i in range(n)) / n
         return sqrt(mse)
 
     elif metric == "mae":
@@ -278,8 +292,8 @@ def _calculate_metric(y_true: List[float], y_pred: List[float], metric: str) -> 
 
     elif metric == "r2":
         y_mean = sum(y_true) / n
-        ss_tot = sum((y_true[i] - y_mean)**2 for i in range(n))
-        ss_res = sum((y_true[i] - y_pred[i])**2 for i in range(n))
+        ss_tot = sum((y_true[i] - y_mean) ** 2 for i in range(n))
+        ss_res = sum((y_true[i] - y_pred[i]) ** 2 for i in range(n))
         if ss_tot != 0:
             return 1.0 - (ss_res / ss_tot)
         else:
@@ -299,16 +313,17 @@ class ModelComparisonResult:
     thống kê: Ridge với λ tối ưu có thể dự báo tốt hơn OLS nhưng hệ số Ridge bị
     chệch nên không thể dùng cho suy luận thống kê chuẩn.
     """
+
     models: Dict[str, CVResult]  # Dict tên mô hình -> CVResult tương ứng
-    best_model: str              # Tên mô hình có mean_cv_score tốt nhất
-    best_score: float            # Giá trị mean_cv_score của mô hình tốt nhất
+    best_model: str  # Tên mô hình có mean_cv_score tốt nhất
+    best_score: float  # Giá trị mean_cv_score của mô hình tốt nhất
 
 
 def model_selection_cv(
     X: List[List[float]],
     y: List[float],
     k: int = 5,
-    models: Dict[str, Callable] = None
+    models: Dict[str, Callable] | None = None,
 ) -> ModelComparisonResult:
     """So sánh nhiều mô hình bằng k-fold cross-validation và xác định mô hình tốt nhất.
 

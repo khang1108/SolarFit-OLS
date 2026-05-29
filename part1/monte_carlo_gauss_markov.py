@@ -1,15 +1,15 @@
 """
-Monte Carlo Simulation to Demonstrate the Gauss-Markov Theorem.
+Module minh họa Định lý Gauss-Markov bằng mô phỏng Monte Carlo so sánh OLS với ước lượng thay thế.
 
-This module simulates the Gauss-Markov theorem by repeatedly:
-1. Fixing the design matrix X and true parameters β
-2. Generating random noise ε ~ N(0, σ²I)
-3. Creating observation vectors y = Xβ + ε
-4. Computing OLS estimates and comparing with alternative estimators
-
-The simulation verifies two key properties:
-- Unbiasedness: E[β̂_OLS | X] = β
-- Optimality: Var(β̂_OLS | X) ≤ Var(β̃_Alt | X) for any unbiased linear estimator β̃_Alt
+Khác với gauss_markov_sim.py chỉ kiểm chứng tính không chệch của OLS, module này
+đi xa hơn bằng cách xây dựng một ước lượng tuyến tính không chệch thay thế
+β̃_Alt = β̂_OLS + Ay và chứng minh qua mô phỏng rằng Var(β̃_Alt) >= Var(β̂_OLS),
+tức là OLS có phương sai nhỏ nhất trong lớp ước lượng đó. Ma trận nhiễu A được
+chọn thỏa mãn AX = 0 để đảm bảo β̃_Alt không chệch: vì E[β̃_Alt] = E[β̂_OLS] +
+A·E[y] = β + AXβ = β khi AX = 0. Cụ thể, A = B(I - H) với B bất kỳ tự động thỏa
+mãn AX = B(I-H)X = 0 vì (I-H)X = 0 theo định nghĩa của hat matrix. Module này
+cung cấp bằng chứng số trực tiếp cho phần "tốt nhất" (BLUE) trong định lý
+Gauss-Markov, bổ sung cho phần "không chệch" đã được kiểm chứng trong gauss_markov_sim.py.
 """
 
 import numpy as np
@@ -17,22 +17,22 @@ from ols_implementation import ols_fit, hat_matrix, _matmul, _matvec
 
 
 def make_perturbation(X, B):
-    """
-    Create a perturbation matrix A = B(I - H) with A X = 0.
+    """Tạo ma trận nhiễu A = B(I - H) thỏa mãn ràng buộc không chệch AX = 0.
 
-    Since (I - H)X = 0, the resulting A satisfies the unbiasedness constraint.
+    Để ước lượng thay thế β̃_Alt = β̂_OLS + Ay không chệch, cần A thỏa mãn
+    AX = 0. Hàm này khai thác tính chất (I - H)X = 0 của ma trận chiếu phần bù:
+    vì HX = X (X chiếu lên chính mình qua C(X)), nên (I-H)X = X - HX = 0. Do đó
+    A = B(I-H) tự động thỏa mãn AX = B(I-H)X = 0 với bất kỳ ma trận B nào, cho
+    phép chọn B ngẫu nhiên mà vẫn đảm bảo tính không chệch của ước lượng thay thế.
 
-    Parameters
-    ----------
-    X : list of list
-        Design matrix as nested lists
-    B : list of list
-        Random perturbation matrix
+    Args:
+        X: Ma trận thiết kế dạng list 2D, kích thước n×k.
+        B: Ma trận nhiễu ngẫu nhiên dạng list 2D, kích thước k×n. Thường được
+           tạo bằng cách nhân một ma trận Gaussian ngẫu nhiên với alt_scale nhỏ
+           để ước lượng thay thế không quá lệch so với OLS.
 
-    Returns
-    -------
-    list of list
-        Perturbation matrix A = B(I - H)
+    Returns:
+        Ma trận nhiễu A = B(I - H) kích thước k×n thỏa mãn AX = 0.
     """
     H = hat_matrix(X).H
     n = len(X)
@@ -41,22 +41,22 @@ def make_perturbation(X, B):
 
 
 def alt_fit(X, y, A):
-    """
-    Compute alternative linear unbiased estimator: β̃_Alt = β̂_OLS + Ay.
+    """Tính ước lượng tuyến tính không chệch thay thế β̃_Alt = β̂_OLS + Ay.
 
-    Parameters
-    ----------
-    X : list of list
-        Design matrix
-    y : list
-        Observation vector
-    A : list of list
-        Perturbation matrix (must satisfy AX = 0)
+    Ước lượng thay thế này được xây dựng bằng cách cộng thêm nhiễu Ay vào β̂_OLS,
+    trong đó A thỏa mãn AX = 0 (được tạo bởi make_perturbation). Tính không chệch
+    của β̃_Alt được đảm bảo vì E[β̃_Alt | X] = E[β̂_OLS | X] + A·E[y | X] =
+    β + AXβ = β + 0 = β. Tuy nhiên phương sai của β̃_Alt bao gồm thêm số hạng
+    σ²AA', làm cho Var(β̃_Alt) = Var(β̂_OLS) + σ²AA' >= Var(β̂_OLS), đây chính
+    là nội dung cần chứng minh bằng mô phỏng trong run_monte_carlo.
 
-    Returns
-    -------
-    list
-        Coefficient vector β̃_Alt
+    Args:
+        X: Ma trận thiết kế dạng list 2D, kích thước n×k.
+        y: Vector quan sát dạng list, kích thước (n,).
+        A: Ma trận nhiễu dạng list 2D, kích thước k×n, phải thỏa mãn AX = 0.
+
+    Returns:
+        Vector hệ số β̃_Alt kích thước (k,) dạng list.
     """
     beta_ols = ols_fit(X, y).beta_hat
     Ay = _matvec(A, y)
@@ -65,57 +65,56 @@ def alt_fit(X, y, A):
 
 def run_monte_carlo(n=30, beta_true=(2.0, 1.0, -0.5), sigma=1.0,
                     n_rep=8000, seed=2024, alt_scale=0.06):
-    """
-    Run Monte Carlo simulation to approximate E[β̂] and Var(β̂).
+    """Chạy mô phỏng Monte Carlo so sánh phương sai OLS với ước lượng thay thế.
 
-    Parameters
-    ----------
-    n : int
-        Number of observations
-    beta_true : tuple
-        True parameters (intercept, slope1, slope2)
-    sigma : float
-        Standard deviation of noise
-    n_rep : int
-        Number of Monte Carlo replications
-    seed : int
-        Random seed for reproducibility
-    alt_scale : float
-        Scaling factor for perturbation matrix B
+    Hàm này là bằng chứng số trung tâm cho tính BLUE của OLS. Trong mỗi trong
+    n_rep lần lặp, cùng một ma trận X cố định (thiết kế theo điều kiện của định lý)
+    nhận một vector nhiễu mới ε ~ N(0, σ²I), tạo y = Xβ + ε, rồi tính cả β̂_OLS
+    lẫn β̃_Alt = β̂_OLS + Ay. Sau n_rep lần, Var(β̂_OLS) và Var(β̃_Alt) được ước
+    lượng bằng phương sai mẫu, dự kiến Var(β̃_Alt) > Var(β̂_OLS) với mọi A ≠ 0.
+    Ma trận nhiễu A được tạo một lần từ make_perturbation(X, B) và giữ cố định
+    trong toàn bộ mô phỏng, đảm bảo so sánh công bằng giữa hai ước lượng. Số lần
+    lặp mặc định là n_rep=8000 để đảm bảo ước lượng phương sai có độ chính xác cao.
 
-    Returns
-    -------
-    dict
-        Dictionary containing:
-        - X: Fixed design matrix (numpy array)
-        - A: Perturbation matrix (numpy array)
-        - beta_true: True parameters
-        - sigma: Noise standard deviation
-        - n, k, n_rep: Dimensions and iterations
-        - beta_ols: Array of shape (n_rep, k) with OLS estimates
-        - beta_alt: Array of shape (n_rep, k) with alternative estimates
+    Args:
+        n: Số quan sát trong mỗi lần lặp, mặc định là 30.
+        beta_true: Vector tham số thực dạng tuple (intercept, slope1, slope2),
+                   mặc định là (2.0, 1.0, -0.5).
+        sigma: Độ lệch chuẩn của nhiễu, mặc định là 1.0.
+        n_rep: Số lần lặp Monte Carlo, mặc định là 8000. Giá trị lớn hơn cho
+               ước lượng phương sai chính xác hơn nhưng tốn thời gian hơn.
+        seed: Hạt giống của numpy.random.default_rng để đảm bảo tái lập được.
+        alt_scale: Hệ số tỷ lệ cho ma trận nhiễu B; giá trị nhỏ (0.06) đảm bảo
+                   ước lượng thay thế không quá xa OLS để so sánh rõ ràng hơn.
+
+    Returns:
+        Dict chứa các trường: "X" (numpy array n×k, ma trận thiết kế cố định),
+        "A" (numpy array k×n, ma trận nhiễu), "beta_true", "sigma", "n", "k",
+        "n_rep", "beta_ols" (numpy array n_rep×k), "beta_alt" (numpy array n_rep×k).
     """
     rng = np.random.default_rng(seed)
     beta_true = np.asarray(beta_true, float)
     k = len(beta_true)
 
-    # Fixed design X (theorem is conditional on X)
+    # Ma trận thiết kế X được giữ cố định theo quy ước định lý (conditional on X);
+    # cột đầu là 1 cho intercept, các cột sau là biến giải thích Gaussian
     X_np = np.column_stack([np.ones(n), rng.normal(size=(n, k - 1))])
     X_list = X_np.tolist()
 
-    # Fixed perturbation A = B(I - H) with AX = 0, built once from X
+    # Ma trận nhiễu A = B(I-H) được tạo một lần và cố định trong toàn bộ mô phỏng
+    # để hai ước lượng được so sánh trên cùng điều kiện nhiễu hệ thống
     B = (alt_scale * rng.normal(size=(k, n))).tolist()
     A = make_perturbation(X_list, B)
     A_np = np.asarray(A)
 
-    # Storage for results
+    # Phân bổ bộ nhớ trước để tránh append làm chậm vòng lặp lớn
     beta_ols = np.empty((n_rep, k))
     beta_alt = np.empty((n_rep, k))
 
-    # Fixed signal component
+    # Tính trước phần tín hiệu cố định μ = Xβ để tránh tính lại n_rep lần
     mu = X_np @ beta_true
 
-    # Monte Carlo loop
+    # Vòng lặp Monte Carlo: mỗi lần lặp chỉ thay đổi nhiễu ε, X và β không đổi
     for r in range(n_rep):
         eps = rng.normal(scale=sigma, size=n)
         y_vec = (mu + eps).tolist()
@@ -136,20 +135,22 @@ def run_monte_carlo(n=30, beta_true=(2.0, 1.0, -0.5), sigma=1.0,
 
 
 def verify_with_numpy_sklearn(X_np, y_one):
-    """
-    Verify OLS implementation against NumPy and scikit-learn.
+    """Kiểm chứng triển khai OLS thuần Python so với NumPy và scikit-learn.
 
-    Parameters
-    ----------
-    X_np : numpy.ndarray
-        Design matrix
-    y_one : list or array
-        Observation vector
+    Hàm này thực hiện kiểm tra tính đúng đắn số học của ols_fit bằng cách so sánh
+    hệ số β̂ với kết quả từ hai thư viện chuẩn. Sai số so với numpy.linalg.lstsq
+    và sklearn.LinearRegression đều kỳ vọng dưới 1e-8, xác nhận triển khai thuần
+    Python không có lỗi số học đáng kể. Kiểm tra này đặc biệt quan trọng trước
+    khi dùng ols_fit trong mô phỏng Monte Carlo quy mô lớn, vì sai số tích lũy
+    qua n_rep=8000 lần lặp có thể ảnh hưởng đến kết luận về phương sai.
 
-    Returns
-    -------
-    dict
-        Dictionary with max errors from NumPy and scikit-learn
+    Args:
+        X_np: Ma trận thiết kế dạng numpy array, kích thước n×k, bao gồm cột intercept.
+        y_one: Vector quan sát dạng list hoặc numpy array, kích thước (n,).
+
+    Returns:
+        Dict với hai khóa: "error_numpy" là max|β̂_scratch - β̂_numpy|_∞ và
+        "error_sklearn" là max|β̂_scratch - β̂_sklearn|_∞.
     """
     from sklearn.linear_model import LinearRegression
 
