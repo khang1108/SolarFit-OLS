@@ -1,0 +1,572 @@
+\section{Ứng Dụng Data Fitting vào Dữ Liệu Thực Tế}
+
+Phần này áp dụng các phương pháp lý thuyết từ Phần 1 vào bộ dữ liệu thực tế về chi phí du lịch tại Tanzania. Bằng cách này, ta có thể kiểm chứng những khái niệm toán học trừu tượng trên một vấn đề thực tiễn, từ đó thực hiện toàn bộ quy trình khoa học từ thu thập dữ liệu, tiền xử lý, xây dựng mô hình hồi quy, đến đánh giá hiệu năng và phân tích kết quả.
+
+% ============================================================
+\subsection{Mô Tả Dataset}
+
+\subsubsection{Tanzania Tourism Expenditure Dataset}
+
+\begin{mydef}{Tanzania Tourism Expenditure Dataset}{}
+Dataset từ cuộc thi Zindi Platform chứa dữ liệu chi tiêu của du khách tại Tanzania, bao gồm thông tin nhân khẩu học, hành vi du lịch, và chi phí tổng cộng.
+
+\vspace{0.3cm}
+
+\textbf{Thông tin cơ bản:}
+\begin{itemize}
+    \item \textbf{Tập huấn luyện:} 4,809 mẫu (quan sát)
+    \item \textbf{Tập kiểm tra:} 1,601 mẫu (không có nhãn mục tiêu)
+    \item \textbf{Biến mục tiêu:} \code{total\_cost} (chi phí tổng cộng, TZS)
+    \item \textbf{Loại biến độc lập:} 21 biến (gồm numeric và categorical)
+    \item \textbf{Phạm vi mục tiêu:} 49,000 TZS đến 99,532,875 TZS
+\end{itemize}
+
+\vspace{0.3cm}
+
+\textbf{Danh sách các đặc trưng:}
+
+Biến số (\textbf{numeric}): \code{total\_female}, \code{total\_male}, \code{night\_mainland}, \code{night\_zanzibar}
+
+Biến phân loại (\textbf{categorical}): \code{country}, \code{age\_group}, \code{travel\_with}, \code{purpose}, \code{main\_activity}, \code{info\_source}, \code{tour\_arrangement}, \code{package\_*} (8 biến), \code{payment\_mode}, \code{first\_trip\_tz}, \code{most\_impressing}
+\end{mydef}
+
+\subsubsection{Missing Values}
+
+Sau khi thực hiện quá trình thống kê mô tả thì nhóm đã có được các thống kê về `missing values` như sau:
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|r|r|}
+        \hline
+        \textbf{Cột} & \textbf{Số lượng} & \textbf{Phần trăm} \\
+        \hline
+        \code{travel\_with} & 1,114 & 23.1\% \\
+        \code{most\_impressing} & 313 & 6.5\% \\
+        \code{total\_male} & 5 & 0.1\% \\
+        \code{total\_female} & 3 & 0.06\% \\
+        \hline
+    \end{tabular}
+    \caption{Phân tích giá trị missing trong dataset huấn luyện.}
+    \label{tab:missing_values}
+\end{table}
+
+Quan sát bảng trên cho thấy rằng \code{travel\_with} chứa 23.1\% missing values, trong khi \code{most\_impressing} có 6.5\%. Và các cột còn lại như \code{total\_male} và \code{total\_female} có mức độ missing cực kỳ nhỏ (dưới 1\%), từ đó ta sẽ xử lý chúng bằng phương pháp imputation phù hợp để đảm bảo không làm mất thông tin quan trọng.
+
+% ============================================================
+\subsection{Phân Tích Dữ Liệu Khám Phá (EDA)}
+
+Tukey \cite{tukey1977} định nghĩa EDA là quá trình dùng các công cụ thống kê và trực quan hóa để hiểu cấu trúc của dữ liệu trước khi áp đặt bất kỳ mô hình nào. Trong hồi quy tuyến tính, EDA đóng vai trò đặc biệt quan trọng vì nó giúp kiểm tra sơ bộ các giả thiết Gauss–Markov (GM1–GM5) ngay từ đầu, từ đó định hướng các quyết định tiền xử lý và lựa chọn mô hình \cite{wooldridge2013}. Nhóm đã xây dựng script \texttt{part2/src/main.py} để thực hiện toàn bộ quá trình EDA, bao gồm phân tích phân bố biến mục tiêu, khám phá tương quan, kiểm tra đa cộng tuyến và phát hiện data shift.
+
+\subsubsection{Phân Bố Biến Mục Tiêu}
+
+Phân tích phân bố biến mục tiêu $y$ là bước đầu tiên vì phân bố của $y$ ảnh hưởng trực tiếp đến giả thiết GM5 ($\varepsilon \mid \mathbf{X} \sim \mathcal{N}(0, \sigma^2\mathbf{I})$). Khi $y$ bị lệch mạnh (high skewness), phần dư $\varepsilon$ cũng sẽ không chuẩn, làm mất hiệu lực của kiểm định $t$ và $F$, đồng thời kéo lệch ước lượng OLS do hàm mất mát $\text{RSS} = \|\mathbf{y} - \mathbf{X}\hat{\beta}\|^2$ nhạy cảm với giá trị cực đoan \cite{wooldridge2013}. James et al.\ \cite{james2013} khuyến nghị kiểm tra phân bố mục tiêu và áp dụng biến đổi dữ liệu (log, sqrt) khi cần thiết để đưa $y$ về gần phân bố chuẩn trước khi mô hình hóa.
+
+Hình \ref{fig:target_distribution} trình bày phân tích chi tiết về phân bố của biến mục tiêu \code{total\_cost}. Biểu đồ bên trái (original distribution) cho thấy phân bố có độ lệch cao (skewness = 5.14) với hầu hết du khách chi tiêu ít hơn 10 triệu TZS, nhưng một số du khách lại chi tiêu rất cao (lên đến 99 triệu TZS), tạo ra một đuôi dài phía bên phải. Biểu đồ ở giữa áp dụng phép biến đổi logarit (\texttt{log1p}) để giảm độ lệch xuống 0.54, giúp dữ liệu gần với phân bố chuẩn hơn. Biểu đồ boxplot ở bên phải hiển thị các outliers theo quy tắc IQR.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{images/fig_target_distribution.png}
+\caption{Phân tích biến mục tiêu \code{total\_cost}: (Trái) Phân bố gốc có độ lệch cao (skewness = 5.14); (Giữa) Phân bố sau biến đổi log1p với độ lệch giảm xuống 0.54; (Phải) Boxplot hiển thị outliers theo IQR.}
+\label{fig:target_distribution}
+\end{figure}
+
+Vì Skewness = 5.14 vi phạm rõ ràng giả thiết GM5, do đó ta áp dụng biến đổi \texttt{log1p($y$)} trước khi huấn luyện. Sau biến đổi, skewness giảm xuống 0.54, đưa $y$ gần phân bố chuẩn, đảm bảo tính BLUE của ước lượng OLS và hiệu lực của các kiểm định thống kê. Ngoài ra, số lượng lớn outliers trong boxplot gợi ý đưa Huber Regression vào danh sách so sánh để đánh giá xem mô hình robust có cải thiện đáng kể so với OLS hay không.
+
+% ----------------------------------------------------------------
+\subsubsection{Phân Bố Các Biến Số}
+
+Bên cạnh biến mục tiêu, việc phân tích phân bố của từng biến đầu vào cũng là bước cần thiết trong EDA vì một biến có phân bố lệch mạnh hoặc chứa nhiều outliers sẽ ảnh hưởng tiêu cực đến chất lượng mô hình theo hai hướng khác nhau. Về mặt tiền xử lý, phân bố lệch làm giảm hiệu quả của chuẩn hóa z-score vì phép biến đổi này giả định dữ liệu phân bố đối xứng quanh trung bình. Về mặt ước lượng, outliers trong biến đầu vào $\mathbf{X}$ có thể gián tiếp kéo lệch $\hat{\beta} = (\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\mathbf{y}$ vì ma trận $\mathbf{X}^T\mathbf{X}$ sẽ bị chi phối bởi các hàng chứa giá trị cực đoan, khiến ước lượng nghiêng về phía phục vụ các điểm bất thường đó \cite{wooldridge2013}. Tukey \cite{tukey1977} đề xuất phân tích histogram của từng biến như bước bắt buộc để hiểu cấu trúc phân bố và phát hiện các nhóm ẩn (mixture distributions) trước khi mô hình hóa.
+
+Hình \ref{fig:numeric_histograms} thể hiện phân bố của 4 biến numeric chính trong dataset. Các biến \code{total\_female} và \code{total\_male} tập trung mạnh ở giá trị thấp với đại đa số quan sát dưới 5 người, phản ánh rằng phần lớn du khách đi một mình hoặc trong nhóm rất nhỏ. Ngược lại, \code{night\_mainland} và \code{night\_zanzibar} có phân bố trải rộng từ vài đêm đến hơn 60 đêm, gợi ý rằng nhiều phân khúc du khách khác nhau cùng tồn tại trong dataset, từ những chuyến đi ngắn ngày đến các hành trình dài.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{images/fig_numeric_histograms.png}
+\caption{Phân bố của 4 biến numeric: \code{total\_female} và \code{total\_male} tập trung ở giá trị thấp; \code{night\_mainland} và \code{night\_zanzibar} có phân bố rộng với đuôi phải dài.}
+\label{fig:numeric_histograms}
+\end{figure}
+
+Vì cả 4 biến đều có phân bố lệch phải rõ rệt, bước chuẩn hóa z-score là cần thiết trong pipeline tiền xử lý để đưa các biến về cùng thang đo và đảm bảo penalty của Ridge và Lasso được áp dụng công bằng lên tất cả các hệ số. Ngoài ra, phân bố đa đỉnh và đuôi dài của \code{night\_mainland} gợi ý rằng mối quan hệ giữa biến này và \code{total\_cost} có thể mang tính phi tuyến, và đây là một trong những lý do để đưa Polynomial Regression cùng với các mô hình ensemble vào danh sách so sánh.
+
+% ----------------------------------------------------------------
+\subsubsection{Ma Trận Tương Quan}
+
+Ma trận tương quan Pearson giúp phát hiện đồng thời hai vấn đề quan trọng trong hồi quy tuyến tính. Vấn đề thứ nhất là multicollinearity, tức là khi hai biến đầu vào có $|r| > 0.8$ thì chúng tuyến tính phụ thuộc vào nhau, vi phạm giả thiết GM2 và làm phồng phương sai ước lượng $\hat{\beta}$, khiến các kiểm định $t$ trở nên không đáng tin cậy. Vấn đề thứ hai là tiềm năng dự đoán tuyến tính của từng feature đối với target, cụ thể là cột cuối của heatmap biểu diễn $r(X_j, y)$ cho từng biến $j$: khi $|r(X_j, y)| > 0.5$, biến đó có mối liên hệ tuyến tính mạnh với $y$ và OLS có thể khai thác trực tiếp; còn khi $|r(X_j, y)| < 0.2$, điều đó không có nghĩa là biến đó vô dụng, bởi vì nó có thể phản ánh hai tình huống hoàn toàn khác nhau: hoặc là biến thực sự không liên quan đến $y$, hoặc là mối quan hệ tồn tại nhưng mang tính phi tuyến nên không được nắm bắt bởi hệ số Pearson \cite{james2013}. Greene \cite{greene2012} nhấn mạnh rằng bước phân tích này cần được thực hiện trước khi lựa chọn mô hình để định hướng sớm: nếu tất cả $|r(X_j, y)|$ đều thấp, cần xem xét các mô hình phi tuyến thay vì chỉ dựa vào OLS thuần túy.
+
+Hình \ref{fig:correlation_heatmap_full} hiển thị ma trận tương quan Pearson đầy đủ giữa tất cả các biến numeric và biến mục tiêu. Tương quan dương (màu đỏ) chỉ ra mối liên hệ cùng chiều, trong khi tương quan âm (màu xanh) chỉ ra mối liên hệ ngược chiều. \code{night\_mainland} và \code{night\_zanzibar} có tương quan dương vừa phải với \code{total\_cost} ở mức khoảng 0.20 đến 0.24, cho thấy thời gian lưu trú dài hơn thường đi kèm với chi phí cao hơn. Đáng chú ý là không có cặp biến đầu vào nào đạt $|r| > 0.5$.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.90\textwidth]{images/fig_correlation_heatmap.png}
+\caption{Ma trận tương quan Pearson của các biến numeric và target. Không có cặp biến đầu vào nào có $|r| > 0.5$, cho thấy không có multicollinearity nghiêm trọng giữa các biến số.}
+\label{fig:correlation_heatmap_full}
+\end{figure}
+
+Việc không có cặp biến đầu vào nào đạt $|r| > 0.5$ cho thấy không có dấu hiệu multicollinearity nghiêm trọng từ phân tích tương quan đơn biến, dù vậy kết luận này cần được xác nhận thêm bằng VIF vì tương quan theo cặp không phát hiện được multicollinearity bậc cao giữa nhiều biến cùng lúc. Tuy nhiên, điều đáng lưu ý hơn là tương quan của tất cả biến số với target đều thấp hơn 0.25, gợi ý rằng sức mạnh dự đoán tuyến tính chủ yếu đến từ các biến phân loại như quốc gia xuất phát và hình thức tour sau khi được mã hóa, chứ không phải từ các biến số. Đây là cơ sở để ưu tiên one-hot encoding kỹ lưỡng cho các biến phân loại trong bước tiền xử lý tiếp theo.
+
+% ----------------------------------------------------------------
+\subsubsection{Phân Tích Outliers Qua Boxplot}
+
+Mặc dù histogram đã cho thấy phân bố tổng quan của từng biến, boxplot cung cấp thêm một góc nhìn cụ thể hơn về sự hiện diện và mức độ nghiêm trọng của outliers theo quy tắc $1.5 \times \text{IQR}$ do Tukey \cite{tukey1977} đề xuất. Bước này đặc biệt quan trọng trong bối cảnh OLS vì phương pháp này tối thiểu hóa tổng bình phương phần dư $\|\mathbf{y} - \mathbf{X}\hat{\beta}\|^2$, nghĩa là mỗi outlier đóng góp theo bình phương khoảng cách vào hàm mất mát và do đó có ảnh hưởng không cân xứng so với các quan sát bình thường \cite{wooldridge2013}. Nói cụ thể hơn, một quan sát có giá trị gấp đôi ngưỡng bình thường sẽ kéo ước lượng $\hat{\beta}$ lệch gấp bốn lần so với một quan sát bình thường, khiến outliers trở thành mối nguy hiểm tiềm ẩn mà histogram có thể bỏ sót nếu chọn thùng phân chia không phù hợp.
+
+Hình \ref{fig:eda_boxplots} trình bày boxplot cho 4 biến số chính. Các biến \code{total\_female} và \code{total\_male} có median gần bằng 0 với nhiều outliers đơn lẻ phía trên, phản ánh rằng phần lớn quan sát là du khách đơn lẻ trong khi một số đoàn lớn tạo ra các giá trị cực đoan. Đáng chú ý hơn, \code{night\_mainland} và \code{night\_zanzibar} có IQR rộng và outliers nghiêm trọng hơn, với một số du khách lưu trú hơn 60 đêm, gấp nhiều lần so với giá trị trung vị của toàn bộ tập dữ liệu.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{images/day1_fig2_boxplots.png}
+\caption{Boxplot của 4 biến numeric. \code{total\_female} và \code{total\_male} có median gần 0 với nhiều điểm ngoại lệ; \code{night\_mainland} và \code{night\_zanzibar} có IQR rộng và outliers nghiêm trọng.}
+\label{fig:eda_boxplots}
+\end{figure}
+
+Dựa vào mức độ outliers quan sát được, ta đưa ra quyết định đưa Huber Regression vào danh sách so sánh cùng với OLS. Khác với OLS, Huber Regression sử dụng hàm mất mát kết hợp giữa bình phương cho các quan sát nằm trong vùng bình thường và tuyến tính cho các quan sát vượt ngưỡng $\varepsilon$, từ đó giảm ảnh hưởng của outliers một cách có kiểm soát. Kết quả so sánh giữa OLS và Huber Regression sau này sẽ cho thấy mức độ mà outliers thực sự làm lệch ước lượng trên bộ dữ liệu này.
+
+% ----------------------------------------------------------------
+\subsubsection{Kiểm Tra Đa Cộng Tuyến (VIF)}
+
+Phân tích tương quan Pearson theo cặp chỉ phát hiện được multicollinearity giữa hai biến, trong khi trên thực tế multicollinearity có thể xuất hiện theo kiểu đa biến, tức là một biến có thể được xấp xỉ tốt bởi tổ hợp tuyến tính của nhiều biến khác ngay cả khi không có cặp nào tương quan cao với nhau. Để kiểm tra toàn diện hơn, ta sử dụng Variance Inflation Factor (VIF), được định nghĩa là:
+\[
+\text{VIF}_j = \frac{1}{1 - R_j^2}
+\]
+trong đó $R_j^2$ là hệ số xác định khi hồi quy biến $j$ lên tất cả các biến còn lại \cite{marquardt1970}. Khi VIF vượt ngưỡng 10, phương sai của $\hat{\beta}_j$ bị phồng đến mức ước lượng mất ổn định và kiểm định $t$ không còn đáng tin cậy \cite{wooldridge2013}. Ngoài ra, VIF cao còn là lý do chính dẫn đến việc áp dụng Ridge Regression, vì penalty $\lambda\|\boldsymbol{\beta}\|^2$ giúp ổn định $(\mathbf{X}^T\mathbf{X} + \lambda\mathbf{I})^{-1}$ khi $\mathbf{X}^T\mathbf{X}$ gần suy biến do multicollinearity, do đó kết quả VIF sẽ trực tiếp ảnh hưởng đến cách chọn $\lambda$ phù hợp \cite{hoerl1970}.
+
+Hình \ref{fig:vif_scores} hiển thị VIF cho các biến số sau chuẩn hóa, với hai ngưỡng cảnh báo VIF $= 5$ và VIF $= 10$ được đánh dấu bằng đường đứt nét. Toàn bộ biến số của dataset Tanzania Tourism đều có VIF dưới 2, cho thấy không có vấn đề đa cộng tuyến nào cần xử lý trong nhóm biến số.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/fig_vif_scores.png}
+\caption{VIF cho các biến numeric. Tất cả VIF $< 2$, thấp hơn nhiều so với ngưỡng cảnh báo 5 và 10, xác nhận không có đa cộng tuyến.}
+\label{fig:vif_scores}
+\end{figure}
+
+Kết quả VIF dưới 2 cho tất cả biến số xác nhận giả thiết GM2 được thỏa mãn với biên độ rộng, từ đó dẫn đến ba quyết định mô hình quan trọng. Trước hết, không cần loại bỏ bất kỳ biến nào do multicollinearity. Tiếp theo, vì không có phương sai bị phồng do đa cộng tuyến, Ridge Regression với $\lambda$ rất lớn là không cần thiết và giá trị $\lambda$ tối ưu sẽ được xác định qua cross-validation thay vì được đặt thủ công ở mức cao. Cuối cùng, OLS cơ bản là nền tảng so sánh hợp lệ vì phương sai ước lượng không bị phồng do cấu trúc dữ liệu.
+
+% ----------------------------------------------------------------
+\subsubsection{Tương Quan Các Biến với Mục Tiêu}
+
+Trong khi ma trận tương quan đầy đủ cung cấp cái nhìn tổng quan về mối quan hệ giữa tất cả các cặp biến, việc trực quan hóa riêng tương quan của từng biến với target giúp ta đánh giá nhanh tiềm năng dự đoán của từng feature theo nghĩa tuyến tính đơn biến. Cần lưu ý một giới hạn quan trọng của phân tích này: hệ số Pearson chỉ đo mối quan hệ tuyến tính và không nắm bắt được tương tác giữa các biến hay các hiệu ứng phi tuyến. Wooldridge \cite{wooldridge2013} lưu ý rằng một biến có tương quan thấp với target theo nghĩa đơn biến không nhất thiết phải loại bỏ, vì trong mô hình đa biến biến đó có thể đóng góp đáng kể sau khi kiểm soát các biến còn lại. Vì vậy, kết quả của bước này cần được xem như một tín hiệu định hướng chứ không phải tiêu chí loại biến, và cần được đối chiếu với bảng hệ số $\hat{\beta}$ của mô hình đầy đủ \cite{james2013}.
+
+Hình \ref{fig:correlation_target} trình bày tương quan Pearson giữa mỗi biến numeric và \code{total\_cost}. Các biến \code{night\_mainland} và \code{night\_zanzibar} có tương quan dương vừa phải ở mức khoảng 0.20 đến 0.24, xác nhận rằng thời gian lưu trú dài hơn thường đi kèm với chi phí cao hơn. Các biến \code{total\_female} và \code{total\_male} có tương quan yếu hơn đáng kể, chỉ ở mức dưới 0.10.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/fig_correlation_target.png}
+\caption{Tương quan Pearson của các biến numeric với \code{total\_cost}. Tương quan cao nhất chỉ đạt $\approx 0.24$ (\code{night\_mainland}), cho thấy sức mạnh dự đoán tuyến tính tổng thể của biến số là hạn chế.}
+\label{fig:correlation_target}
+\end{figure}
+
+Tất cả biến số đều có tương quan đơn biến với target dưới 0.25, từ đó ta có thể rút ra hai nhận định quan trọng định hướng cho việc lựa chọn mô hình. Nhận định thứ nhất là sức mạnh dự đoán tuyến tính của dataset chủ yếu đến từ các biến phân loại như quốc gia xuất phát hay hình thức tour sau khi được mã hóa one-hot, chứ không phải từ các biến số thuần túy. Nhận định thứ hai là mối quan hệ giữa biến số và target, dù tương quan Pearson thấp, vẫn có thể tồn tại theo nghĩa phi tuyến mà hệ số Pearson không nắm bắt được. Hai nhận định này cộng lại là cơ sở lý luận để đưa Polynomial Regression và các mô hình ensemble như Random Forest và Gradient Boosting vào danh sách mô hình so sánh, bên cạnh các mô hình tuyến tính.
+
+% ----------------------------------------------------------------
+\subsubsection{Phát Hiện Data Shift (Kolmogorov--Smirnov Test)}
+
+Một giả định quan trọng nhưng thường bị bỏ qua trong thực hành là giả định rằng dữ liệu huấn luyện và dữ liệu kiểm tra đến từ cùng một phân bố, tức là $P_{\text{train}}(\mathbf{x}) = P_{\text{test}}(\mathbf{x})$. Khi giả định này bị vi phạm, hiện tượng được gọi là covariate shift xảy ra và mô hình đã huấn luyện trên tập train có thể không tổng quát hóa tốt sang tập test dù loss trên tập huấn luyện thấp, bởi vì mô hình đã học các quy luật phù hợp với phân bố của train nhưng phân bố đó không còn đúng trên test nữa \cite{james2013}. Để kiểm tra điều này một cách định lượng, ta áp dụng kiểm định Kolmogorov--Smirnov với giả thuyết $H_0$ rằng hai mẫu đến từ cùng phân bố, và bác bỏ $H_0$ khi p-value nhỏ hơn 0.05 \cite{massey1951}. Bước này cần thiết để xác nhận rằng các chỉ số đánh giá trên test set phản ánh khả năng tổng quát hóa thực sự của mô hình chứ không bị sai lệch bởi sự khác biệt phân bố giữa hai tập.
+
+Hình \ref{fig:ks_shift} hiển thị p-value của kiểm định cho từng biến numeric. Thanh xanh (p-value $\geq 0.05$) cho thấy phân bố giữa tập huấn luyện và tập kiểm tra là tương đồng, trong khi thanh đỏ (p-value $< 0.05$) cảnh báo sự khác biệt đáng kể về phân bố. Phần lớn các biến có phân bố tương đồng giữa hai tập, điều này tốt cho tính tin cậy của kết quả đánh giá mô hình.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/fig_ks_shift.png}
+\caption{Kiểm định Kolmogorov--Smirnov phát hiện data shift giữa tập huấn luyện và kiểm tra. Thanh xanh: không có shift (p $\geq 0.05$); thanh đỏ: shift có ý nghĩa thống kê (p $< 0.05$).}
+\label{fig:ks_shift}
+\end{figure}
+
+Vì phần lớn các biến có p-value vượt ngưỡng 0.05, phân bố train và test là tương đồng, và do đó các chỉ số MAE, RMSE và $R^2$ trên test set có thể được xem là đại diện đáng tin cậy cho hiệu suất thực tế của mô hình trong triển khai. Đối với những biến có thanh màu đỏ nếu có, cần ghi chú khi phân tích kết quả vì ước lượng hệ số $\hat{\beta}$ tương ứng có thể bị lệch trên tập kiểm tra do phân bố đầu vào thay đổi, dẫn đến khả năng hiệu suất thực tế thấp hơn so với số liệu trên test set.
+
+% ============================================================
+\subsection{Tiền Xử Lý Dữ Liệu}
+
+\subsubsection{Xử Lý Giá Trị Thiếu}
+
+Giá trị thiếu nếu không được xử lý sẽ vi phạm giả thiết GM2 vì ma trận $\mathbf{X}$ không đầy đủ hàng, đồng thời làm giảm kích thước tập dữ liệu nếu ta xóa toàn bộ các hàng thiếu (listwise deletion). Tuy nhiên, trước khi chọn phương pháp xử lý, điều quan trọng là phải phân tích cơ chế thiếu (missing data mechanism) của từng biến, vì mỗi cơ chế đòi hỏi một cách tiếp cận khác nhau \cite{wooldridge2013}. Cụ thể, có ba loại cơ chế: MCAR (Missing Completely At Random) khi xác suất thiếu hoàn toàn ngẫu nhiên và không phụ thuộc vào bất kỳ biến nào; MAR (Missing At Random) khi xác suất thiếu phụ thuộc vào các biến đã quan sát được nhưng không phụ thuộc vào chính giá trị bị thiếu đó; và MNAR (Missing Not At Random) khi xác suất thiếu phụ thuộc vào chính giá trị bị thiếu, đây là trường hợp phức tạp nhất và đòi hỏi mô hình hóa riêng.
+
+Đối với \code{total\_female} và \code{total\_male} chỉ thiếu dưới 1\% quan sát, cơ chế thiếu nhiều khả năng là MCAR vì đây là lỗi nhập liệu ngẫu nhiên, không có lý do có hệ thống nào khiến thông tin số lượng thành viên trong đoàn bị bỏ trống. Đối với \code{travel\_with} thiếu tới 23.1\%, cơ chế có thể là MAR: những du khách đi một mình có xu hướng bỏ qua câu hỏi này vì không có đồng hành nào để mô tả, do đó xác suất thiếu phụ thuộc vào các biến khác như số lượng thành viên đoàn. Còn \code{most\_impressing} thiếu 6.5\% cũng có thể là MAR vì du khách ít ấn tượng hơn có xu hướng bỏ qua câu hỏi mở này nhiều hơn. Trong cả hai trường hợp MAR và MCAR, phương pháp Mean/Mode Imputation là lựa chọn hợp lý vì nó không đưa ra thêm giả định mạnh về phân bố có điều kiện của giá trị thiếu, đồng thời dễ dàng đảm bảo nguyên tắc fit-on-train-transform-on-test để tránh data leakage.
+
+Cụ thể, với các biến numeric, ta điền giá trị thiếu bằng trung bình của cột tính trên tập huấn luyện, từ đó không làm thay đổi kỳ vọng toán học của biến: \code{total\_female} được điền bằng 0.93 cho 3 hàng thiếu và \code{total\_male} được điền bằng 1.01 cho 5 hàng thiếu. Với các biến categorical, ta điền bằng mode vì đây là giá trị bảo toàn phân bố tần suất gốc tốt nhất: \code{travel\_with} được điền bằng \textit{``Alone''} cho 1,114 hàng thiếu và \code{most\_impressing} được điền bằng \textit{``Friendly People''} cho 313 hàng thiếu. Sau bước này, tập huấn luyện hoàn toàn không còn giá trị thiếu, đảm bảo ma trận thiết kế $\mathbf{X}$ đầy đủ hàng và $\mathbf{X}^T\mathbf{X}$ có thể tính được.
+
+\subsubsection{Mã Hóa Biến Phân Loại}
+
+Hầu hết các thuật toán hồi quy tuyến tính, bao gồm OLS, Ridge và Lasso, hoạt động thông qua phép nhân ma trận $\mathbf{X}\boldsymbol{\beta}$ trong đó $\mathbf{X}$ phải là ma trận số thực. Do đó, 17 biến categorical trong dataset cần được chuyển đổi sang dạng số trước khi đưa vào mô hình. Khi đứng trước lựa chọn phương pháp mã hóa, ta cần cân nhắc giữa hai hướng phổ biến: ordinal encoding gán một số nguyên cho mỗi category theo một thứ tự nào đó, còn one-hot encoding tạo một cột nhị phân riêng cho mỗi category. Với dataset Tanzania Tourism, các biến categorical như \code{country}, \code{purpose} hay \code{main\_activity} không có thứ tự tự nhiên có ý nghĩa, vì vậy ordinal encoding sẽ tạo ra quan hệ số học giả tạo giữa các category, ví dụ ngầm giả định rằng quốc gia số 3 nằm giữa quốc gia số 2 và số 4 theo nghĩa nào đó \cite{james2013}. Do đó, one-hot encoding là lựa chọn phù hợp hơn vì nó cho phép mô hình học hệ số riêng biệt cho từng category mà không áp đặt thứ tự giả tạo nào.
+
+Sau khi áp dụng one-hot encoding cho 17 biến categorical, ví dụ biến \code{country} với hơn 70 quốc gia tạo ra hơn 70 cột nhị phân tương ứng, tổng số cột sinh ra từ bước mã hóa là 181. Kết hợp với 4 biến numeric ban đầu và 1 cột intercept, ma trận thiết kế $\mathbf{X}$ sau mã hóa có kích thước $4{,}809 \times 186$. Việc số lượng features tăng đột biến từ 4 lên 185 (chưa tính intercept) là hệ quả tất yếu của one-hot encoding và chính điều này đặt ra câu hỏi về overfitting, từ đó củng cố thêm lý do cần so sánh OLS với các mô hình có regularization trong bước tiếp theo.
+
+\subsubsection{Chuẩn Hóa Đặc Trưng}
+
+Chuẩn hóa các biến numeric là bước bắt buộc khi sử dụng các phương pháp regularization như Ridge và Lasso, bởi vì penalty $\lambda\|\boldsymbol{\beta}\|^2$ được tính trực tiếp trên không gian tham số và không phân biệt đơn vị đo lường. Nếu hai biến có thang đo khác nhau, chẳng hạn \code{night\_mainland} có phạm vi hàng chục đêm trong khi \code{total\_female} thường chỉ từ 0 đến 5 người, thì hệ số $\hat{\beta}$ của biến có thang đo lớn hơn sẽ tự nhiên nhỏ hơn và do đó bị penalize ít hơn, ngay cả khi biến đó không quan trọng hơn. Điều này làm sai lệch quá trình chọn biến của Lasso và làm mất ý nghĩa của hệ số trong phân tích feature importance \cite{hoerl1970}. Ngoài ra, chuẩn hóa còn giúp cho các hệ số $\hat{\beta}$ sau ước lượng có thể so sánh trực tiếp với nhau, từ đó phân tích tầm quan trọng của từng feature trở nên có ý nghĩa hơn \cite{james2013}.
+
+Ta áp dụng chuẩn hóa z-score theo công thức:
+
+\begin{equation}
+    x_{\text{scaled}} = \frac{x - \mu_{\text{train}}}{\sigma_{\text{train}}}
+\end{equation}
+
+trong đó $\mu_{\text{train}}$ và $\sigma_{\text{train}}$ lần lượt là trung bình và độ lệch chuẩn được tính \textit{chỉ trên tập huấn luyện}. Sau đó, cùng một cặp giá trị $(\mu_{\text{train}}, \sigma_{\text{train}})$ đó được dùng để transform cả tập kiểm tra, đảm bảo nguyên tắc không để thông tin từ test set rò rỉ vào quá trình huấn luyện. Chú ý rằng chuẩn hóa chỉ được áp dụng cho 4 biến numeric vì các biến one-hot đã ở thang đo nhị phân $\{0, 1\}$ và không cần chuẩn hóa thêm.
+
+\subsubsection{Dữ Liệu Sau Xử Lý}
+
+Sau khi hoàn thành ba bước tiền xử lý trên, ta thu được ma trận thiết kế $\mathbf{X}_{\text{train}} \in \mathbb{R}^{4809 \times 186}$ và $\mathbf{X}_{\text{test}} \in \mathbb{R}^{1601 \times 186}$, trong đó 186 cột bao gồm 1 cột intercept, 4 biến numeric đã chuẩn hóa và 181 cột one-hot từ 17 biến categorical. Tập dữ liệu sau xử lý không còn giá trị thiếu nào, tất cả biến numeric có trung bình 0 và phương sai 1, và toàn bộ biến categorical đã được chuyển về dạng nhị phân. Đặc biệt quan trọng là toàn bộ pipeline trên tuân theo nguyên tắc fit-on-train-transform-on-test: mọi thống kê dùng để impute, mọi category dùng để one-hot encode và mọi tham số dùng để chuẩn hóa đều được tính từ tập huấn luyện trước khi áp dụng lên tập kiểm tra, từ đó đảm bảo đánh giá mô hình trên test set phản ánh đúng khả năng tổng quát hóa trong thực tế.
+
+% ============================================================
+\subsection{Xây Dựng và Đánh Giá Mô Hình}
+
+Ba mô hình hồi quy được xây dựng theo thứ tự tăng dần về mức độ regularization: OLS không có penalty, Ridge với penalty L2, và Lasso với penalty L1. Mỗi mô hình giải quyết một khía cạnh cụ thể của vấn đề được phát hiện trong EDA, đặc biệt là nguy cơ overfitting do không gian feature có 185 chiều sau one-hot encoding. Toàn bộ quá trình huấn luyện được thực hiện trên $\mathbf{X}_{\text{train}} \in \mathbb{R}^{4809 \times 186}$ với biến mục tiêu đã được biến đổi log1p.
+
+% ----------------------------------------------------------------
+\subsubsection{Mô Hình 1: Ordinary Least Squares (OLS)}
+
+OLS là mô hình nền tảng (baseline) của hồi quy tuyến tính, giải bài toán tối thiểu hóa tổng bình phương phần dư (Residual Sum of Squares):
+
+\begin{equation}
+    \hat{\boldsymbol{\beta}}_{\text{OLS}} = \arg\min_{\boldsymbol{\beta}} \|\mathbf{y} - \mathbf{X}\boldsymbol{\beta}\|_2^2
+\end{equation}
+
+Vì hàm mục tiêu là bậc hai và lồi (convex) theo $\boldsymbol{\beta}$, điều kiện đạo hàm bằng 0 cho ra hệ phương trình pháp tắc (normal equations) $\mathbf{X}^T\mathbf{X}\hat{\boldsymbol{\beta}} = \mathbf{X}^T\mathbf{y}$. Khi $\mathbf{X}^T\mathbf{X}$ khả nghịch, bài toán có nghiệm dạng đóng:
+
+\begin{equation}
+    \hat{\boldsymbol{\beta}}_{\text{OLS}} = (\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\mathbf{y}
+\end{equation}
+
+Theo Định lý Gauss–Markov đã chứng minh ở Phần 1, $\hat{\boldsymbol{\beta}}_{\text{OLS}}$ là ước lượng tuyến tính không chệch có phương sai nhỏ nhất (BLUE) khi các giả thiết GM1–GM4 thỏa mãn. Tuy nhiên trong bối cảnh ứng dụng này, với 185 feature và chỉ 4{,}809 quan sát (tỷ lệ $n/p \approx 26$), tính BLUE không đủ để ngăn chặn overfitting: mô hình có đủ tự do để fit cả noise lẫn signal trong dữ liệu huấn luyện, dẫn đến hiệu suất kém trên dữ liệu mới \cite{james2013}. Vì lý do này, OLS được dùng làm baseline để so sánh với các mô hình có regularization.
+
+% ----------------------------------------------------------------
+\subsubsection{Mô Hình 2: Ridge Regression}
+
+Ridge Regression, được đề xuất bởi Hoerl và Kennard \cite{hoerl1970}, bổ sung một penalty L2 vào hàm mất mát của OLS nhằm kiểm soát độ lớn của hệ số:
+
+\begin{equation}
+    \hat{\boldsymbol{\beta}}_{\text{Ridge}} = \arg\min_{\boldsymbol{\beta}} \left\{ \|\mathbf{y} - \mathbf{X}\boldsymbol{\beta}\|_2^2 + \lambda\|\boldsymbol{\beta}\|_2^2 \right\}
+\end{equation}
+
+Penalty $\lambda\|\boldsymbol{\beta}\|_2^2$ ép buộc các hệ số không được quá lớn, từ đó giảm phương sai của ước lượng và đánh đổi bằng một lượng bias nhỏ. Nhờ dạng bậc hai của penalty L2, bài toán tối ưu vẫn có nghiệm dạng đóng:
+
+\begin{equation}
+    \hat{\boldsymbol{\beta}}_{\text{Ridge}} = (\mathbf{X}^T\mathbf{X} + \lambda\mathbf{I})^{-1}\mathbf{X}^T\mathbf{y}
+\end{equation}
+
+Ma trận $(\mathbf{X}^T\mathbf{X} + \lambda\mathbf{I})$ luôn khả nghịch với mọi $\lambda > 0$, ngay cả khi $\mathbf{X}^T\mathbf{X}$ gần suy biến, đây là ưu điểm quan trọng về mặt số học. Về mặt hình học, Ridge tương đương với bài toán tối ưu có ràng buộc $\|\boldsymbol{\beta}\|_2^2 \leq t$: nghiệm co lại về phía gốc tọa độ theo mọi hướng nhưng không đặt hệ số nào chính xác bằng 0. Tham số $\lambda = 100$ được lựa chọn qua 5-fold cross-validation trên lưới $\{1, 10, 100, 1000, 10000\}$, trong đó $\lambda = 100$ đạt CV $R^2$ cao nhất là $0.3501$ (chi tiết tại mục~\ref{subsec:cv}).
+
+% ----------------------------------------------------------------
+\subsubsection{Mô Hình 3: Lasso Regression}
+
+Lasso (Least Absolute Shrinkage and Selection Operator), được đề xuất bởi Tibshirani \cite{tibshirani1996}, thay penalty L2 của Ridge bằng penalty L1:
+
+\begin{equation}
+    \hat{\boldsymbol{\beta}}_{\text{Lasso}} = \arg\min_{\boldsymbol{\beta}} \left\{ \|\mathbf{y} - \mathbf{X}\boldsymbol{\beta}\|_2^2 + \alpha\|\boldsymbol{\beta}\|_1 \right\}
+\end{equation}
+
+Sự khác biệt căn bản so với Ridge nằm ở hình học của vùng ràng buộc: penalty L1 tạo ra một hình thoi (L1-ball) với các đỉnh nhọn nằm trên các trục tọa độ. Khi vùng đẳng mức của hàm mất mát tiếp xúc với hình thoi, giao điểm thường rơi đúng vào một đỉnh nhọn, khiến một số hệ số bằng chính xác bằng 0 \cite{tibshirani1996}. Tính chất này biến Lasso thành công cụ feature selection tự động: những feature không đóng góp đủ để bù lại chi phí penalty $\alpha|\beta_j|$ sẽ bị loại hoàn toàn.
+
+Khác với OLS và Ridge, hàm mục tiêu của Lasso chứa chuẩn L1 không khả vi tại gốc tọa độ nên không tồn tại nghiệm dạng đóng. Thuật toán Coordinate Descent được sử dụng để tìm nghiệm: tại mỗi bước lặp, từng hệ số $\beta_j$ được cập nhật bằng toán tử soft-threshold trong khi giữ nguyên tất cả các hệ số còn lại.
+
+\begin{algorithm}[H]
+\caption{Coordinate Descent cho Lasso}
+\begin{algorithmic}[1]
+\Require $\mathbf{X} \in \mathbb{R}^{n \times p}$,\; $\mathbf{y} \in \mathbb{R}^n$,\; $\alpha > 0$,\; ngưỡng hội tụ $\varepsilon > 0$
+\Ensure $\hat{\boldsymbol{\beta}} \in \mathbb{R}^p$ (sparse solution)
+\State $\boldsymbol{\beta} \leftarrow \mathbf{0}$ \Comment{khởi tạo tất cả hệ số bằng 0}
+\Repeat
+    \State $\boldsymbol{\beta}_{\text{old}} \leftarrow \boldsymbol{\beta}$
+    \For{$j = 1$ \textbf{to} $p$}
+        \State $\rho_j \leftarrow \mathbf{x}_j^T\!\left(\mathbf{y} - \mathbf{X}_{-j}\boldsymbol{\beta}_{-j}\right) / n$ \Comment{partial residual correlation}
+        \State $\hat{\beta}_j \leftarrow \mathcal{S}(\rho_j,\; \alpha) \;/\; \left(\|\mathbf{x}_j\|^2 / n\right)$ \Comment{soft-threshold update}
+    \EndFor
+\Until{$\|\boldsymbol{\beta} - \boldsymbol{\beta}_{\text{old}}\|_2 < \varepsilon$}
+\State \Return $\boldsymbol{\beta}$
+\end{algorithmic}
+\end{algorithm}
+\noindent\textit{Toán tử soft-threshold:}\; $\mathcal{S}(z,\,\alpha) = \mathrm{sign}(z)\cdot\max(|z| - \alpha,\;0)$
+
+Với $\alpha = 100$, Lasso đặt 24 trong 186 hệ số về đúng 0, chỉ giữ lại 162 feature. Các feature bị loại bỏ thường là những quốc gia xuất hiện rất ít lần trong tập dữ liệu, nơi mà ước lượng hệ số không đủ độ tin cậy thống kê để vượt qua ngưỡng penalty.
+
+% ----------------------------------------------------------------
+\subsubsection{Đánh Giá và So Sánh Các Mô Hình}
+
+Để so sánh khách quan ba mô hình, ta đánh giá trên hai tiêu chí bổ sung cho nhau: hiệu năng trên tập huấn luyện phản ánh mức độ fit dữ liệu, và CV $R^2$ qua 5-fold cross-validation phản ánh khả năng tổng quát hóa sang dữ liệu chưa thấy. Bảng \ref{tab:model_comparison} tổng hợp kết quả theo định dạng so sánh baseline chuẩn trong các bài báo học máy.
+
+\begin{table}[H]
+\centering
+\caption{So sánh hiệu năng của ba mô hình hồi quy trên dataset Tanzania Tourism (đơn vị MAE và RMSE là TZS). Giá trị in đậm là tốt nhất theo từng cột. CV $R^2$ báo cáo mean $\pm$ std qua 5 fold; Lasso chưa được đánh giá qua CV trong thí nghiệm này.}
+\label{tab:model_comparison}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+\textbf{Mô hình} & \textbf{Tham số} & \textbf{Train MAE} & \textbf{Train RMSE} & \textbf{Train $R^2$} & \textbf{CV $R^2$} & \textbf{Coef.\ $\neq 0$} \\
+\midrule
+OLS    & --              & 5{,}645{,}164          & 9{,}550{,}144          & \textbf{0.3896} & $0.3395_{\ \pm\ 0.036}$ & 186 / 186 \\
+Ridge  & $\lambda = 100$ & \textbf{5{,}560{,}692} & 9{,}636{,}547          & 0.3785          & $\mathbf{0.3501}_{\ \pm\ 0.038}$ & 186 / 186 \\
+Lasso  & $\alpha  = 100$ & 5{,}645{,}826          & \textbf{9{,}550{,}144} & \textbf{0.3896} & --                      & 162 / 186 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Từ Bảng \ref{tab:model_comparison}, có thể rút ra ba nhận định. Thứ nhất, OLS đạt Train $R^2$ cao nhất (0.3896) nhưng CV $R^2$ thấp nhất (0.3395), với khoảng cách $\Delta R^2 = 0.050$ giữa train và CV: đây là dấu hiệu rõ ràng của overfitting, mô hình học quá sát dữ liệu huấn luyện nhưng kém tổng quát hóa. Thứ hai, Ridge đạt CV $R^2$ cao nhất (0.3501) với khoảng cách train–CV thu hẹp còn 0.028, cho thấy penalty L2 đã kiểm soát overfitting hiệu quả hơn; Ridge được chọn làm mô hình chính cho các phân tích tiếp theo. Thứ ba, Lasso đạt cùng Train $R^2$ với OLS nhưng chỉ với 162/186 feature có hệ số khác 0, cung cấp một mô hình thưa và dễ diễn giải hơn mà không mất accuracy trên tập huấn luyện.
+
+% ============================================================
+\subsection{Cross-Validation và Lựa Chọn Siêu Tham Số}
+\label{subsec:cv}
+
+Đánh giá hiệu năng mô hình trên một lần phân chia train/test duy nhất có thể bị ảnh hưởng nhiều bởi cách phân chia ngẫu nhiên đó, khiến ước lượng không ổn định và có thể lạc quan hoặc bi quan hơn thực tế. K-fold cross-validation khắc phục vấn đề này bằng cách chia dữ liệu thành $k$ fold bằng nhau, thực hiện $k$ lần huấn luyện trong đó mỗi fold lần lượt đóng vai trò tập validation, từ đó thu được ước lượng hiệu năng có độ tin cậy cao hơn nhiều \cite{james2013}. Trong nghiên cứu này, CV còn đóng vai trò quan trọng hơn: đây là công cụ duy nhất để chọn $\lambda$ cho Ridge một cách khách quan, vì nếu dùng train loss để chọn thì mô hình sẽ luôn ưu tiên $\lambda$ nhỏ hơn do penalty nhỏ hơn cho train loss thấp hơn, dù điều đó không phản ánh khả năng tổng quát hóa thực sự.
+
+\subsubsection{K-Fold Cross-Validation}
+
+\begin{algorithm}[H]
+\caption{K-Fold Cross-Validation}
+\begin{algorithmic}[1]
+\Require dataset $\mathcal{D} = \{(\mathbf{x}_i, y_i)\}_{i=1}^n$, model $\mathcal{M}$, số fold $k = 5$, metric $f$
+\Ensure CV score: $\bar{s} \pm \sigma_s$ qua $k$ fold
+\State Phân chia $\mathcal{D}$ thành $k$ fold bằng nhau $\mathcal{F}_1, \ldots, \mathcal{F}_k$
+\For{$i = 1$ \textbf{to} $k$}
+    \State $\mathcal{D}_{\text{train}} \leftarrow \mathcal{D} \setminus \mathcal{F}_i$ \Comment{$k{-}1$ fold dùng để huấn luyện}
+    \State $\mathcal{D}_{\text{val}} \leftarrow \mathcal{F}_i$ \Comment{fold thứ $i$ dùng để đánh giá}
+    \State Huấn luyện $\mathcal{M}$ trên $\mathcal{D}_{\text{train}}$ thu được $\hat{\mathcal{M}}_i$
+    \State $s_i \leftarrow f\!\left(\hat{\mathcal{M}}_i,\; \mathcal{D}_{\text{val}}\right)$ \Comment{tính metric trên fold validation}
+\EndFor
+\State $\bar{s} \leftarrow \dfrac{1}{k}\displaystyle\sum_{i=1}^k s_i$,\quad $\sigma_s \leftarrow \mathrm{std}\!\left(\{s_i\}_{i=1}^k\right)$
+\State \Return $\bar{s} \pm \sigma_s$
+\end{algorithmic}
+\end{algorithm}
+
+Với $k = 5$, mỗi mô hình được huấn luyện và đánh giá 5 lần trên các phân chia dữ liệu khác nhau. Bảng \ref{tab:cv_results} trình bày kết quả cho OLS và Ridge với $\lambda = 100$.
+
+\begin{table}[H]
+\centering
+\caption{Kết quả 5-fold cross-validation (mean $\pm$ std, đơn vị MAE và RMSE là TZS). Giá trị tốt nhất in đậm.}
+\label{tab:cv_results}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Mô hình} & \textbf{Tham số} & \textbf{CV MAE} & \textbf{CV RMSE} & \textbf{CV $R^2$} \\
+\midrule
+OLS   & --              & $5{,}886{,}021 \pm 148{,}515$ & $9{,}908{,}397 \pm 571{,}182$ & $0.3395 \pm 0.036$ \\
+Ridge & $\lambda = 100$ & $\mathbf{5{,}636{,}144} \pm 200{,}197$ & $\mathbf{9{,}831{,}182} \pm 624{,}638$ & $\mathbf{0.3501} \pm 0.038$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Ridge với $\lambda = 100$ đạt CV $R^2 = 0.3501$, vượt trội hơn OLS ($0.3395$) và CV MAE thấp hơn đáng kể (5,636,144 so với 5,886,021 TZS). Mặc dù Ridge có độ lệch chuẩn CV $R^2$ cao hơn OLS một chút (0.038 so với 0.036), sự chênh lệch này nhỏ và không đủ để phủ nhận ưu thế về giá trị trung bình. Kết quả này xác nhận rằng penalty L2 đã cải thiện khả năng tổng quát hóa so với OLS không có regularization.
+
+\subsubsection{Lựa Chọn Siêu Tham Số $\lambda$ cho Ridge}
+
+Tham số $\lambda$ kiểm soát mức độ shrinkage: $\lambda$ quá nhỏ đưa mô hình về gần OLS và dễ overfitting, còn $\lambda$ quá lớn co tất cả hệ số về gần 0 và gây underfitting. Tham số tối ưu được xác định theo tiêu chí:
+
+\begin{equation}
+    \lambda^* = \arg\max_{\lambda \in \Lambda}\; \text{CV-}R^2(\lambda)
+\end{equation}
+
+trên lưới giá trị $\Lambda = \{1, 10, 100, 1{,}000, 10{,}000\}$. Bảng \ref{tab:lambda_selection} trình bày kết quả đầy đủ.
+
+\begin{table}[H]
+\centering
+\caption{CV $R^2$ của Ridge trên lưới giá trị $\lambda$. Giá trị tốt nhất in đậm.}
+\label{tab:lambda_selection}
+\begin{tabular}{@{}ccc@{}}
+\toprule
+$\lambda$ & CV $R^2$ & Nhận xét \\
+\midrule
+1         & 0.3434   & underfitting giảm nhẹ so với OLS \\
+10        & 0.3491   & \\
+\textbf{100}      & \textbf{0.3501} & $\lambda^*$ --- cân bằng bias-variance tối ưu \\
+1{,}000   & 0.3253   & bắt đầu underfitting \\
+10{,}000  & 0.2063   & underfitting nghiêm trọng \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+CV $R^2$ đạt cực đại tại $\lambda = 100$ và giảm dần ở cả hai hướng, phản ánh rõ ràng bias-variance tradeoff: vùng $\lambda < 100$ có phương sai cao do chưa kiểm soát được overfitting, còn vùng $\lambda > 100$ có bias cao do penalty quá mạnh làm mất khả năng biểu diễn của mô hình. Giá trị $\lambda^* = 100$ nằm tại điểm cân bằng tối ưu trên đường cong này.
+
+% ============================================================
+\subsection{Phân Tích Tầm Quan Trọng Đặc Trưng}
+
+Để hiểu mô hình dự đoán điều gì và dựa vào những thông tin nào, ta phân tích tầm quan trọng của từng feature thông qua độ lớn tuyệt đối của hệ số $|\hat{\beta}_j|$ trong mô hình OLS. Cách tiếp cận này hoạt động được vì tất cả biến số đã được chuẩn hóa z-score và biến categorical đã được one-hot encode về thang đo nhị phân, do đó $|\hat{\beta}_j|$ lớn phản ánh feature $j$ có ảnh hưởng thực sự lớn đến dự đoán chi phí chứ không phải do thang đo lớn hơn các feature khác \cite{james2013}.
+
+\subsubsection{Top 10 Đặc Trưng Quan Trọng Nhất}
+
+Bảng \ref{tab:feature_importance} xếp hạng 10 feature có $|\hat{\beta}_j|$ lớn nhất trong mô hình OLS.
+
+\begin{table}[H]
+\centering
+\caption{Top 10 feature có ảnh hưởng lớn nhất theo mô hình OLS, xếp hạng theo $|\hat{\beta}_j|$ giảm dần.}
+\label{tab:feature_importance}
+\begin{tabular}{@{}clc@{}}
+\toprule
+\textbf{Hạng} & \textbf{Feature} & $|\hat{\beta}_j|$ (TZS) \\
+\midrule
+1  & \code{country\_GEORGIA}    & 13{,}889{,}256 \\
+2  & \code{country\_COSTARICA}  & 13{,}023{,}821 \\
+3  & \code{country\_MADAGASCAR} & 10{,}511{,}733 \\
+4  & \code{country\_MORROCO}    & 9{,}876{,}223  \\
+5  & \code{country\_DOMINICA}   & 8{,}969{,}454  \\
+6  & \code{country\_ARGENTINA}  & 8{,}502{,}415  \\
+7  & \code{country\_PAKISTAN}   & 8{,}484{,}792  \\
+8  & \code{country\_NIGER}      & 8{,}476{,}597  \\
+9  & \code{country\_DENMARK}    & 8{,}225{,}280  \\
+10 & \code{country\_TUNISIA}    & 7{,}662{,}950  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Kết quả trong Bảng \ref{tab:feature_importance} cho thấy toàn bộ 10 feature quan trọng nhất đều là biến quốc gia (\code{country\_*}), với hệ số dao động từ 7.7 đến 13.9 triệu TZS, gấp nhiều lần các biến số như \code{night\_mainland} (hệ số khoảng 2-3 triệu TZS). Điều này xác nhận nhận định từ phân tích EDA rằng quốc gia xuất phát của du khách là yếu tố quyết định chi tiêu, có thể phản ánh sức mua khác nhau giữa các nền kinh tế hoặc các mẫu hành vi du lịch đặc trưng theo quốc tịch. Ngoài ra, độ lớn hệ số rất cao này trong OLS cũng là dấu hiệu của overfitting: khi một quốc gia có rất ít quan sát trong tập huấn luyện, OLS có xu hướng fit các điểm đó rất chặt và sinh ra hệ số cực đoan, trong khi Ridge sẽ co hệ số này lại về phía 0 một cách có kiểm soát.
+
+% ============================================================
+\subsection{Kết Quả Mô Hình Hồi Quy}
+
+\subsubsection{So Sánh Hệ Số Giữa Các Phương Pháp}
+
+Một trong những cách trực quan nhất để hiểu tác động của regularization là quan sát trực tiếp sự thay đổi của các hệ số $\hat{\boldsymbol{\beta}}$ giữa OLS, Ridge và Lasso. Nếu regularization hoạt động đúng như lý thuyết, ta kỳ vọng Ridge co lại tất cả hệ số về phía 0 một cách đồng đều, còn Lasso đặt một số hệ số về đúng 0 trong khi giữ nguyên các hệ số còn lại ở mức gần với OLS hơn \cite{tibshirani1996}. Phân tích này cũng giúp kiểm chứng xem mô hình đang dựa vào các feature có ý nghĩa kinh tế thực sự hay chỉ fitting vào noise.
+
+Hình \ref{fig:model_coef} so sánh hệ số của OLS, Ridge và Lasso cho 30 feature có magnitude lớn nhất. OLS có hệ số lớn nhất do không có penalty kiềm chế, phản ánh xu hướng overfitting khi fit quá sát các quốc gia ít xuất hiện. Ridge co lại toàn bộ hệ số một cách đồng đều, giúp ổn định ước lượng mà vẫn giữ đủ tất cả 186 feature. Lasso cũng co lại hệ số nhưng đồng thời loại bỏ hoàn toàn 24 feature kém quan trọng nhất, tạo ra mô hình thưa hơn và dễ diễn giải hơn.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{images/fig_coefficients_comparison.png}
+\caption{So sánh hệ số $\hat{\beta}_j$ của OLS, Ridge ($\lambda=100$) và Lasso ($\alpha=100$) cho 30 feature hàng đầu theo magnitude OLS. Ridge co đều tất cả hệ số (shrinkage), Lasso đặt một số hệ số về đúng 0 (sparsity).}
+\label{fig:model_coef}
+\end{figure}
+
+Hành vi co hệ số của Ridge và Lasso quan sát được trong hình hoàn toàn khớp với dự đoán lý thuyết, từ đó xác nhận rằng cả hai mô hình đang hoạt động đúng như thiết kế và penalty đang kiểm soát overfitting theo đúng cơ chế đã phân tích ở mục \ref{subsec:cv}.
+
+\subsubsection{Hiệu Năng Cross-Validation}
+
+Hình \ref{fig:cv_perf} trực quan hóa so sánh MAE, RMSE và $R^2$ qua 5-fold cross-validation cho ba mô hình, bổ sung cho bảng số liệu đã trình bày ở Bảng \ref{tab:cv_results}. Mục đích của biểu đồ này là làm rõ không chỉ giá trị trung bình mà còn độ biến động (error bar) của các chỉ số qua từng fold, từ đó đánh giá sự ổn định của từng mô hình.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{images/fig_cv_comparison.png}
+\caption{So sánh MAE, RMSE và $R^2$ trên 5-fold cross-validation cho OLS, Ridge và Lasso. Error bar thể hiện độ lệch chuẩn qua 5 fold. Ridge đạt CV $R^2$ cao nhất với error bar không lớn hơn đáng kể so với OLS.}
+\label{fig:cv_perf}
+\end{figure}
+
+Ridge đạt CV $R^2$ cao nhất và CV MAE thấp nhất, đồng thời duy trì error bar tương đương OLS, cho thấy sự ổn định không bị đánh đổi khi sử dụng regularization. Kết quả này củng cố quyết định chọn Ridge làm mô hình chính cho phân tích residual và feature importance.
+
+\subsubsection{Chẩn Đoán Phần Dư}
+
+Sau khi chọn Ridge là mô hình tốt nhất, bước tiếp theo là kiểm tra xem mô hình có vi phạm các giả thiết Gauss–Markov hay không thông qua phân tích phần dư $\hat{\boldsymbol{\varepsilon}} = \mathbf{y} - \mathbf{X}\hat{\boldsymbol{\beta}}_{\text{Ridge}}$. Phân tích này quan trọng vì nếu các giả thiết bị vi phạm, các suy luận thống kê (kiểm định $t$, khoảng tin cậy) sẽ không còn hiệu lực, dù ước lượng $\hat{\boldsymbol{\beta}}$ vẫn nhất quán \cite{wooldridge2013}. Bốn biểu đồ chẩn đoán chuẩn được dùng: Residuals vs Fitted kiểm tra tuyến tính và đồng phương sai (GM4); Normal Q-Q kiểm tra chuẩn tắc của phần dư (GM5); Scale-Location phát hiện heteroscedasticity; và Residuals vs Leverage xác định các quan sát có ảnh hưởng bất thường lớn.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{images/fig_residual_diagnostics.png}
+\caption{Bốn biểu đồ chẩn đoán phần dư cho mô hình Ridge ($\lambda = 100$): Residuals vs Fitted (tuyến tính, đồng phương sai), Normal Q-Q (chuẩn tắc), Scale-Location (heteroscedasticity) và Residuals vs Leverage (điểm có ảnh hưởng lớn).}
+\label{fig:residual_diag}
+\end{figure}
+
+Dựa vào Hình \ref{fig:residual_diag}, mô hình vi phạm một số giả thiết Gauss–Markov. Biểu đồ Residuals vs Fitted cho thấy phần dư không phân bố ngẫu nhiên đồng đều mà có xu hướng tăng theo giá trị fitted, gợi ý heteroscedasticity (vi phạm GM4). Normal Q-Q plot cho thấy phần dư lệch khỏi đường chuẩn ở hai đuôi, xác nhận phân phối phần dư không chuẩn (vi phạm GM5). Ngoài ra, một số điểm có leverage cao xuất hiện trong biểu đồ Residuals vs Leverage, tương ứng với các quốc gia hiếm gặp mà OLS đã fit quá chặt. Những vi phạm này là hệ quả trực tiếp của phân bố lệch phải trong \code{total\_cost} (đã phân tích ở mục EDA) và sự không đồng đều trong phân bố dữ liệu theo quốc gia, gợi ý rằng biến đổi log1p trên $y$ là cần thiết nhưng chưa đủ để loại bỏ hoàn toàn heteroscedasticity.
+
+% ============================================================
+\subsection{Triển Khai Python}
+
+Toàn bộ phần 2 được cài đặt trong thư mục \texttt{part2/src/} theo nguyên tắc separation of concerns: mỗi module chịu trách nhiệm duy nhất một bước trong pipeline và có thể được kiểm tra, thay thế hoặc mở rộng độc lập với các module còn lại. Module \texttt{data\_pipeline.py} xử lý toàn bộ quá trình tải dữ liệu, imputation, one-hot encoding và chuẩn hóa, đồng thời đảm bảo nguyên tắc fit-on-train-transform-on-test để tránh data leakage. Module \texttt{models.py} cài đặt ba lớp mô hình OLS, Ridge và Lasso với interface thống nhất, trong đó OLS và Ridge sử dụng nghiệm dạng đóng từ phần cài đặt ở Part 1, còn Lasso gọi thư viện scikit-learn vì cần thuật toán lặp. Module \texttt{evaluate.py} tập trung vào đánh giá: tính MAE, RMSE, $R^2$, thực hiện k-fold cross-validation và vẽ bốn biểu đồ chẩn đoán phần dư. Module \texttt{analysis.py} đảm nhiệm toàn bộ phần EDA bao gồm tính VIF, ma trận tương quan và kiểm định KS. Cuối cùng, \texttt{main.py} đóng vai trò orchestration script, gọi lần lượt tất cả các module theo đúng thứ tự và lưu kết quả ra thư mục \texttt{outputs/}.
+
+\subsubsection{Pipeline Tổng Thể}
+
+\begin{algorithm}[H]
+\caption{Data Fitting Pipeline --- Tanzania Tourism}
+\begin{algorithmic}[1]
+\Require \texttt{Train.csv}, \texttt{Test.csv}
+\Ensure Các mô hình đã huấn luyện, bảng metrics, biểu đồ chẩn đoán
+\Statex \textit{// ── Bước 1: Tiền xử lý ──}
+\State Tải \texttt{Train.csv} vào $\mathcal{D}_{\text{train}}$; xác định $\mathcal{N}$ (numeric) và $\mathcal{C}$ (categorical)
+\State $\mathbf{y} \leftarrow \log(1 + \code{total\_cost})$ \Comment{biến đổi mục tiêu giảm skewness}
+\For{$f \in \mathcal{N}$}
+    \State Điền missing bằng mean$_{\text{train}}(f)$; fit scaler $(\mu_f, \sigma_f)$ trên train
+\EndFor
+\For{$f \in \mathcal{C}$}
+    \State Điền missing bằng mode$_{\text{train}}(f)$; one-hot encode, lưu các category từ train
+\EndFor
+\State Transform \texttt{Test.csv} dùng $(\mu_f, \sigma_f)$ và category set đã fit \Comment{không refit trên test}
+\State $\mathbf{X}_{\text{train}}, \mathbf{X}_{\text{test}} \leftarrow$ ma trận thiết kế ($n \times 186$) sau xử lý
+\Statex \textit{// ── Bước 2: Xây dựng mô hình ──}
+\State Huấn luyện OLS: $\hat{\boldsymbol{\beta}}_{\text{OLS}} \leftarrow (\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\mathbf{y}$
+\For{$\lambda \in \{1, 10, 100, 1{,}000, 10{,}000\}$}
+    \State Tính $\text{CV-}R^2(\lambda)$ bằng 5-fold CV trên $\mathbf{X}_{\text{train}}$
+\EndFor
+\State $\lambda^* \leftarrow \arg\max_{\lambda}\,\text{CV-}R^2(\lambda)$ \Comment{$\lambda^* = 100$}
+\State Huấn luyện Ridge: $\hat{\boldsymbol{\beta}}_{\text{Ridge}} \leftarrow (\mathbf{X}^T\mathbf{X} + \lambda^*\mathbf{I})^{-1}\mathbf{X}^T\mathbf{y}$
+\State Huấn luyện Lasso ($\alpha = 100$) bằng Coordinate Descent \Comment{xem Algorithm 1}
+\Statex \textit{// ── Bước 3: Đánh giá ──}
+\For{$m \in \{\text{OLS},\, \text{Ridge},\, \text{Lasso}\}$}
+    \State Tính MAE, RMSE, $R^2$ trên train
+    \State Tính CV MAE, RMSE, $R^2$ qua 5-fold (xem Algorithm 2)
+\EndFor
+\State Vẽ bốn biểu đồ chẩn đoán phần dư cho Ridge \Comment{kiểm tra GM4, GM5}
+\Statex \textit{// ── Bước 4: Phân tích feature ──}
+\State Tính $\text{VIF}_j = 1/(1 - R_j^2)$ cho từng biến số \Comment{kiểm tra multicollinearity}
+\State Tính SHAP values $\phi_{ij} = \hat{\beta}_j(x_{ij} - \bar{x}_j)$ cho Ridge
+\State Xếp hạng feature theo $\text{mean}|\phi_j|$
+\State \Return $\hat{\boldsymbol{\beta}}_{\text{OLS}},\, \hat{\boldsymbol{\beta}}_{\text{Ridge}},\, \hat{\boldsymbol{\beta}}_{\text{Lasso}}$, bảng metrics, biểu đồ
+\end{algorithmic}
+\end{algorithm}
+
+% ============================================================
+\subsection{Phân Tích SHAP — Giải Thích Mô Hình}
+
+Một trong những thách thức cốt lõi khi triển khai mô hình hồi quy trong thực tế không chỉ là dự đoán chính xác mà còn là \textit{giải thích tại sao} mô hình đưa ra những dự đoán đó. Ta áp dụng phương pháp SHAP (SHapley Additive exPlanations) \cite{lundberg2017unified} để định lượng đóng góp của từng đặc trưng vào mỗi dự đoán, từ đó chuyển mô hình Ridge từ một ``hộp đen'' thành một công cụ minh bạch và có thể giải thích.
+
+\subsubsection{Nền Tảng Lý Thuyết của SHAP}
+
+SHAP dựa trên lý thuyết trò chơi hợp tác (cooperative game theory) của Shapley (1953). Với một dự đoán cụ thể $\hat{y}_i$, SHAP phân rã đóng góp thành tổng tuyến tính:
+
+\begin{equation}
+    \hat{y}_i = \phi_0 + \sum_{j=1}^{p} \phi_{ij}
+\end{equation}
+
+trong đó $\phi_0 = \mathbb{E}[\hat{y}]$ là giá trị baseline (kỳ vọng dự đoán trên toàn tập huấn luyện), và $\phi_{ij}$ là SHAP value của đặc trưng $j$ cho quan sát $i$. Đối với mô hình tuyến tính như Ridge Regression, SHAP value có dạng closed-form:
+
+\begin{equation}
+    \phi_{ij} = \hat{\beta}_j \cdot \bigl(x_{ij} - \mathbb{E}[x_j]\bigr)
+\end{equation}
+
+Điều này có nghĩa là SHAP value của đặc trưng $j$ cho quan sát $i$ bằng hệ số hồi quy nhân với độ lệch của giá trị đặc trưng so với giá trị trung bình của nó trên tập huấn luyện. Tính chất này đảm bảo bốn điều kiện công bằng (axioms): \textit{efficiency} (tổng SHAP bằng hiệu dự đoán và baseline), \textit{symmetry}, \textit{dummy}, và \textit{additivity}.
+
+\subsubsection{SHAP Summary Plot — Phân Bố Tác Động}
+
+Hình \ref{fig:shap_summary} trình bày SHAP summary plot (beeswarm) cho 20 đặc trưng có tầm quan trọng cao nhất. Mỗi điểm là một quan sát, vị trí trục hoành thể hiện SHAP value (tác động đến dự đoán tính bằng TZS), màu sắc từ xanh đậm (giá trị đặc trưng thấp) đến đỏ (giá trị cao).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{images/fig_shap_summary.png}
+\caption{SHAP Summary Plot (beeswarm) — Top 20 đặc trưng, Ridge Regression ($\lambda=100$). Mỗi điểm là một quan sát; vị trí trục hoành thể hiện tác động đến dự đoán (TZS); màu đỏ = giá trị đặc trưng cao, màu xanh = thấp. Sự phân tán của các điểm cho thấy tính không đồng nhất trong tác động.}
+\label{fig:shap_summary}
+\end{figure}
+
+Từ hình này ta rút ra những nhận xét quan trọng. Đặc trưng \code{tour\_arrangement\_Package Tour} có SHAP value dương lớn khi đặc trưng này bằng 1 (du khách đặt tour trọn gói), nghĩa là tour trọn gói làm tăng chi phí dự đoán trung bình hơn 1.2 triệu TZS so với baseline. Ngược lại, \code{travel\_with\_Alone} có SHAP value âm, phản ánh rằng du khách đi một mình có xu hướng chi tiêu ít hơn trung bình. Đặc biệt, các biến \code{total\_male} và \code{total\_female} cho thấy tác động phi tuyến: nhóm lớn thì chi phí tăng theo chiều hướng dương, do chi phí thuê xe và hướng dẫn viên được chia sẻ nhưng tổng tăng.
+
+\subsubsection{SHAP Feature Importance — Tầm Quan Trọng Tổng Thể}
+
+Hình \ref{fig:shap_importance} xếp hạng các đặc trưng theo giá trị $\text{mean}|\phi_j| = \frac{1}{n}\sum_{i=1}^{n}|\phi_{ij}|$, đây là thước đo tầm quan trọng tổng thể của đặc trưng trên toàn tập dữ liệu, khác với hệ số hồi quy $|\hat{\beta}_j|$ vốn không phản ánh phân phối của dữ liệu.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{images/fig_shap_importance.png}
+\caption{SHAP Feature Importance — Xếp hạng theo Mean $|\phi_j|$. \code{tour\_arrangement\_Package Tour} là đặc trưng ảnh hưởng nhất, theo sau là các biến nhóm du lịch (\code{travel\_with}) và nguồn thông tin (\code{info\_source}).}
+\label{fig:shap_importance}
+\end{figure}
+
+Đáng chú ý là thứ hạng SHAP khác biệt so với thứ hạng theo $|\hat{\beta}_j|$ thuần túy: trong khi top 10 đặc trưng theo $|\hat{\beta}|$ đều là biến \code{country\_*} (quốc gia), top SHAP lại được dẫn đầu bởi \code{tour\_arrangement} và \code{travel\_with}. Sự khác biệt này xảy ra vì biến quốc gia có hệ số lớn nhưng phân phối thưa thớt (mỗi quốc gia chỉ xuất hiện ít lần), do đó tác động trung bình $\text{mean}|\phi_j|$ thấp hơn. SHAP cung cấp cái nhìn toàn diện hơn về tầm quan trọng thực sự trong ngữ cảnh phân phối dữ liệu.
+
+\subsubsection{SHAP Waterfall — Giải Thích Từng Dự Đoán}
+
+Hình \ref{fig:shap_waterfall} minh họa ba trường hợp điển hình: dự đoán thấp (du khách ít chi tiêu), dự đoán trung bình (gần với median), và dự đoán cao (du khách chi tiêu nhiều). Mỗi waterfall chart phân rã dự đoán thành baseline cộng với đóng góp từng đặc trưng, trong đó các thanh đỏ là đặc trưng làm tăng dự đoán và thanh xanh là đặc trưng làm giảm dự đoán.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{images/fig_shap_waterfall.png}
+\caption{SHAP Waterfall Plot cho ba dự đoán điển hình: chi phí thấp, trung bình, và cao. Thanh đỏ = đặc trưng làm tăng dự đoán; thanh xanh = đặc trưng làm giảm dự đoán. Baseline là giá trị dự đoán trung bình $\mathbb{E}[\hat{y}]$ trên tập huấn luyện.}
+\label{fig:shap_waterfall}
+\end{figure}
+
+Phân tích waterfall giúp ta hiểu tại sao cùng một mô hình lại đưa ra dự đoán rất khác nhau cho các quan sát khác nhau. Đối với dự đoán chi phí thấp, các biến như \code{travel\_with\_Alone} và \code{tour\_arrangement\_Independent} đóng góp âm mạnh, kéo dự đoán xuống dưới baseline. Ngược lại, với dự đoán cao, \code{tour\_arrangement\_Package Tour} và \code{package\_transport\_int\_Yes} cùng đóng góp dương, cho thấy đây là những du khách đặt tour trọn gói quốc tế. Phân tích SHAP từ đó cung cấp nền tảng để các nhà quản lý du lịch Tanzania hiểu rõ hơn về nhóm khách hàng nào mang lại doanh thu cao nhất.
+
+% ============================================================
+\subsection{Kết Luận và Đề Xuất}
+
+\subsubsection{Kết Luận Chính}
+
+Nghiên cứu này đã áp dụng toàn bộ quy trình data fitting từ lý thuyết đến thực nghiệm trên bộ dữ liệu Tanzania Tourism Expenditure, bao gồm EDA, tiền xử lý, xây dựng ba mô hình hồi quy và đánh giá có hệ thống. Trong số ba mô hình được so sánh, Ridge Regression với $\lambda = 100$ đạt hiệu năng tổng quát hóa tốt nhất với CV $R^2 = 0.3501$, vượt trội hơn OLS (0.3395) và thể hiện rằng penalty L2 kiểm soát overfitting hiệu quả trên không gian feature 185 chiều. OLS, mặc dù đạt Train $R^2 = 0.3896$, cho thấy khoảng cách train–CV là 0.050 — dấu hiệu rõ ràng của overfitting khi số feature lớn so với số quan sát. Lasso với $\alpha = 100$ đạt cùng Train $R^2$ với OLS nhưng loại bỏ 24/186 feature về đúng 0, cung cấp một mô hình thưa hơn và dễ diễn giải hơn mà không mất accuracy trên tập huấn luyện.
+
+Về mặt ý nghĩa thực tiễn, phân tích hệ số và SHAP value đều chỉ ra rằng quốc gia xuất phát của du khách là yếu tố quyết định chi tiêu mạnh nhất, trong khi hình thức tour (trọn gói hay tự túc) và người đồng hành cũng có ảnh hưởng đáng kể. Tuy nhiên, CV $R^2 \approx 0.35$ cho thấy ba mô hình tuyến tính hiện tại chỉ giải thích được khoảng một phần ba phương sai của biến mục tiêu, gợi ý rằng cấu trúc dữ liệu có những mối quan hệ phi tuyến hoặc tương tác giữa các feature mà hồi quy tuyến tính không nắm bắt được.
+
+\subsubsection{Đề Xuất Cải Thiện}
+
+Hướng cải thiện đầu tiên và có khả năng tác động lớn nhất là feature engineering. Phân tích EDA cho thấy tương quan đơn biến giữa biến số và target rất thấp, gợi ý rằng các tương tác giữa feature có thể quan trọng hơn giá trị đơn lẻ của từng feature. Việc tạo các interaction feature giữa quốc gia và hình thức tour, hoặc giữa thời gian lưu trú và loại hoạt động chính, có thể cung cấp thêm tín hiệu tuyến tính mà các mô hình hiện tại có thể khai thác được. Bên cạnh đó, polynomial features bậc 2 cho các biến số như \code{night\_mainland} có thể giúp nắm bắt mối quan hệ phi tuyến phát hiện trong EDA.
+
+Hướng thứ hai là mở rộng danh sách mô hình so sánh. ElasticNet, kết hợp penalty L1 và L2 với tỷ lệ $\rho$, có thể cân bằng tốt hơn giữa sparsity của Lasso và ổn định của Ridge trong trường hợp các feature có tương quan cao với nhau. Kernel Ridge Regression với RBF kernel có thể nắm bắt các mối quan hệ phi tuyến mà phân tích tương quan EDA gợi ý, trong khi các mô hình ensemble như Gradient Boosting hoặc Random Forest không cần giả thiết tuyến tính và có thể phát hiện các tương tác phức tạp hơn.
+
+Hướng thứ ba liên quan đến xử lý dữ liệu. Với \code{travel\_with} có tới 23.1\% missing và cơ chế thiếu có thể là MAR, các phương pháp imputation phức tạp hơn như MICE (Multiple Imputation by Chained Equations) có thể cho kết quả tốt hơn Mean/Mode Imputation, đặc biệt nếu giá trị thiếu phụ thuộc vào các biến khác đã quan sát được. Ngoài ra, phân tích residual cho thấy còn heteroscedasticity sau biến đổi log1p, gợi ý cần thử các biến đổi thay thế hoặc áp dụng weighted least squares để khắc phục vi phạm GM4.
+
+% ============================================================

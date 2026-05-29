@@ -6,3 +6,11 @@ ENV/
 .DS_Store
 __pycache__/
 *.pyc
+
+# IDE
+.vscode/
+.idea/
+
+# Temp docs
+docs/report.tex
+docs/bibnum-580.pdf

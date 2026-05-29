@@ -1,0 +1,70 @@
+\babel@toc {vietnamese}{}\relax 
+\contentsline {section}{\numberline {1}Bài Toán Data Fitting và Phương Pháp OLS}{1}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Phát Biểu Bài Toán Data Fitting Tổng Quát}{1}{subsection.1.1}%
+\contentsline {subsubsection}{\numberline {1.1.1}Đặt vấn đề}{1}{subsubsection.1.1.1}%
+\contentsline {subsubsection}{\numberline {1.1.2}Mô hình hồi quy tuyến tính}{1}{subsubsection.1.1.2}%
+\contentsline {subsection}{\numberline {1.2}Các Giả Thiết Gauss–Markov}{2}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Hàm Mất Mát RSS và Chứng Minh Nghiệm OLS}{3}{subsection.1.3}%
+\contentsline {subsubsection}{\numberline {1.3.1}Hàm mất mát RSS}{3}{subsubsection.1.3.1}%
+\contentsline {subsubsection}{\numberline {1.3.2}Chứng minh nghiệm OLS (Normal Equations)}{4}{subsubsection.1.3.2}%
+\contentsline {subsection}{\numberline {1.4}Ma Trận Chiếu (Hat Matrix)}{7}{subsection.1.4}%
+\contentsline {subsubsection}{\numberline {1.4.1}Định nghĩa và hình học}{7}{subsubsection.1.4.1}%
+\contentsline {subsubsection}{\numberline {1.4.2}Các tính chất của Hat Matrix}{8}{subsubsection.1.4.2}%
+\contentsline {subsection}{\numberline {1.5}Ước Lượng Phương Sai Nhiễu $\sigma ^2$}{9}{subsection.1.5}%
+\contentsline {subsection}{\numberline {1.6}Định Lý Gauss–Markov (BLUE)}{9}{subsection.1.6}%
+\contentsline {subsection}{\numberline {1.7}Đánh Giá Mô Hình}{11}{subsection.1.7}%
+\contentsline {subsubsection}{\numberline {1.7.1}Phân rã phương sai và hệ số xác định}{11}{subsubsection.1.7.1}%
+\contentsline {subsubsection}{\numberline {1.7.2}Kiểm định giả thuyết}{11}{subsubsection.1.7.2}%
+\contentsline {subsection}{\numberline {1.8}Các Vấn Đề Nâng Cao trong Data Fitting}{13}{subsection.1.8}%
+\contentsline {subsubsection}{\numberline {1.8.1}Đa cộng tuyến và Tác động của nó}{13}{subsubsection.1.8.1}%
+\contentsline {subsubsection}{\numberline {1.8.2}Hồi quy được chuẩn hóa (Regularized Regression)}{14}{subsubsection.1.8.2}%
+\contentsline {section}{\numberline {2}Cài Đặt Python}{16}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Hàm \texttt {ols\_fit(X, y)}}{16}{subsection.2.1}%
+\contentsline {subsubsection}{\numberline {2.1.1}Mô tả}{16}{subsubsection.2.1.1}%
+\contentsline {subsubsection}{\numberline {2.1.2}Pseudo-code}{17}{subsubsection.2.1.2}%
+\contentsline {subsubsection}{\numberline {2.1.3}Hàm \texttt {hat\_matrix(X)}}{17}{subsubsection.2.1.3}%
+\contentsline {subsection}{\numberline {2.2}Chuẩn hóa Ridge Regression}{17}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Đánh giá Mô hình}{18}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Suy diễn Thống kê cho Hệ số}{18}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}Phát hiện Đa cộng tuyến qua VIF}{19}{subsection.2.5}%
+\contentsline {section}{\numberline {3}Ứng Dụng Data Fitting vào Dữ Liệu Thực Tế}{20}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Mô Tả Dataset}{20}{subsection.3.1}%
+\contentsline {subsubsection}{\numberline {3.1.1}Tanzania Tourism Expenditure Dataset}{20}{subsubsection.3.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.2}Missing Values}{20}{subsubsection.3.1.2}%
+\contentsline {subsection}{\numberline {3.2}Phân Tích Dữ Liệu Khám Phá (EDA)}{21}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}Phân Bố Biến Mục Tiêu}{21}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2}Phân Bố Các Biến Số}{22}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3}Ma Trận Tương Quan}{23}{subsubsection.3.2.3}%
+\contentsline {subsubsection}{\numberline {3.2.4}Phân Tích Outliers Qua Boxplot}{25}{subsubsection.3.2.4}%
+\contentsline {subsubsection}{\numberline {3.2.5}Kiểm Tra Đa Cộng Tuyến (VIF)}{26}{subsubsection.3.2.5}%
+\contentsline {subsubsection}{\numberline {3.2.6}Tương Quan Các Biến với Mục Tiêu}{27}{subsubsection.3.2.6}%
+\contentsline {subsubsection}{\numberline {3.2.7}Phát Hiện Data Shift (Kolmogorov--Smirnov Test)}{29}{subsubsection.3.2.7}%
+\contentsline {subsection}{\numberline {3.3}Tiền Xử Lý Dữ Liệu}{30}{subsection.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.1}Xử Lý Giá Trị Thiếu}{30}{subsubsection.3.3.1}%
+\contentsline {subsubsection}{\numberline {3.3.2}Mã Hóa Biến Phân Loại}{31}{subsubsection.3.3.2}%
+\contentsline {subsubsection}{\numberline {3.3.3}Chuẩn Hóa Đặc Trưng}{31}{subsubsection.3.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.4}Dữ Liệu Sau Xử Lý}{32}{subsubsection.3.3.4}%
+\contentsline {subsection}{\numberline {3.4}Xây Dựng và Đánh Giá Mô Hình}{32}{subsection.3.4}%
+\contentsline {subsubsection}{\numberline {3.4.1}Mô Hình 1: Ordinary Least Squares (OLS)}{32}{subsubsection.3.4.1}%
+\contentsline {subsubsection}{\numberline {3.4.2}Mô Hình 2: Ridge Regression}{33}{subsubsection.3.4.2}%
+\contentsline {subsubsection}{\numberline {3.4.3}Mô Hình 3: Lasso Regression}{33}{subsubsection.3.4.3}%
+\contentsline {subsubsection}{\numberline {3.4.4}Đánh Giá và So Sánh Các Mô Hình}{34}{subsubsection.3.4.4}%
+\contentsline {subsection}{\numberline {3.5}Cross-Validation và Lựa Chọn Siêu Tham Số}{35}{subsection.3.5}%
+\contentsline {subsubsection}{\numberline {3.5.1}K-Fold Cross-Validation}{36}{subsubsection.3.5.1}%
+\contentsline {subsubsection}{\numberline {3.5.2}Lựa Chọn Siêu Tham Số $\lambda $ cho Ridge}{36}{subsubsection.3.5.2}%
+\contentsline {subsection}{\numberline {3.6}Phân Tích Tầm Quan Trọng Đặc Trưng}{37}{subsection.3.6}%
+\contentsline {subsubsection}{\numberline {3.6.1}Top 10 Đặc Trưng Quan Trọng Nhất}{37}{subsubsection.3.6.1}%
+\contentsline {subsection}{\numberline {3.7}Kết Quả Mô Hình Hồi Quy}{38}{subsection.3.7}%
+\contentsline {subsubsection}{\numberline {3.7.1}So Sánh Hệ Số Giữa Các Phương Pháp}{38}{subsubsection.3.7.1}%
+\contentsline {subsubsection}{\numberline {3.7.2}Hiệu Năng Cross-Validation}{39}{subsubsection.3.7.2}%
+\contentsline {subsubsection}{\numberline {3.7.3}Chẩn Đoán Phần Dư}{40}{subsubsection.3.7.3}%
+\contentsline {subsection}{\numberline {3.8}Triển Khai Python}{41}{subsection.3.8}%
+\contentsline {subsubsection}{\numberline {3.8.1}Pipeline Tổng Thể}{42}{subsubsection.3.8.1}%
+\contentsline {subsection}{\numberline {3.9}Phân Tích SHAP — Giải Thích Mô Hình}{42}{subsection.3.9}%
+\contentsline {subsubsection}{\numberline {3.9.1}Nền Tảng Lý Thuyết của SHAP}{43}{subsubsection.3.9.1}%
+\contentsline {subsubsection}{\numberline {3.9.2}SHAP Summary Plot — Phân Bố Tác Động}{43}{subsubsection.3.9.2}%
+\contentsline {subsubsection}{\numberline {3.9.3}SHAP Feature Importance — Tầm Quan Trọng Tổng Thể}{44}{subsubsection.3.9.3}%
+\contentsline {subsubsection}{\numberline {3.9.4}SHAP Waterfall — Giải Thích Từng Dự Đoán}{45}{subsubsection.3.9.4}%
+\contentsline {subsection}{\numberline {3.10}Kết Luận và Đề Xuất}{46}{subsection.3.10}%
+\contentsline {subsubsection}{\numberline {3.10.1}Kết Luận Chính}{46}{subsubsection.3.10.1}%
+\contentsline {subsubsection}{\numberline {3.10.2}Đề Xuất Cải Thiện}{47}{subsubsection.3.10.2}%
