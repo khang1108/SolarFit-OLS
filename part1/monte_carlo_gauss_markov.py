@@ -1,35 +1,30 @@
 """
-Module minh họa Định lý Gauss-Markov bằng mô phỏng Monte Carlo so sánh OLS với ước lượng thay thế.
+File minh họa Định lý Gauss-Markov bằng mô phỏng Monte Carlo so sánh OLS với ước lượng thay thế.
 
-Khác với gauss_markov_sim.py chỉ kiểm chứng tính không chệch của OLS, module này
-đi xa hơn bằng cách xây dựng một ước lượng tuyến tính không chệch thay thế
+Xây dựng một ước lượng tuyến tính không chệch thay thế
 β̃_Alt = β̂_OLS + Ay và chứng minh qua mô phỏng rằng Var(β̃_Alt) >= Var(β̂_OLS),
-tức là OLS có phương sai nhỏ nhất trong lớp ước lượng đó. Ma trận nhiễu A được
-chọn thỏa mãn AX = 0 để đảm bảo β̃_Alt không chệch: vì E[β̃_Alt] = E[β̂_OLS] +
-A·E[y] = β + AXβ = β khi AX = 0. Cụ thể, A = B(I - H) với B bất kỳ tự động thỏa
-mãn AX = B(I-H)X = 0 vì (I-H)X = 0 theo định nghĩa của hat matrix. Module này
-cung cấp bằng chứng số trực tiếp cho phần "tốt nhất" (BLUE) trong định lý
-Gauss-Markov, bổ sung cho phần "không chệch" đã được kiểm chứng trong gauss_markov_sim.py.
+tức là OLS có phương sai nhỏ nhất trong lớp ước lượng đó.
+Ma trận nhiễu A được chọn thỏa mãn AX = 0 để đảm bảo β̃_Alt không chệch: 
+    vì E[β̃_Alt] = E[β̂_OLS] + A·E[y] = β + AXβ = β khi AX = 0. 
+    
+Cụ thể, A = B(I - H) với B bất kỳ tự động thỏa mãn AX = B(I-H)X = 0 vì (I-H)X = 0 theo định nghĩa của hat matrix. 
 """
 
 import numpy as np
 from ols_implementation import ols_fit, hat_matrix, _matmul, _matvec
-
 
 def make_perturbation(X, B):
     """Tạo ma trận nhiễu A = B(I - H) thỏa mãn ràng buộc không chệch AX = 0.
 
     Để ước lượng thay thế β̃_Alt = β̂_OLS + Ay không chệch, cần A thỏa mãn
     AX = 0. Hàm này khai thác tính chất (I - H)X = 0 của ma trận chiếu phần bù:
-    vì HX = X (X chiếu lên chính mình qua C(X)), nên (I-H)X = X - HX = 0. Do đó
-    A = B(I-H) tự động thỏa mãn AX = B(I-H)X = 0 với bất kỳ ma trận B nào, cho
-    phép chọn B ngẫu nhiên mà vẫn đảm bảo tính không chệch của ước lượng thay thế.
+    vì HX = X (X chiếu lên chính mình qua C(X)), nên (I-H)X = X - HX = 0.
 
     Args:
-        X: Ma trận thiết kế dạng list 2D, kích thước n×k.
-        B: Ma trận nhiễu ngẫu nhiên dạng list 2D, kích thước k×n. Thường được
-           tạo bằng cách nhân một ma trận Gaussian ngẫu nhiên với alt_scale nhỏ
-           để ước lượng thay thế không quá lệch so với OLS.
+        X:  Ma trận thiết kế dạng list 2D, kích thước n×k.
+        B:  Ma trận nhiễu ngẫu nhiên dạng list 2D, kích thước k×n. Thường được
+            tạo bằng cách nhân một ma trận Gaussian ngẫu nhiên với alt_scale nhỏ
+            để ước lượng thay thế không quá lệch so với OLS.
 
     Returns:
         Ma trận nhiễu A = B(I - H) kích thước k×n thỏa mãn AX = 0.
@@ -43,12 +38,8 @@ def make_perturbation(X, B):
 def alt_fit(X, y, A):
     """Tính ước lượng tuyến tính không chệch thay thế β̃_Alt = β̂_OLS + Ay.
 
-    Ước lượng thay thế này được xây dựng bằng cách cộng thêm nhiễu Ay vào β̂_OLS,
-    trong đó A thỏa mãn AX = 0 (được tạo bởi make_perturbation). Tính không chệch
-    của β̃_Alt được đảm bảo vì E[β̃_Alt | X] = E[β̂_OLS | X] + A·E[y | X] =
-    β + AXβ = β + 0 = β. Tuy nhiên phương sai của β̃_Alt bao gồm thêm số hạng
-    σ²AA', làm cho Var(β̃_Alt) = Var(β̂_OLS) + σ²AA' >= Var(β̂_OLS), đây chính
-    là nội dung cần chứng minh bằng mô phỏng trong run_monte_carlo.
+    Tính không chệch của β̃_Alt được đảm bảo vì E[β̃_Alt | X] = E[β̂_OLS | X] + A·E[y | X] =
+    β + AXβ = β + 0 = β. 
 
     Args:
         X: Ma trận thiết kế dạng list 2D, kích thước n×k.
@@ -70,22 +61,23 @@ def run_monte_carlo(n=30, beta_true=(2.0, 1.0, -0.5), sigma=1.0,
     Hàm này là bằng chứng số trung tâm cho tính BLUE của OLS. Trong mỗi trong
     n_rep lần lặp, cùng một ma trận X cố định (thiết kế theo điều kiện của định lý)
     nhận một vector nhiễu mới ε ~ N(0, σ²I), tạo y = Xβ + ε, rồi tính cả β̂_OLS
-    lẫn β̃_Alt = β̂_OLS + Ay. Sau n_rep lần, Var(β̂_OLS) và Var(β̃_Alt) được ước
+    lẫn β̃_Alt = β̂_OLS + Ay. 
+    
+    Sau ``n_rep`` lần, Var(β̂_OLS) và Var(β̃_Alt) được ước
     lượng bằng phương sai mẫu, dự kiến Var(β̃_Alt) > Var(β̂_OLS) với mọi A ≠ 0.
     Ma trận nhiễu A được tạo một lần từ make_perturbation(X, B) và giữ cố định
-    trong toàn bộ mô phỏng, đảm bảo so sánh công bằng giữa hai ước lượng. Số lần
-    lặp mặc định là n_rep=8000 để đảm bảo ước lượng phương sai có độ chính xác cao.
+    trong toàn bộ mô phỏng, đảm bảo so sánh công bằng giữa hai ước lượng. 
 
     Args:
-        n: Số quan sát trong mỗi lần lặp, mặc định là 30.
-        beta_true: Vector tham số thực dạng tuple (intercept, slope1, slope2),
-                   mặc định là (2.0, 1.0, -0.5).
-        sigma: Độ lệch chuẩn của nhiễu, mặc định là 1.0.
-        n_rep: Số lần lặp Monte Carlo, mặc định là 8000. Giá trị lớn hơn cho
-               ước lượng phương sai chính xác hơn nhưng tốn thời gian hơn.
-        seed: Hạt giống của numpy.random.default_rng để đảm bảo tái lập được.
-        alt_scale: Hệ số tỷ lệ cho ma trận nhiễu B; giá trị nhỏ (0.06) đảm bảo
-                   ước lượng thay thế không quá xa OLS để so sánh rõ ràng hơn.
+        n:          Số quan sát trong mỗi lần lặp, mặc định là 30.
+        beta_true:  Vector tham số thực dạng tuple (intercept, slope1, slope2),
+                    mặc định là (2.0, 1.0, -0.5).
+        sigma:      Độ lệch chuẩn của nhiễu, mặc định là 1.0.
+        n_rep:      Số lần lặp Monte Carlo, mặc định là 8000. Giá trị lớn hơn cho
+                    ước lượng phương sai chính xác hơn nhưng tốn thời gian hơn.
+        seed:       Hạt giống của numpy.random.default_rng để đảm bảo tái lập được.
+        alt_scale:  Hệ số tỷ lệ cho ma trận nhiễu B; giá trị nhỏ (0.06) đảm bảo
+                    ước lượng thay thế không quá xa OLS để so sánh rõ ràng hơn.
 
     Returns:
         Dict chứa các trường: "X" (numpy array n×k, ma trận thiết kế cố định),
@@ -140,9 +132,7 @@ def verify_with_numpy_sklearn(X_np, y_one):
     Hàm này thực hiện kiểm tra tính đúng đắn số học của ols_fit bằng cách so sánh
     hệ số β̂ với kết quả từ hai thư viện chuẩn. Sai số so với numpy.linalg.lstsq
     và sklearn.LinearRegression đều kỳ vọng dưới 1e-8, xác nhận triển khai thuần
-    Python không có lỗi số học đáng kể. Kiểm tra này đặc biệt quan trọng trước
-    khi dùng ols_fit trong mô phỏng Monte Carlo quy mô lớn, vì sai số tích lũy
-    qua n_rep=8000 lần lặp có thể ảnh hưởng đến kết luận về phương sai.
+    Python không có lỗi số học đáng kể. 
 
     Args:
         X_np: Ma trận thiết kế dạng numpy array, kích thước n×k, bao gồm cột intercept.

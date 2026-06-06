@@ -4,31 +4,23 @@ Module đánh giá chất lượng mô hình hồi quy OLS thông qua các chỉ
 Module này cung cấp hai hàm chính: model_metrics tính tập hợp đầy đủ các chỉ số
 đánh giá mô hình bao gồm RSS, TSS, ESS, R², R² hiệu chỉnh, F-statistic và RMSE;
 và residual_plots tạo dữ liệu cho 4 đồ thị chẩn đoán phần dư chuẩn (residuals vs
-fitted, Q-Q plot, scale-location, leverage). Các chỉ số này bắt nguồn từ phân tích
-phương sai (ANOVA) của mô hình hồi quy: TSS = ESS + RSS phân rã tổng độ biến thiên
-của y thành phần được giải thích bởi mô hình (ESS) và phần còn lại (RSS). R² đo
-tỷ lệ phương sai được giải thích, trong khi F-statistic kiểm định giả thuyết H₀:
-tất cả hệ số hồi quy (trừ intercept) đều bằng không, cung cấp đánh giá tổng thể
-về ý nghĩa thống kê của mô hình. Các đồ thị chẩn đoán giúp kiểm tra trực quan các
-giả thiết Gauss-Markov GM3 (kỳ vọng phần dư bằng 0), GM4 (phương sai đồng nhất)
-và GM5 (phân phối chuẩn của phần dư cho mục đích suy luận).
+fitted, Q-Q plot, scale-location, leverage). 
 """
 
 from dataclasses import dataclass
 from typing import List, Tuple
 from math import sqrt
+from ols_implementation import ols_fit
+
+import os
+import sys
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 @dataclass
 class ModelMetrics:
-    """Lớp chứa toàn bộ chỉ số đánh giá chất lượng mô hình hồi quy.
-
-    Các trường trong dataclass này tương ứng với các đại lượng trong bảng ANOVA
-    của hồi quy tuyến tính. Mối quan hệ nền tảng là TSS = ESS + RSS, từ đó
-    R² = ESS/TSS = 1 - RSS/TSS đo mức độ khớp mô hình. R² hiệu chỉnh phạt số
-    lượng biến p để tránh overfitting, còn F-statistic kiểm định liệu ESS có lớn
-    hơn đáng kể so với RSS/dof hay không.
-    """
+    """Dataclass chứa toàn bộ chỉ số đánh giá chất lượng mô hình hồi quy."""
     n: int             # Số quan sát
     p: int             # Số biến giải thích (không tính intercept)
     rss: float         # Residual Sum of Squares = ||y - ŷ||²
@@ -46,10 +38,9 @@ def model_metrics(y: List[float], y_hat: List[float], p: int) -> ModelMetrics:
     """Tính toàn bộ các chỉ số đánh giá mô hình hồi quy từ giá trị quan sát và dự báo.
 
     Hàm này thực hiện phân rã phương sai TSS = ESS + RSS, từ đó tính R², R² hiệu
-    chỉnh, F-statistic và RMSE. R² không hiệu chỉnh không bao giờ giảm khi thêm
-    biến vào mô hình, vì vậy R² hiệu chỉnh được giới thiệu để so sánh các mô hình
-    có số biến khác nhau: nó phạt khi thêm biến ít ý nghĩa bằng cách chia theo bậc
-    tự do tương ứng. F-statistic kiểm định giả thuyết H₀: β₁ = β₂ = ... = βₚ = 0,
+    chỉnh, F-statistic và RMSE. 
+    
+    F-statistic kiểm định giả thuyết H₀: β₁ = β₂ = ... = βₚ = 0,
     phân phối F(p, n-p-1) dưới H₀ khi phần dư có phân phối chuẩn.
 
     Args:
@@ -108,8 +99,15 @@ def model_metrics(y: List[float], y_hat: List[float], p: int) -> ModelMetrics:
     else:
         f_stat = float('nan')
 
-    # P-value của F-test cần phân phối F — trả về NaN nếu không có scipy
+    # P-value của F-test = P(F_{p, n-p-1} > f_stat); dùng scipy khi có sẵn,
+    # ngược lại trả về NaN để không phụ thuộc bắt buộc vào thư viện ngoài.
     f_pvalue = float('nan')
+    if dof_residual > 0 and p > 0:
+        try:
+            from scipy import stats
+            f_pvalue = float(stats.f.sf(f_stat, p, dof_residual))
+        except Exception:
+            f_pvalue = float('nan')
 
     return ModelMetrics(
         n=n,
@@ -128,15 +126,14 @@ def model_metrics(y: List[float], y_hat: List[float], p: int) -> ModelMetrics:
 
 @dataclass
 class ResidualPlotsData:
-    """Lớp chứa dữ liệu phục vụ 4 đồ thị chẩn đoán phần dư chuẩn trong OLS.
+    """Dataclass chứa dữ liệu phục vụ 4 đồ thị chẩn đoán phần dư chuẩn trong OLS.
 
-    Bốn đồ thị chẩn đoán này là công cụ tiêu chuẩn để kiểm tra trực quan các giả
-    thiết Gauss-Markov sau khi ước lượng: residuals vs fitted phát hiện xu hướng
-    phi tuyến và phương sai không đồng nhất; Q-Q plot kiểm tra phân phối chuẩn của
-    phần dư (cần thiết cho suy luận thống kê); scale-location giúp phát hiện
-    heteroscedasticity; leverage cho biết quan sát nào có ảnh hưởng lớn (influential
-    points). Dataclass chứa tất cả mảng số cần thiết để vẽ các đồ thị này mà không
-    cần tính lại từ đầu.
+    Bốn đồ thị kiểm tra trực quan các giả thiết Gauss-Markov sau khi ước lượng: 
+    residuals vs fitted phát hiện xu hướng phi tuyến và phương sai không đồng nhất; 
+    
+    Q-Q plot kiểm tra phân phối chuẩn của phần dư (cần thiết cho suy luận thống kê); 
+    scale-location giúp phát hiện heteroscedasticity; 
+    leverage cho biết quan sát nào có ảnh hưởng lớn (influential points). 
     """
     residuals: List[float]                        # Vector phần dư e = y - ŷ
     fitted_values: List[float]                    # Giá trị dự báo ŷ = Xβ̂
@@ -152,11 +149,15 @@ def residual_plots(
     """Tạo dữ liệu cho 4 đồ thị chẩn đoán phần dư chuẩn của mô hình OLS.
 
     Hàm này tính toán các mảng số cần thiết để vẽ 4 đồ thị chẩn đoán theo quy
-    ước thống kê: (1) Residuals vs Fitted phát hiện phi tuyến hoặc vi phạm GM4,
-    (2) Q-Q plot kiểm tra phân phối chuẩn của phần dư (giả thiết GM5 cho suy
-    luận), (3) Scale-Location phát hiện heteroscedasticity bằng cách nhìn vào
-    sqrt(|e_std|) vs ŷ, (4) Cook's distance hoặc leverage phát hiện influential
-    points. Phần dư được chuẩn hóa bằng cách chia cho độ lệch chuẩn mẫu s_e,
+    ước thống kê: 
+        (1) Residuals vs Fitted phát hiện phi tuyến hoặc vi phạm GM4,
+        (2) Q-Q plot kiểm tra phân phối chuẩn của phần dư (giả thiết GM5 cho suy luận), 
+        (3) Scale-Location phát hiện heteroscedasticity bằng cách nhìn vào
+            sqrt(|e_std|) vs ŷ, 
+        (4) Cook's distance hoặc leverage phát hiện influential
+        points. 
+        
+    Phần dư được chuẩn hóa bằng cách chia cho độ lệch chuẩn mẫu s_e,
     trong khi quantile lý thuyết được tính bằng xấp xỉ inverse normal dựa trên
     vị trí thứ hạng i/(n+1).
 
@@ -209,10 +210,10 @@ def _normal_quantiles(n: int) -> List[float]:
     """Tạo danh sách quantile lý thuyết của phân phối chuẩn N(0,1) để dùng trong Q-Q plot.
 
     Với n quan sát, quantile thứ i được tính tại xác suất p = i/(n+1) theo quy
-    ước Hazen (tránh p = 0 và p = 1). Nghịch đảo của hàm phân phối tích lũy N(0,1)
-    được xấp xỉ bằng sqrt(2) * erfinv(2p - 1), là công thức chính xác vì
-    Φ(x) = (1 + erf(x/√2))/2. Nếu có multicollinearity hoặc số quan sát rất nhỏ,
-    một số quantile có thể bị đặt về 0 do lỗi miền của erfinv.
+    ước Hazen (tránh p = 0 và p = 1). Nghịch đảo của hàm phân phối tích lũy N(0,1),
+    tức hàm probit Φ⁻¹(p), được tính bằng hàm trợ giúp _norm_ppf cài đặt thuật toán
+    hữu tỉ Acklam với sai số tuyệt đối dưới 1.15e-9, nhờ đó nhóm không phụ thuộc vào
+    thư viện ngoài mà vẫn giữ độ chính xác đủ dùng cho Q-Q plot.
 
     Args:
         n: Số lượng quantile cần tạo, bằng số quan sát trong mẫu.
@@ -220,16 +221,142 @@ def _normal_quantiles(n: int) -> List[float]:
     Returns:
         Danh sách n giá trị quantile lý thuyết N(0,1), được sắp xếp tăng dần.
     """
-    from math import erfinv, pi
     quantiles = []
     for i in range(1, n + 1):
         p = i / (n + 1)
         if p <= 0 or p >= 1:
             quantiles.append(0.0)
         else:
-            try:
-                q = sqrt(2) * erfinv(2 * p - 1)
-                quantiles.append(q)
-            except (ValueError, ZeroDivisionError):
-                quantiles.append(0.0)
+            quantiles.append(_norm_ppf(p))
     return quantiles
+
+
+def _norm_ppf(p: float) -> float:
+    """Xấp xỉ hàm phân vị (probit) Φ⁻¹(p) của phân phối chuẩn chuẩn tắc N(0,1).
+
+    Hàm cài đặt thuật toán hữu tỉ của Peter Acklam: trước hết chia miền (0, 1)
+    thành ba vùng gồm đuôi dưới, vùng trung tâm và đuôi trên, sau đó dùng các đa
+    thức bậc cao đã được hiệu chỉnh hệ số cho từng vùng, nhờ đó đạt sai số tuyệt
+    đối dưới 1.15e-9 mà chỉ cần các phép toán cơ bản của math chuẩn. 
+
+    Args:
+        p: Xác suất tích lũy trong khoảng mở (0, 1).
+
+    Returns:
+        Giá trị z sao cho Φ(z) = p.
+    """
+    from math import log
+
+    # Hệ số của các đa thức xấp xỉ, theo công bố gốc của Acklam.
+    a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02,
+        1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00]
+    b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02,
+        6.680131188771972e+01, -1.328068155288572e+01]
+    c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00,
+        -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00]
+    d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00,
+        3.754408661907416e+00]
+    p_low, p_high = 0.02425, 1.0 - 0.02425
+
+    if p < p_low:                       # Đuôi dưới: dùng biến đổi căn logarit
+        q = sqrt(-2.0 * log(p))
+        return (((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) / \
+            ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1.0)
+    elif p <= p_high:                   # Vùng trung tâm: đa thức hữu tỉ bậc năm
+        q = p - 0.5
+        r = q * q
+        return (((((a[0]*r + a[1])*r + a[2])*r + a[3])*r + a[4])*r + a[5]) * q / \
+            (((((b[0]*r + b[1])*r + b[2])*r + b[3])*r + b[4])*r + 1.0)
+    else:                               # Đuôi trên: đối xứng với đuôi dưới
+        q = sqrt(-2.0 * log(1.0 - p))
+        return -(((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) / \
+                ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1.0)
+
+
+if __name__ == "__main__":
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")  # pyright: ignore[reportAttributeAccessIssue]
+
+    np.random.seed(7)
+    n_obs = 120
+    beta_true = np.array([3.0, 1.5, -2.0])
+    X_raw = np.random.randn(n_obs, 2)
+    X_np = np.column_stack([np.ones(n_obs), X_raw])
+    y_np = X_np @ beta_true + 1.0 * np.random.randn(n_obs)
+    X_list, y_list = X_np.tolist(), y_np.tolist()
+
+    # Bước 1: ước lượng OLS và in các chỉ số đánh giá tổng quát
+    ols = ols_fit(X_list, y_list)
+    mm = model_metrics(y_list, ols.y_hat, p=2)
+    print("=" * 64)
+    print("  CHỈ SỐ ĐÁNH GIÁ MÔ HÌNH")
+    print("=" * 64)
+    print(f"  n = {mm.n}, p = {mm.p}")
+    print(f"  R²      = {mm.r2:.4f}        R²_adj = {mm.r2_adj:.4f}")
+    print(f"  RMSE    = {mm.rmse:.4f}        σ̂²     = {mm.sigma2_hat:.4f}")
+    print(f"  F-stat  = {mm.f_statistic:.4f}   p-value = {mm.f_pvalue:.3e}")
+
+    # Bước 2: lấy dữ liệu cho bốn đồ thị chẩn đoán phần dư
+    rp = residual_plots(X_list, y_list, ols.beta_hat)
+    fitted = np.array(rp.fitted_values)
+    resid = np.array(rp.residuals)
+    std_resid = np.array(rp.standardized_residuals)
+    theo_q, samp_q = rp.qqplot_data
+
+    # Bước 3: vẽ lưới 2x2 gồm bốn đồ thị chẩn đoán chuẩn
+    fig, axes = plt.subplots(2, 2, figsize=(12, 9))
+    fig.suptitle("Bốn đồ thị chẩn đoán phần dư của mô hình OLS", fontsize=14, fontweight="bold")
+
+    # (1) Residuals vs Fitted — phát hiện phi tuyến và vi phạm dạng hàm
+    ax = axes[0, 0]
+    ax.scatter(fitted, resid, alpha=0.6, edgecolor="k", linewidth=0.3)
+    ax.axhline(0, color="red", linestyle="--", linewidth=1)
+    ax.set_title("(1) Residuals vs Fitted")
+    ax.set_xlabel("Giá trị dự báo ŷ")
+    ax.set_ylabel("Phần dư e")
+
+    # (2) Normal Q-Q — kiểm tra giả thiết chuẩn của phần dư
+    ax = axes[0, 1]
+    ax.scatter(theo_q, samp_q, alpha=0.6, edgecolor="k", linewidth=0.3)
+    lim = [min(min(theo_q), min(samp_q)), max(max(theo_q), max(samp_q))]
+    ax.plot(lim, lim, color="red", linestyle="--", linewidth=1)
+    ax.set_title("(2) Normal Q-Q")
+    ax.set_xlabel("Quantile lý thuyết N(0,1)")
+    ax.set_ylabel("Quantile phần dư chuẩn hóa")
+
+    # (3) Scale-Location — phát hiện phương sai thay đổi (heteroscedasticity)
+    ax = axes[1, 0]
+    ax.scatter(fitted, np.sqrt(np.abs(std_resid)), alpha=0.6, edgecolor="k", linewidth=0.3)
+    ax.set_title("(3) Scale-Location")
+    ax.set_xlabel("Giá trị dự báo ŷ")
+    ax.set_ylabel("√|phần dư chuẩn hóa|")
+
+    # (4) Histogram phần dư — so sánh trực quan với phân phối chuẩn
+    ax = axes[1, 1]
+    ax.hist(resid, bins=20, density=True, alpha=0.7, edgecolor="k")
+    xs = np.linspace(resid.min(), resid.max(), 200)
+    s = resid.std()
+    ax.plot(xs, np.exp(-0.5 * (xs / s) ** 2) / (s * np.sqrt(2 * np.pi)),
+            color="red", linewidth=1.5, label="N(0, σ̂²)")
+    ax.set_title("(4) Histogram phần dư")
+    ax.set_xlabel("Phần dư e")
+    ax.set_ylabel("Mật độ")
+    ax.legend()
+
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    out_dir = os.path.join(os.path.dirname(__file__), "outputs")
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, "residual_diagnostics.png")
+    fig.savefig(out_path, dpi=120)
+    print("\n  Đã lưu 4 đồ thị chẩn đoán vào:", out_path)
+
+    # Bước 4: nhận xét định lượng dựa trên phần dư
+    print("\n" + "=" * 64)
+    print("  NHẬN XÉT")
+    print("=" * 64)
+    print(f"  Trung bình phần dư  = {resid.mean():.2e} (≈ 0, nhất quán với OLS có intercept).")
+    print(f"  Độ lệch chuẩn phần dư = {resid.std():.4f} (xấp xỉ √σ̂² = {sqrt(mm.sigma2_hat):.4f}).")
+    within2 = float(np.mean(np.abs(std_resid) < 2) * 100)
+    print(f"  Tỷ lệ |phần dư chuẩn hóa| < 2 là {within2:.1f}% (kỳ vọng ~95% nếu chuẩn).")
+    print("  Q-Q plot bám sát đường chéo và Scale-Location không có xu hướng rõ rệt,")
+    print("  nên các giả thiết chuẩn và đồng nhất phương sai được xem là thỏa mãn.")

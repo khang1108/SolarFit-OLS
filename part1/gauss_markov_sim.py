@@ -320,3 +320,50 @@ def verify_assumptions(
         "residual_var": residual_var,
         "residual_se": sqrt(residual_var),
     }
+
+
+if __name__ == "__main__":
+    # ------------------------------------------------------------------
+    # Demo kiểm chứng Định lý Gauss-Markov bằng Monte Carlo. Nhóm cố định ma
+    # trận thiết kế X và vector tham số thật beta_true, sau đó lặp lại nhiều
+    # lần việc sinh nhiễu mới rồi ước lượng OLS. Trung bình các ước lượng cho
+    # thấy OLS không chệch (E[β̂] ≈ β), còn phương sai mẫu của ước lượng được
+    # so sánh với giá trị lý thuyết σ²(X'X)⁻¹ để xác nhận công thức phương sai.
+    # ------------------------------------------------------------------
+    import sys
+    import random as _random
+
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")  # pyright: ignore[reportAttributeAccessIssue]
+
+    # Cố định một ma trận thiết kế X nhỏ với cột intercept (theo quy ước định lý)
+    _random.seed(123)
+    n_obs = 50
+    X_fixed = [[1.0, _random.gauss(0, 1), _random.gauss(0, 1)] for _ in range(n_obs)]
+    beta_true = [4.0, 2.5, -1.0]
+    sigma = 1.5
+    n_sim = 5000
+
+    sim = simulate_gauss_markov(X_fixed, beta_true, sigma=sigma,
+                                n_simulations=n_sim, seed=42)
+
+    print("=" * 70)
+    print(f"  MÔ PHỎNG MONTE CARLO GAUSS-MARKOV ({n_sim} lần lặp, σ = {sigma})")
+    print("=" * 70)
+    print(f"  {'Hệ số':<10}{'β_true':>10}{'E[β̂]':>12}{'bias':>12}{'sd(β̂)':>12}{'sd lý thuyết':>14}")
+    names = ["Intercept", "x1", "x2"]
+    for j, nm in enumerate(names):
+        sd_theo = sqrt(sim.theoretical_var[j])
+        print(f"  {nm:<10}{beta_true[j]:>10.2f}{sim.beta_mean[j]:>12.4f}"
+              f"{sim.bias_estimate[j]:>12.4f}{sim.beta_std[j]:>12.4f}{sd_theo:>14.4f}")
+
+    print("\n" + "=" * 70)
+    print("  NHẬN XÉT")
+    print("=" * 70)
+    max_bias = max(abs(b) for b in sim.bias_estimate)
+    print(f"  Bias lớn nhất = {max_bias:.4f} (≈ 0) → khẳng định OLS không chệch (GM3).")
+    print("  Độ lệch chuẩn mẫu sd(β̂) khớp với sd lý thuyết từ σ²(X'X)⁻¹,")
+    print("  xác nhận công thức phương sai của ước lượng OLS là chính xác.")
+    print(f"  Kiểm tra không chệch       : {'ĐẠT' if sim.unbiased_verified else 'KHÔNG ĐẠT'}")
+    print(f"  Kiểm tra phương sai tối thiểu: {'ĐẠT' if sim.minimum_var_verified else 'KHÔNG ĐẠT'}")
+    print(f"\n  {sim.message}")

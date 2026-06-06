@@ -1,24 +1,18 @@
 """
-Module huấn luyện và so sánh các mô hình hồi quy tuyến tính cho bài toán dự
-đoán chi phí du lịch Tanzania. Module này là trung tâm của pipeline mô hình
-hóa, triển khai và thống nhất giao diện cho ba phương pháp hồi quy: OLS
+Train và so sánh các mô hình hồi quy tuyến tính cho bài toán dự
+đoán chi phí du lịch Tanzania. Module này là nơi chứa toàn bộ pipeline mô hình
+hóa, triển khai và interfaces cho ba phương pháp hồi quy: OLS
 (Ordinary Least Squares), Ridge (chuẩn hóa L2) và Lasso (chuẩn hóa L1).
 
-Thiết kế quan trọng: module ưu tiên dùng các hàm tự triển khai từ Part 1
-(ols_fit, ridge_fit) để đảm bảo tính nhất quán với lý thuyết được trình bày
-trong báo cáo. Trong trường hợp import Part 1 thất bại, module tự động
-fallback về scikit-learn mà không làm gián đoạn pipeline, đảm bảo khả năng
-chạy trên nhiều môi trường khác nhau.
-
 Ba chỉ số đánh giá chính được tính toán đồng nhất cho mọi mô hình:
-  MAE  — Mean Absolute Error, dễ giải thích theo đơn vị TZS.
-  RMSE — Root Mean Squared Error, phạt nặng sai số lớn.
-  R²   — Hệ số xác định, đo lường tỷ lệ phương sai được giải thích.
+    MAE  — Mean Absolute Error, dễ giải thích theo đơn vị TZS.
+    RMSE — Root Mean Squared Error, phạt nặng sai số lớn.
+    R²   — Hệ số xác định, đo lường tỷ lệ phương sai được giải thích.
 
 Các class và hàm chính:
-  ModelResult      — dataclass lưu kết quả fit một mô hình đơn lẻ.
-  ComparisonResult — dataclass lưu kết quả so sánh trên test set.
-  RegressionModels — class container điều phối fit và so sánh mô hình.
+    ModelResult      — dataclass lưu kết quả fit một mô hình đơn lẻ.
+    ComparisonResult — dataclass lưu kết quả so sánh trên test set.
+    RegressionModels — class container điều phối fit và so sánh mô hình.
 
 Module này nhận PipelineResult từ data_pipeline.py và được gọi bởi analysis.py
 cũng như main.py.
@@ -34,15 +28,17 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-# Import Part 1 modules
+# Nạp lại các module Part 1 (OLS, Ridge, suy luận hệ số, cross-validation) để
+# Part 2 dùng đúng cài đặt thuần Python đã chứng minh ở phần lý thuyết, thay vì
+# viết lại từ đầu; nhờ vậy kết quả thực nghiệm gắn liền trực tiếp với lý thuyết.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../part1'))
 
 try:
-    from ols_implementation import ols_fit, OLSResult
-    from regularization import ridge_fit, ridge_trace, RidgeResult
-    from model_evaluation import model_metrics, ModelMetrics
-    from inference import vif, coef_inference
-    from cross_validation import kfold_cv, kfold_cv_ridge
+    from ols_implementation import ols_fit, OLSResult  # pyright: ignore[reportMissingImports]
+    from regularization import ridge_fit, ridge_trace, RidgeResult  # pyright: ignore[reportMissingImports]
+    from model_evaluation import model_metrics, ModelMetrics  # pyright: ignore[reportMissingImports]
+    from inference import vif, coef_inference  # pyright: ignore[reportMissingImports]
+    from cross_validation import kfold_cv, kfold_cv_ridge  # pyright: ignore[reportMissingImports]
 except ImportError as e:
     print(f"Warning: Could not import Part 1 modules: {e}")
     print("Using fallback implementations instead.")
@@ -56,27 +52,26 @@ from sklearn.model_selection import KFold
 class ModelResult:
     """Kết quả huấn luyện của một mô hình hồi quy đơn lẻ.
 
-    Dataclass này đóng gói tất cả thông tin cần thiết sau khi fit một mô hình,
+    Dataclass này chứa tất cả thông tin cần thiết sau khi fit một mô hình,
     bao gồm các hệ số ước lượng và các chỉ số đánh giá trên tập huấn luyện.
     Thiết kế thống nhất giao diện giữa các mô hình khác nhau (OLS, Ridge,
     Lasso) giúp các hàm downstream (evaluate, visualization) xử lý mọi mô
     hình theo cùng một cách mà không cần phân nhánh logic.
 
     Attributes:
-        name: Tên định danh mô hình, ví dụ "OLS", "Ridge(λ=100)".
+        name: Tên mô hình, ví dụ "OLS", "Ridge(λ=100)".
         beta_hat: Vector hệ số ước lượng beta, bao gồm hệ số intercept ở vị
-                  trí đầu tiên, dạng list để tương thích với Part 1 modules.
+                trí đầu tiên, dạng list để tương thích với Part 1 modules.
         y_hat: Giá trị dự đoán trên tập huấn luyện, hình dạng (n_train,).
         train_mae: Mean Absolute Error trên tập huấn luyện, đơn vị TZS.
         train_rmse: Root Mean Squared Error trên tập huấn luyện, đơn vị TZS.
         train_r2: Hệ số xác định R² trên tập huấn luyện.
         train_adj_r2: R² hiệu chỉnh, có tính đến số biến để tránh overfitting
-                      khi so sánh mô hình với số đặc trưng khác nhau.
+                    khi so sánh mô hình với số đặc trưng khác nhau.
         sigma2_hat: Ước lượng phương sai nhiễu (sigma²), dùng cho kiểm định
                     thống kê và khoảng tin cậy hệ số.
         cv_scores: Kết quả cross-validation nếu có, None khi chưa chạy CV.
-        model_object: Đối tượng mô hình sklearn (chỉ dùng cho Lasso/ElasticNet
-                      vốn không có implementation trong Part 1).
+        model_object: sklearn object (chỉ dùng cho Lasso/ElasticNet).
     """
 
     name: str
@@ -89,6 +84,7 @@ class ModelResult:
     sigma2_hat: Optional[float] = None
     cv_scores: Optional[Dict] = None
     model_object: Optional[object] = None  # Chỉ dùng cho các mô hình sklearn
+    selected_indices: Optional[List[int]] = None  # Index cột được giữ lại (OLS+Selection)
 
 
 @dataclass
@@ -134,7 +130,7 @@ class RegressionModels:
         models: Dictionary ánh xạ tên mô hình sang đối tượng ModelResult tương
                 ứng, được tự động cập nhật sau mỗi lần gọi fit_*.
         feature_names: Danh sách tên đặc trưng, có thể gán để hỗ trợ giải thích
-                       hệ số trong báo cáo.
+                    hệ số trong báo cáo.
 
     Cách sử dụng:
         models = RegressionModels()
@@ -149,7 +145,7 @@ class RegressionModels:
         self.feature_names = None
 
     # ========================================================================
-    # OLS Regression
+    # Hồi quy OLS — mô hình nền tảng để mọi mô hình khác đối chiếu
     # ========================================================================
 
     def fit_ols(
@@ -168,7 +164,7 @@ class RegressionModels:
 
         Args:
             X_train: Ma trận đặc trưng huấn luyện hình dạng (n, p+1), cột đầu
-                     tiên phải là cột intercept (toàn giá trị 1).
+                    tiên phải là cột intercept (toàn giá trị 1).
             y_train: Vector giá trị mục tiêu total_cost (TZS) hình dạng (n,).
             feature_names: Danh sách tên đặc trưng tùy chọn, dùng khi in báo cáo.
 
@@ -186,7 +182,7 @@ class RegressionModels:
 
         try:
             # Ưu tiên dùng Part 1 để nhất quán với lý thuyết được trình bày
-            result = ols_fit(X_list, y_list)
+            result = ols_fit(X_list, y_list) # pyright: ignore[reportPossiblyUnboundVariable]
             beta_hat = result.beta_hat
             sigma2_hat = result.sigma2_hat
             y_hat_arr = np.array(result.y_hat)
@@ -225,18 +221,178 @@ class RegressionModels:
             name="OLS",
             beta_hat=beta_hat,
             y_hat=y_hat_arr,
-            train_mae=mae,
-            train_rmse=rmse,
-            train_r2=r2,
-            train_adj_r2=adj_r2,
-            sigma2_hat=sigma2_hat
+            train_mae=float(mae),
+            train_rmse=float(rmse),
+            train_r2=float(r2),
+            train_adj_r2=float(adj_r2),
+            sigma2_hat=float(sigma2_hat) if sigma2_hat is not None else None,
         )
 
         self.models["OLS"] = model_result
         return model_result
 
     # ========================================================================
-    # Ridge Regression
+    # OLS + Feature Selection (dựa trên p-value)
+    # ========================================================================
+
+    def fit_ols_selected(
+        self,
+        X_train: np.ndarray,
+        y_train: np.ndarray,
+        feature_names: Optional[List[str]] = None,
+        p_threshold: float = 0.05,
+    ) -> ModelResult:
+        """Huấn luyện OLS sau khi loại bỏ biến không có ý nghĩa thống kê.
+
+        Quy trình gồm hai bước: (1) fit OLS đầy đủ trên toàn bộ feature để lấy
+        p-value của từng hệ số qua kiểm định t (β_j / se(β_j) ~ t_{n-p-1}); (2)
+        giữ lại chỉ những feature có p-value < p_threshold, rồi refit OLS trên
+        tập con đó. Intercept luôn được giữ và không tham gia vào quá trình lọc.
+
+        Beta trả về có cùng số chiều với X_train (zero-padding tại các vị trí bị
+        loại) để evaluate_on_test có thể dùng X_test @ beta_hat mà không cần thay
+        đổi logic downstream.
+
+        Args:
+            X_train: Ma trận đặc trưng (n, p+1), cột đầu là intercept (toàn số 1).
+            y_train: Vector mục tiêu hình dạng (n,).
+            feature_names: Danh sách tên đặc trưng, dùng để in log.
+            p_threshold: Ngưỡng p-value để giữ biến (mặc định 0.05).
+
+        Returns:
+            ModelResult với tên "OLS+Selection" và selected_indices ghi lại
+            các cột được chọn để tiện trình bày trong báo cáo.
+        """
+        print(f"\n{'='*70}")
+        print(f"MODEL: OLS + Feature Selection (p-value threshold = {p_threshold})")
+        print(f"{'='*70}")
+
+        X_list = X_train.tolist()
+        y_list = y_train.tolist()
+        n, total_cols = X_train.shape
+        p_full = total_cols - 1  # Số biến thực sự, không tính intercept
+
+        # ── Bước 1: Fit OLS đầy đủ ───────────────────────────────────────────
+        try:
+            full_result = ols_fit(X_list, y_list)  # pyright: ignore[reportPossiblyUnboundVariable]
+            beta_full = full_result.beta_hat
+            sigma2_hat = full_result.sigma2_hat
+            if len(beta_full) == 0:
+                raise ValueError("OLS returned empty beta")
+        except Exception as e:
+            print(f"  Using NumPy fallback for initial OLS (error: {type(e).__name__})")
+            beta_np = np.linalg.lstsq(X_train, y_train, rcond=None)[0]
+            beta_full = beta_np.tolist()
+            y_hat_tmp = X_train @ beta_np
+            rss_tmp = float(np.sum((y_train - y_hat_tmp) ** 2))
+            dof_tmp = n - total_cols
+            sigma2_hat = rss_tmp / dof_tmp if dof_tmp > 0 else float('nan')
+
+        # Đảm bảo sigma2_hat hợp lệ để coef_inference không trả về NaN p-values
+        if sigma2_hat is None or (isinstance(sigma2_hat, float) and np.isnan(sigma2_hat)):
+            y_hat_tmp = X_train @ np.array(beta_full)
+            rss_tmp = float(np.sum((y_train - y_hat_tmp) ** 2))
+            dof_tmp = n - total_cols
+            sigma2_hat = rss_tmp / dof_tmp if dof_tmp > 0 else 1.0
+
+        # ── Bước 2: Tính p-value qua coef_inference ──────────────────────────
+        try:
+            inference_result = coef_inference(X_list, y_list, beta_full, sigma2_hat)  # pyright: ignore[reportPossiblyUnboundVariable]
+            p_values = inference_result.p_values
+        except Exception as e:
+            print(f"  Warning: coef_inference failed ({e}), falling back to scipy OLS")
+            import scipy.stats as stats
+            X_np = np.array(X_list)
+            beta_np = np.array(beta_full)
+            y_hat_np = X_np @ beta_np
+            residuals = np.array(y_list) - y_hat_np
+            rss = float(np.sum(residuals ** 2))
+            s2 = rss / (n - total_cols) if (n - total_cols) > 0 else 1.0
+            XtX_inv = np.linalg.pinv(X_np.T @ X_np)
+            se = np.sqrt(s2 * np.diag(XtX_inv))
+            t_stats = beta_np / (se + 1e-15)
+            dof = max(n - total_cols, 1)
+            p_values = [float(2 * (1 - stats.t.cdf(abs(t), dof))) for t in t_stats]
+
+        # ── Bước 3: Chọn feature theo p-value ────────────────────────────────
+        # Index 0 là intercept — luôn giữ, không đưa vào tiêu chí lọc
+        kept = [0] + [j for j in range(1, total_cols) if p_values[j] < p_threshold]
+
+        # Edge case: nếu không có feature nào qua ngưỡng, giữ feature tốt nhất
+        if len(kept) == 1:
+            best_j = int(np.argmin([p_values[j] for j in range(1, total_cols)])) + 1
+            kept = [0, best_j]
+            print(f"  ⚠ Không có feature nào qua ngưỡng — giữ lại feature tốt nhất: "
+                  f"{feature_names[best_j] if feature_names else best_j}")
+
+        dropped = [j for j in range(1, total_cols) if j not in kept]
+        n_kept = len(kept) - 1  # Trừ intercept
+        n_dropped = len(dropped)
+
+        print(f"  Features ban đầu : {p_full}")
+        print(f"  Giữ lại (p < {p_threshold}): {n_kept}")
+        print(f"  Loại bỏ         : {n_dropped}")
+        if feature_names and n_dropped <= 20:
+            dropped_names = [feature_names[j] for j in dropped]
+            print(f"  Biến bị loại    : {dropped_names}")
+
+        # ── Bước 4: Refit OLS trên feature được chọn ─────────────────────────
+        X_sel = X_train[:, kept]
+        X_sel_list = X_sel.tolist()
+
+        try:
+            sel_result = ols_fit(X_sel_list, y_list)  # pyright: ignore[reportPossiblyUnboundVariable]
+            beta_sel = sel_result.beta_hat
+            sigma2_sel = sel_result.sigma2_hat
+            y_hat_arr = np.array(sel_result.y_hat)
+            if len(y_hat_arr) == 0:
+                raise ValueError("OLS on selected features returned empty predictions")
+        except Exception as e:
+            print(f"  Using NumPy fallback for selected OLS (error: {type(e).__name__})")
+            beta_np_sel = np.linalg.lstsq(X_sel, y_train, rcond=None)[0]
+            beta_sel = beta_np_sel.tolist()
+            y_hat_arr = X_sel @ beta_np_sel
+            rss_sel = float(np.sum((y_train - y_hat_arr) ** 2))
+            dof_sel = n - len(kept)
+            sigma2_sel = rss_sel / dof_sel if dof_sel > 0 else float('nan')
+
+        # ── Bước 5: Zero-pad beta về đúng kích thước X_train ─────────────────
+        beta_padded = [0.0] * total_cols
+        for out_pos, col_idx in enumerate(kept):
+            beta_padded[col_idx] = beta_sel[out_pos]
+
+        # ── Bước 6: Tính metrics trên tập huấn luyện ─────────────────────────
+        rss = float(np.sum((y_train - y_hat_arr) ** 2))
+        tss = float(np.sum((y_train - np.mean(y_train)) ** 2))
+        r2 = 1 - rss / tss if tss > 0 else 0.0
+        adj_r2 = (1 - (1 - r2) * (n - 1) / (n - n_kept - 1)
+                  if (n - n_kept - 1) > 0 else 0.0)
+        mae = float(np.mean(np.abs(y_train - y_hat_arr)))
+        rmse = float(np.sqrt(np.mean((y_train - y_hat_arr) ** 2)))
+
+        print(f"  ✓ Refit xong")
+        print(f"  Train MAE:  {mae:.2f}")
+        print(f"  Train RMSE: {rmse:.2f}")
+        print(f"  Train R²:   {r2:.4f}")
+        print(f"  Train Adj R²: {adj_r2:.4f}")
+
+        model_result = ModelResult(
+            name="OLS+Selection",
+            beta_hat=beta_padded,
+            y_hat=y_hat_arr,
+            train_mae=mae,
+            train_rmse=rmse,
+            train_r2=r2,
+            train_adj_r2=adj_r2,
+            sigma2_hat=sigma2_sel,
+            selected_indices=kept,
+        )
+
+        self.models["OLS+Selection"] = model_result
+        return model_result
+
+    # ========================================================================
+    # Hồi quy Ridge — thêm phạt L2 để ổn định nghiệm khi có đa cộng tuyến
     # ========================================================================
 
     def fit_ridge(
@@ -276,8 +432,8 @@ class RegressionModels:
 
         try:
             # Dùng ridge_fit từ Part 1 để nhất quán với công thức lý thuyết
-            result = ridge_fit(X_list, y_list, lam)
-            beta_hat = result.beta_hat
+            result = ridge_fit(X_list, y_list, lam)  # pyright: ignore[reportPossiblyUnboundVariable]
+            beta_hat = result.coefficients  # RidgeResult lưu hệ số ở field 'coefficients'
             y_hat = X_train @ np.array(beta_hat)
             sigma2_hat = np.mean((y_train - y_hat) ** 2)
         except Exception as e:
@@ -289,7 +445,8 @@ class RegressionModels:
             y_hat = sk_ridge.predict(X_train)
             sigma2_hat = np.mean((y_train - y_hat) ** 2)
 
-        # Calculate metrics
+        # Từ phần dư, ta tính RSS và TSS để suy ra R², R² hiệu chỉnh cùng MAE và
+        # RMSE — bộ chỉ số dùng chung cho mọi mô hình nên có thể so sánh trực tiếp.
         n = len(y_train)
         p = X_train.shape[1] - 1
 
@@ -312,18 +469,18 @@ class RegressionModels:
             name=f"Ridge(λ={lam})",
             beta_hat=beta_hat,
             y_hat=y_hat,
-            train_mae=mae,
-            train_rmse=rmse,
-            train_r2=r2,
-            train_adj_r2=adj_r2,
-            sigma2_hat=sigma2_hat
+            train_mae=float(mae),
+            train_rmse=float(rmse),
+            train_r2=float(r2),
+            train_adj_r2=float(adj_r2),
+            sigma2_hat=float(sigma2_hat) if sigma2_hat is not None else None,
         )
 
         self.models[f"Ridge(λ={lam})"] = model_result
         return model_result
 
     # ========================================================================
-    # Lasso Regression
+    # Hồi quy Lasso — phạt L1 để tự động chọn biến (đẩy hệ số yếu về 0)
     # ========================================================================
 
     def fit_lasso(
@@ -361,17 +518,20 @@ class RegressionModels:
         print(f"{'='*70}")
 
         try:
-            # Use scikit-learn Lasso
+            # Lasso không có nghiệm dạng đóng nên ta dùng coordinate descent của
+            # scikit-learn, đặt max_iter lớn để chắc chắn hội tụ trên bộ đặc trưng
+            # nhiều biến giả sau one-hot encoding.
             lasso = Lasso(alpha=alpha, fit_intercept=False, max_iter=10000)
             lasso.fit(X_train, y_train)
-            beta_hat = lasso.coef_.tolist()
+            beta_hat = [float(c) for c in lasso.coef_]  # đảm bảo List[float] phẳng
             y_hat = lasso.predict(X_train)
             model_obj = lasso
         except Exception as e:
             print(f"  Error: {e}")
             raise
 
-        # Calculate metrics
+        # Từ phần dư, ta tính RSS và TSS để suy ra R², R² hiệu chỉnh cùng MAE và
+        # RMSE — bộ chỉ số dùng chung cho mọi mô hình nên có thể so sánh trực tiếp.
         n = len(y_train)
         p = X_train.shape[1] - 1
 
@@ -396,18 +556,18 @@ class RegressionModels:
             name=f"Lasso(α={alpha})",
             beta_hat=beta_hat,
             y_hat=y_hat,
-            train_mae=mae,
-            train_rmse=rmse,
-            train_r2=r2,
-            train_adj_r2=adj_r2,
-            model_object=model_obj
+            train_mae=float(mae),
+            train_rmse=float(rmse),
+            train_r2=float(r2),
+            train_adj_r2=float(adj_r2),
+            model_object=model_obj,
         )
 
         self.models[f"Lasso(α={alpha})"] = model_result
         return model_result
 
     # ========================================================================
-    # Model Evaluation on Test Set
+    # Đánh giá trên tập test và sinh dự đoán phục vụ submission
     # ========================================================================
 
     def evaluate_on_test(
@@ -450,11 +610,13 @@ class RegressionModels:
         for model in models:
             print(f"\n  {model.name}")
 
-            # Make predictions
+            # Dự đoán thuần bằng phép nhân X_test @ beta_hat, không gọi lại đối
+            # tượng mô hình gốc, nhờ đó OLS tự cài và các mô hình sklearn đi chung
+            # một lối, tránh sai khác do cách dự đoán khác nhau giữa hai nguồn.
             y_pred = X_test @ np.array(model.beta_hat)
 
             if y_test_actual is not None:
-                # Calculate metrics
+                # Khi có nhãn thực, ta tính đầy đủ MAE, RMSE và R² trên tập test
                 mae = np.mean(np.abs(y_test_actual - y_pred))
                 rmse = np.sqrt(np.mean((y_test_actual - y_pred) ** 2))
 
@@ -468,23 +630,23 @@ class RegressionModels:
 
                 result = ComparisonResult(
                     model_name=model.name,
-                    test_mae=mae,
-                    test_rmse=rmse,
-                    test_r2=r2,
+                    test_mae=float(mae),
+                    test_rmse=float(rmse),
+                    test_r2=float(r2),
                     test_pred=y_pred,
                     coef_count=len(model.beta_hat),
-                    nonzero_coef=np.count_nonzero(model.beta_hat)
+                    nonzero_coef=int(np.count_nonzero(model.beta_hat)),
                 )
             else:
                 print(f"    Predictions: {y_pred.shape}")
                 result = ComparisonResult(
                     model_name=model.name,
-                    test_mae=np.nan,
-                    test_rmse=np.nan,
-                    test_r2=np.nan,
+                    test_mae=float("nan"),
+                    test_rmse=float("nan"),
+                    test_r2=float("nan"),
                     test_pred=y_pred,
                     coef_count=len(model.beta_hat),
-                    nonzero_coef=np.count_nonzero(model.beta_hat)
+                    nonzero_coef=int(np.count_nonzero(model.beta_hat)),
                 )
 
             results[model.name] = result
@@ -522,7 +684,7 @@ class RegressionModels:
 
 
 # ============================================================================
-# Example Usage
+# Chạy thử trực tiếp — kiểm tra nhanh ba mô hình trên dữ liệu thật
 # ============================================================================
 
 if __name__ == "__main__":
@@ -530,7 +692,7 @@ if __name__ == "__main__":
 
     print("Testing Models Module\n")
 
-    # Load data
+    # Nạp và tiền xử lý dữ liệu qua pipeline trước, để có ngay X_train, y_train.
     config = PipelineConfig(data_dir="data", missing_method="mean")
     pipeline = DataPipeline(config)
     pipe_result = pipeline.run()
@@ -543,17 +705,18 @@ if __name__ == "__main__":
     print(f"\nData loaded: X_train {X_train.shape}, y_train {y_train.shape}")
     print(f"  Feature names: {feature_names[:5]}...")
 
-    # Fit models
+    # Huấn luyện ba mô hình tiêu biểu để đối chiếu: OLS, Ridge và Lasso.
     models_obj = RegressionModels()
 
     ols_result = models_obj.fit_ols(X_train, y_train, feature_names)
     ridge_result = models_obj.fit_ridge(X_train, y_train, lam=1000.0)
     lasso_result = models_obj.fit_lasso(X_train, y_train, alpha=100.0)
 
-    # Evaluate on test set (note: we don't have y_test, so just make predictions)
+    # Sinh dự đoán trên test; bộ dữ liệu này không có nhãn nên chỉ tạo prediction
+    # chứ chưa tính được sai số thực.
     eval_results = models_obj.evaluate_on_test(X_test, models=[ols_result, ridge_result, lasso_result])
 
-    # Create summary table
+    # Gom kết quả vào một bảng duy nhất để so sánh các mô hình cạnh nhau.
     summary = models_obj.summary_table(eval_results)
     print(f"\n{'='*70}")
     print("MODEL COMPARISON SUMMARY")

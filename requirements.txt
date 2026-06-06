@@ -1,14 +1,27 @@
+# Core numerical/data stack
 numpy
 pandas
 scipy
 scikit-learn
+
+# Plotting and EDA
 matplotlib
 seaborn
+
+# Model explainability and ML baselines
+shap
+lightgbm
+catboost
+
+# Notebook support
+jupyter
+notebook
+ipykernel
+ipython
+
+# Optional data/download utilities referenced by project docs/workflow
 requests
 beautifulsoup4
 tqdm
 xarray
 netCDF4
-lightgbm
-catboost
-jupyter

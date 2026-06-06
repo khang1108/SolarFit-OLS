@@ -222,11 +222,12 @@ class ModelEvaluator:
             X_train, X_test = X[train_idx], X[test_idx]
             y_train, y_test = y[train_idx], y[test_idx]
 
-            # Fit and predict
+            # Huấn luyện trên k-1 fold rồi dự đoán trên fold còn lại; chính việc
+            # đánh giá trên dữ liệu mô hình chưa thấy mới cho ước lượng trung thực.
             beta = fit_func(X_train, y_train)
             y_pred = X_test @ beta
 
-            # Calculate metrics
+            # Tính sai số của fold này (MAE, RMSE, R²) để sau đó lấy trung bình
             mae = np.mean(np.abs(y_test - y_pred))
             rmse = np.sqrt(np.mean((y_test - y_pred) ** 2))
 
@@ -435,7 +436,7 @@ def _shapiro_test(residuals: np.ndarray) -> Dict:
 
 
 # ============================================================================
-# Example Usage
+# Chạy thử trực tiếp — minh họa cross-validation, feature importance và tuning
 # ============================================================================
 
 if __name__ == "__main__":
@@ -444,7 +445,7 @@ if __name__ == "__main__":
 
     print("Testing Evaluator Module\n")
 
-    # Load data
+    # Nạp và tiền xử lý dữ liệu để lấy ma trận đặc trưng cho phần đánh giá.
     config = PipelineConfig(data_dir="data", missing_method="mean")
     pipeline = DataPipeline(config)
     pipe_result = pipeline.run()
@@ -452,7 +453,8 @@ if __name__ == "__main__":
     X_train = pipe_result.X_train
     y_train = pipe_result.y_train
 
-    # Define fit functions for CV
+    # Định nghĩa hàm fit cho CV: ta truyền thẳng hàm ước lượng hệ số vào vòng
+    # cross-validation, nhờ đó cùng một khung CV dùng được cho cả OLS lẫn Ridge.
     def fit_ols(X, y):
         from numpy.linalg import lstsq
         return lstsq(X, y, rcond=None)[0]
@@ -461,7 +463,7 @@ if __name__ == "__main__":
         from numpy.linalg import inv
         return inv(X.T @ X + lam * np.eye(X.shape[1])) @ X.T @ y
 
-    # Test k-fold CV
+    # Kiểm tra k-fold CV cho OLS: chia 5 fold rồi lấy trung bình ± độ lệch chuẩn
     print("=" * 70)
     print("K-FOLD CROSS-VALIDATION (k=5)")
     print("=" * 70)
@@ -478,7 +480,7 @@ if __name__ == "__main__":
     print(f"  RMSE: {cv_ols.mean_rmse:.2f} ± {cv_ols.std_rmse:.2f}")
     print(f"  R²:   {cv_ols.mean_r2:.4f} ± {cv_ols.std_r2:.4f}")
 
-    # Test feature importance
+    # Xếp hạng đặc trưng theo |hệ số| để xem biến nào chi phối dự đoán nhất
     print("\n" + "=" * 70)
     print("FEATURE IMPORTANCE (Top 20)")
     print("=" * 70)
@@ -491,7 +493,8 @@ if __name__ == "__main__":
     for i, (feat, coef) in enumerate(fi_result.ranking, 1):
         print(f"  {i:2d}. {feat:40s}: {coef:12.2f}")
 
-    # Test hyperparameter tuning
+    # Dò siêu tham số λ cho Ridge bằng CV: đây là cách khách quan duy nhất để
+    # chọn λ, vì nếu dựa vào train loss thì mô hình sẽ luôn thiên về λ nhỏ.
     print("\n" + "=" * 70)
     print("HYPERPARAMETER TUNING: Ridge λ selection")
     print("=" * 70)

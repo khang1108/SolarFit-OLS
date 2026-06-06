@@ -748,6 +748,238 @@ với công thức nghiệm đóng $\hat{\boldsymbol{\beta}}_{\mathrm{ridge}} = 
 \end{algorithmic}
 \end{algorithm}
 
+% ============================================================
+\subsection{Hồi Quy Lasso và Thuật Toán Coordinate Descent}
+% ============================================================
+
+\subsubsection{Bài Toán Tối Ưu và Lý Do Không Tồn Tại Nghiệm Dạng Đóng}
+
+Trong khi Ridge Regression cho phép giải trực tiếp hệ tuyến tính
+$(\mat{X}^T\mat{X} + \lambda\mat{I})\hat{\boldsymbol{\beta}} = \mat{X}^T\mat{y}$
+nhờ hàm mục tiêu khả vi toàn cục, Lasso Regression đặt ra một thách thức tính toán hoàn
+toàn khác biệt do bản chất không trơn của chuẩn $L_1$~\cite{tibshirani1996}. Cụ thể,
+hàm mục tiêu mà ta tối thiểu hóa là:
+\begin{equation}
+    f(\boldsymbol{\beta})
+    = \norm{\mat{y} - \mat{X}\boldsymbol{\beta}}_2^2
+    + \lambda\,\norm{\boldsymbol{\beta}_{-0}}_1,
+    \label{eq:lasso_obj}
+\end{equation}
+trong đó $\norm{\boldsymbol{\beta}_{-0}}_1 = \sum_{j=1}^{p}|\beta_j|$ là chuẩn $L_1$
+áp dụng trên tất cả hệ số hồi quy trừ hệ số chặn $\beta_0$, còn $\lambda \geq 0$ là
+tham số chính quy hóa kiểm soát mức độ phạt. Theo quy ước chuẩn trong tài
+liệu~\cite{tibshirani1996, james2013}, hệ số chặn không bị phạt vì việc đưa $\beta_0$
+vào số hạng phạt sẽ làm cho nghiệm phụ thuộc vào gốc tọa độ và đơn vị của biến đầu
+vào, điều này không mong muốn từ góc độ thống kê.
+
+Hàm $|\beta_j|$ có đạo hàm theo nghĩa thông thường là $\mathrm{sign}(\beta_j)$ khi
+$\beta_j \neq 0$, nhưng \textit{không khả vi} tại $\beta_j = 0$ vì đạo hàm trái và
+phải không bằng nhau. Do đó, điều kiện tối ưu bậc nhất $\nabla f = \mat{0}$ không thể
+áp dụng cho~\eqref{eq:lasso_obj}, và bài toán Lasso không có nghiệm dạng đóng như Ridge
+hay OLS~\cite{tibshirani1996}. Thay vào đó, lý thuyết tối ưu lồi đòi hỏi sử dụng khái
+niệm \textbf{subdifferential}: subdifferential của $|\beta_j|$ là tập đơn điểm
+$\{\mathrm{sign}(\beta_j)\}$ khi $\beta_j \neq 0$, và là đoạn $[-1,\,1]$ khi
+$\beta_j = 0$, từ đó điều kiện tối ưu KKT (Karush--Kuhn--Tucker) trở thành điều kiện
+bao hàm thức $0 \in \partial f(\boldsymbol{\beta})$ thay vì phương trình đơn giản.
+
+\subsubsection{Soft-Thresholding: Nghiệm Giải Tích của bài toán con}
+
+Thay vì tối thiểu hóa $f$ theo toàn bộ $\boldsymbol{\beta}$ cùng lúc (bài toán $p$-chiều
+không trơn), ý tưởng cốt lõi của \textbf{Coordinate Descent} là lần lượt cố định tất
+cả $\beta_k$ ($k \neq j$) và giải bài toán tối ưu theo từng $\beta_j$ riêng lẻ. Điều
+đặc biệt quan trọng là bài toán 1D kết quả có \textit{nghiệm giải tích chính xác}, có
+thể dẫn xuất tường minh từ điều kiện KKT.
+
+Khi cố định tất cả $\beta_k$ ($k \neq j$), ta định nghĩa
+\textbf{phần dư một phần} (partial residual) $\mat{r}^{(-j)} = \mat{y} - \sum_{k \neq j}\mat{X}_k\beta_k$,
+trong đó $\mat{X}_j$ là cột thứ $j$ của $\mat{X}$. Hàm mục tiêu theo $\beta_j$ khi đó
+rút gọn thành:
+\begin{equation}
+    f_j(\beta_j)
+    = z_j\beta_j^2 - 2\rho_j\beta_j + \text{const} + \lambda|\beta_j|,
+    \qquad j \geq 1,
+    \label{eq:lasso_1d}
+\end{equation}
+trong đó $z_j = \norm{\mat{X}_j}_2^2 = \sum_{i=1}^n X_{ij}^2$ là chuẩn bình phương cột
+$j$ (một hằng số không phụ thuộc $\beta_j$), và:
+\begin{equation}
+    \rho_j = \mat{X}_j^T\mat{r}^{(-j)}
+    = \sum_{i=1}^n X_{ij}\bigl(r_i + X_{ij}\beta_j\bigr)
+    \label{eq:rho_j}
+\end{equation}
+là hình chiếu của partial residual lên cột $\mat{X}_j$. Áp dụng điều kiện KKT cho
+bài toán~\eqref{eq:lasso_1d}: nghiệm tối ưu $\hat{\beta}_j$ thỏa mãn
+$0 \in 2z_j\hat{\beta}_j - 2\rho_j + \lambda\,\partial|\hat{\beta}_j|$, từ đó giải
+theo từng trường hợp của subdifferential:
+\begin{align}
+    \hat{\beta}_j > 0 &\implies 2z_j\hat{\beta}_j - 2\rho_j + \lambda = 0
+        \implies \hat{\beta}_j = \frac{\rho_j - \lambda/2}{z_j}, \notag\\
+    \hat{\beta}_j < 0 &\implies 2z_j\hat{\beta}_j - 2\rho_j - \lambda = 0
+        \implies \hat{\beta}_j = \frac{\rho_j + \lambda/2}{z_j}, \notag\\
+    \hat{\beta}_j = 0 &\iff |\rho_j| \leq \lambda/2. \notag
+\end{align}
+Ba trường hợp này hợp nhất thành một công thức duy nhất~\cite{tibshirani1996,friedman2010}:
+\begin{equation}
+    \hat{\beta}_j = \frac{S\!\left(\rho_j,\;\dfrac{\lambda}{2}\right)}{z_j},
+    \label{eq:cd_update}
+\end{equation}
+trong đó $S(\rho, \lambda) = \mathrm{sign}(\rho)\cdot\max(|\rho| - \lambda,\,0)$ là
+\textbf{toán tử soft-thresholding}. Nhân tử $\lambda/2$ --- chứ không phải $\lambda$ ---
+xuất hiện do đạo hàm của thành phần RSS sinh ra hệ số $2$:
+$\partial_{\beta_j}\norm{\mat{y} - \mat{X}\boldsymbol{\beta}}_2^2 = -2\mat{X}_j^T\mat{r}^{(-j)} + 2z_j\beta_j$,
+và khi đặt điều kiện KKT rồi chia hai vế cho $2z_j$ ta thu được
+công thức~\eqref{eq:cd_update}~\cite{friedman2010}. Để so sánh với scikit-learn, thư
+viện này tối thiểu $\frac{1}{2n}\norm{\mat{y}-\mat{X}\boldsymbol{\beta}}_2^2 + \alpha\norm{\boldsymbol{\beta}}_1$,
+tương đương với formulation~\eqref{eq:lasso_obj} khi đặt
+$\alpha_{\text{sklearn}} = \lambda\,/\,(2n)$.
+
+Toán tử soft-thresholding mang ý nghĩa hình học rõ ràng: nó tạo ra một
+\textit{vùng chết} (dead zone) $[-\lambda,\,\lambda]$ quanh gốc tọa độ, trong đó bất kỳ
+$\rho_j$ nào rơi vào vùng này đều cho $\hat{\beta}_j = 0$, nghĩa là biến $X_j$ bị loại
+hoàn toàn khỏi mô hình. Đây chính là cơ chế lựa chọn biến tự động
+(\textit{automatic feature selection}) của Lasso mà Ridge không có được: hàm $\beta_j^2$
+khả vi tại gốc tọa độ và không tạo ra dead zone, nên nghiệm Ridge luôn khác
+không~\cite{tibshirani1996, james2013}. Với hệ số chặn $\beta_0$ ($j = 0$), vì không
+có thành phần phạt, cập nhật trở về bài toán OLS 1D thông thường:
+$\hat{\beta}_0 = \rho_0 / z_0$.
+
+\subsubsection{Thuật Toán Coordinate Descent và Tính Hội Tụ}
+
+Thuật toán \textbf{Coordinate Descent} (CD) cho Lasso được Fu~\cite{fu1998} đề xuất lần
+đầu vào năm 1998 dưới tên \textit{shooting algorithm}, trong đó tác giả chứng minh rằng
+việc lặp qua từng tọa độ $\beta_j$ và áp dụng cập nhật~\eqref{eq:cd_update} hội tụ
+đến nghiệm toàn cục của bài toán Lasso vì hàm mục tiêu~\eqref{eq:lasso_obj} lồi chặt
+theo từng tọa độ riêng lẻ. Tính hội tụ tổng quát cho bài toán không khả vi sau đó được
+Tseng~\cite{tseng2001} chứng minh trong khuôn khổ rộng hơn: bất kỳ điểm tích lũy nào
+của dãy lặp CD đều là điểm dừng (stationary point), và với bài toán Lasso lồi thì điểm
+dừng đồng thời là nghiệm tối ưu toàn cục.
+
+Về hiệu năng tính toán, Friedman, Hastie và Tibshirani~\cite{friedman2010} tiến hành đánh
+giá thực nghiệm và kết luận rằng Coordinate Descent cạnh tranh tốt và thường vượt trội
+so với thuật toán LARS (Least Angle Regression and Shrinkage) của Efron et al.\ trong các
+bài toán quy mô lớn, đặc biệt khi cần tính toàn bộ regularization path. Kết quả này
+được Friedman et al.~\cite{friedman2007} làm rõ hơn: trên bài toán thưa với nhiều biến,
+tốc độ CD nhanh hơn LARS khoảng một bậc độ lớn (\textit{one order of magnitude}) nhờ
+chi phí mỗi epoch chỉ là $O(np)$, thay vì phải duy trì và cập nhật một cơ sở vector tích
+cực như LARS. Lý do cốt lõi là kỹ thuật \textit{cập nhật residual tăng dần}: sau mỗi
+lần thay đổi $\Delta\beta_j = \hat{\beta}_j - \beta_j^{\text{cũ}}$, ta cập nhật trực tiếp
+$\mat{r} \leftarrow \mat{r} - \mat{X}_j\Delta\beta_j$ thay vì tính lại
+$\mat{r} = \mat{y} - \mat{X}\boldsymbol{\beta}$ từ đầu, giữ chi phí mỗi cột ở mức $O(n)$
+và tổng mỗi epoch là $O(np)$. Thêm vào đó, Friedman et al.~\cite{friedman2010} chỉ ra
+rằng CD đặc biệt hiệu quả trên bài toán thưa: khi $\hat{\beta}_j = 0$ sau cập nhật, tọa
+độ này có thể bỏ qua ở những epoch tiếp theo nếu residual chưa thay đổi đủ để $|\rho_j|$
+vượt ngưỡng $\lambda/2$, giảm đáng kể số phép tính thực tế.
+
+Tiêu chí hội tụ mà ta sử dụng là $\norm{\boldsymbol{\beta}^{(t)} - \boldsymbol{\beta}^{(t-1)}}_\infty < \texttt{tol}$,
+tức là dừng khi thay đổi lớn nhất của bất kỳ hệ số nào qua một epoch nhỏ hơn ngưỡng
+$10^{-6}$, nhất quán với cách kiểm tra hội tụ trong thư viện tham chiếu
+\texttt{glmnet}~\cite{friedman2010}.
+
+\begin{algorithm}[H]
+\caption{Lasso Regression via Coordinate Descent (\texttt{lasso\_fit})}
+\label{alg:lasso_fit}
+\begin{algorithmic}[1]
+\Require $\mat{X} \in \R^{n\times(p+1)}$, $\mat{y} \in \R^n$, $\lambda \geq 0$,
+         \texttt{max\_iter}, \texttt{tol}, $\boldsymbol{\beta}^{(0)}$ (warm start, tùy chọn)
+\Ensure $\hat{\boldsymbol{\beta}}_{\text{lasso}}$, RSS, lasso\_penalty, total\_loss, n\_iter, converged
+\If{$\lambda < 0$}
+    \State \Return \textsc{FAIL} \Comment{lambda must be non-negative}
+\EndIf
+\State $\boldsymbol{\beta} \gets \boldsymbol{\beta}^{(0)}$ (hoặc $\mat{0}$ nếu không có warm start)
+\State $\mat{r} \gets \mat{y} - \mat{X}\boldsymbol{\beta}$ \Comment{residual ban đầu}
+\State $z_j \gets \norm{\mat{X}_j}_2^2$ với mọi $j = 0,\ldots,p$ \Comment{precompute: không đổi trong suốt quá trình}
+\For{$t = 1, 2, \ldots, \texttt{max\_iter}$}
+    \State $\boldsymbol{\beta}^{\text{old}} \gets \boldsymbol{\beta}$
+    \For{$j = 0, 1, \ldots, p$}
+        \State $\rho_j \gets \sum_{i} X_{ij}(r_i + X_{ij}\beta_j)$
+               \Comment{partial residual projection, xem~\eqref{eq:rho_j}}
+        \If{$z_j < 10^{-12}$}
+            \State \textbf{continue} \Comment{cột hằng hoặc toàn 0: bỏ qua, tránh chia cho 0}
+        \EndIf
+        \If{$j = 0$}
+            \State $\beta_j \gets \rho_j \;/\; z_j$
+                   \Comment{intercept: cập nhật OLS, không penalty}
+        \Else
+            \State $\beta_j \gets S\!\left(\rho_j,\;\lambda/2\right) \;/\; z_j$
+                   \Comment{xem công thức~\eqref{eq:cd_update}}
+        \EndIf
+        \State $\mat{r} \gets \mat{r} - \mat{X}_j(\beta_j - \beta_j^{\text{old}})$
+               \Comment{cập nhật residual tăng dần: $O(n)$ mỗi cột}
+    \EndFor
+    \If{$\norm{\boldsymbol{\beta} - \boldsymbol{\beta}^{\text{old}}}_\infty < \texttt{tol}$}
+        \State \textbf{break} \Comment{hội tụ}
+    \EndIf
+\EndFor
+\State $\text{RSS} \gets \norm{\mat{r}}_2^2$;\quad
+       $\text{penalty} \gets \sum_{j=1}^p|\beta_j|$;\quad
+       $L \gets \text{RSS} + \lambda\cdot\text{penalty}$
+\State \Return $\bigl(\hat{\boldsymbol{\beta}},\;\text{RSS},\;\text{penalty},\;L,\;t,\;\text{converged}\bigr)$
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Quỹ Đạo Chuẩn Hóa}
+
+Thay vì chỉ tính nghiệm tại một giá trị $\lambda$ duy nhất, trong thực tế ta thường muốn
+khảo sát toàn bộ \textbf{quỹ đạo chuẩn hóa} (regularization path): đồ thị biểu diễn
+$\hat{\boldsymbol{\beta}}(\lambda)$ khi $\lambda$ biến thiên trên một dải giá trị từ rất
+lớn (mô hình thưa tối đa, gần như tất cả hệ số bằng không) đến rất nhỏ (mô hình gần
+OLS). Hàm \texttt{lasso\_path} thực hiện điều này bằng cách gọi \texttt{lasso\_fit}
+tuần tự trên dãy $\lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_K$ theo thứ tự giảm
+dần, đồng thời thu thập hệ số, RSS, total loss và số hệ số khác không tại mỗi $\lambda_k$.
+
+Điểm then chốt về mặt tính toán là kỹ thuật \textbf{warm start}: nghiệm
+$\hat{\boldsymbol{\beta}}(\lambda_k)$ được dùng làm điểm khởi đầu cho bài toán
+$\lambda_{k+1}$, thay vì khởi tạo lại từ vector không. Friedman, Hastie, Höfling và
+Tibshirani~\cite{friedman2007} đã chứng minh rằng warm start theo hướng $\lambda$ giảm
+dần làm giảm đáng kể số epoch cần thiết tại mỗi $\lambda$, vì khi $\lambda_{k+1}$ gần
+$\lambda_k$, điểm khởi đầu warm start đã rất gần nghiệm tối ưu và coordinate descent
+chỉ cần vài epoch để hội tụ thay vì hàng chục epoch khi khởi đầu từ vector
+không~\cite{friedman2007}. Đây là hệ quả trực tiếp từ tính liên tục của quỹ đạo nghiệm
+$\hat{\boldsymbol{\beta}}(\lambda)$ theo $\lambda$: khi $\lambda$ thay đổi ít, nghiệm
+thay đổi ít, nên điểm warm start luôn nằm trong lân cận của nghiệm tối ưu.
+
+Lý do sắp xếp $\lambda$ theo chiều \textit{giảm dần} (từ lớn đến nhỏ) thay vì ngược lại
+xuất phát từ cấu trúc bài toán: tại $\lambda$ đủ lớn, toàn bộ hệ số hồi quy trừ
+intercept bị ép về không nên điểm khởi đầu là vector không đã là nghiệm tối ưu và CD
+hội tụ ngay từ epoch đầu~\cite{friedman2010}. Khi $\lambda$ giảm dần, các hệ số lần lượt
+``giải phóng'' khỏi vùng chết theo thứ tự quan trọng giảm dần --- biến có tương quan cao
+nhất với phần dư xuất hiện trước --- và warm start đảm bảo điểm khởi đầu luôn gần nghiệm,
+duy trì hiệu quả hội tụ trong suốt toàn bộ quỹ đạo. Phân tích trong~\cite{friedman2007}
+xác nhận rằng warm start kết hợp với dãy $\lambda$ giảm dần giảm đáng kể tổng số vòng
+lặp so với khởi đầu lạnh (cold start) trên cùng dữ liệu.
+
+\begin{algorithm}[H]
+\caption{Regularization Path for Lasso (\texttt{lasso\_path})}
+\label{alg:lasso_path}
+\begin{algorithmic}[1]
+\Require $\mat{X} \in \R^{n\times(p+1)}$, $\mat{y} \in \R^n$, $\{\lambda_k\}_{k=1}^K$
+         (bất kỳ thứ tự)
+\Ensure \texttt{LassoTraceData}: quỹ đạo hệ số, RSS, total loss, nonzero\_counts, n\_iter, converged
+\State Sắp xếp $\lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_K$ theo thứ tự giảm dần
+\State $\boldsymbol{\beta}^{\text{warm}} \gets \mat{0}$
+\For{$k = 1, 2, \ldots, K$}
+    \State Gọi \texttt{lasso\_fit}$\bigl(\mat{X},\,\mat{y},\,\lambda_k;\;\boldsymbol{\beta}^{(0)} = \boldsymbol{\beta}^{\text{warm}}\bigr)$
+    \State Thu thập $\hat{\boldsymbol{\beta}}(\lambda_k)$, $\text{RSS}_k$, $L_k$, $\text{nonzero}_k$, $\text{n\_iter}_k$
+    \If{hội tụ thành công}
+        \State $\boldsymbol{\beta}^{\text{warm}} \gets \hat{\boldsymbol{\beta}}(\lambda_k)$
+               \Comment{warm start cho $\lambda_{k+1}$}
+    \EndIf
+\EndFor
+\State \Return \texttt{LassoTraceData}$\bigl(\{\lambda_k\},\,\{\hat{\boldsymbol{\beta}}(\lambda_k)\},\,\{\text{RSS}_k\},\,\{L_k\},\,\{\text{nonzero}_k\},\,\{\text{n\_iter}_k\}\bigr)$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{note}[So sánh với \texttt{ridge\_trace}]
+Điểm khác biệt cơ bản giữa \texttt{lasso\_path} và \texttt{ridge\_trace} là kỹ thuật warm
+start và sự phụ thuộc vào thứ tự duyệt $\lambda$. Với Ridge, vì \texttt{ridge\_fit} giải
+một hệ tuyến tính độc lập tại mỗi $\lambda$ (nghiệm không phụ thuộc điểm khởi đầu),
+thứ tự $\lambda$ không ảnh hưởng đến kết quả và warm start không có ý nghĩa. Với Lasso,
+warm start theo chiều giảm của $\lambda$ không chỉ giảm chi phí tính toán mà còn ổn định
+hơn về mặt số học vì nghiệm ít thay đổi giữa hai $\lambda$ liên tiếp, tránh hiện tượng
+dao động số học khi CD phải tìm kiếm từ xa.
+\end{note}
+
+% ============================================================
 \subsection{Suy diễn Thống kê cho Hệ số}
 
 Hàm \texttt{coef\_inference(X, y, beta\_hat, sigma2)} tính toán sai số chuẩn, thống kê $t$, giá trị $p$, và khoảng tin cậy cho mỗi hệ số hồi quy, cho phép kiểm định giả thuyết $H_0 : \beta_j = 0$.

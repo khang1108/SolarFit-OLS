@@ -40,7 +40,10 @@ warnings.filterwarnings("ignore")
 np.random.seed(42)
 
 # ════════════════════════════════════════════════════════════════
-# CONFIG
+# CẤU HÌNH
+# Ta gom toàn bộ đường dẫn, tên cột mục tiêu và danh sách đặc trưng về một chỗ
+# ngay đầu file, để khi cấu trúc thư mục hay tên biến thay đổi thì chỉ cần sửa
+# duy nhất khối này thay vì dò khắp script.
 # ════════════════════════════════════════════════════════════════
 DATA_DIR   = "data"
 OUTPUT_DIR = "outputs"
@@ -78,7 +81,10 @@ CAT_FEAT = [
 SEP = "=" * 65
 
 # ════════════════════════════════════════════════════════════════
-# 0. LOAD DATA
+# BƯỚC 0 — NẠP DỮ LIỆU THÔ
+# Trước khi phân tích bất cứ điều gì, ta nạp đồng thời cả train lẫn test để có
+# thể soi hai tập song song, đồng thời đếm ngay số dòng trùng lặp: một dòng bị
+# lặp sẽ làm phồng giả tạo trọng số của quan sát đó khi mô hình fit về sau.
 # ════════════════════════════════════════════════════════════════
 print(SEP)
 print("0. LOADING DATA (Tanzania Tourism Expenditure)")
@@ -100,7 +106,10 @@ if dup_train > 0:
 
 
 # ════════════════════════════════════════════════════════════════
-# 1. MISSING VALUES AUDIT
+# BƯỚC 1 — KIỂM KÊ GIÁ TRỊ KHUYẾT
+# Với mỗi cột, ta soi cả số lượng lẫn tỷ lệ phần trăm missing, vì chính tỷ lệ
+# này mới quyết định cách xử lý: thiếu rất ít thì điền khuyết, thiếu nhiều thì
+# phải phân tích cơ chế (MCAR/MAR/MNAR) rồi mới chọn chiến lược cho từng cột.
 # ════════════════════════════════════════════════════════════════
 print(f"\n{SEP}")
 print("1. MISSING VALUES AUDIT (Xác định cột thiếu ≥ 5%)")
@@ -170,7 +179,11 @@ print("""
 
 
 # ════════════════════════════════════════════════════════════════
-# 2. DESCRIPTIVE STATISTICS + OUTLIER (IQR & Z-score)
+# BƯỚC 2 — THỐNG KÊ MÔ TẢ VÀ PHÁT HIỆN OUTLIER
+# Ta tính song song hai thước đo outlier cho từng biến số: luật 1.5·IQR của
+# Tukey và ngưỡng |z| > 3. Bước này quan trọng vì OLS tối thiểu hóa tổng bình
+# phương phần dư, nên mỗi outlier kéo lệch β̂ theo bình phương khoảng cách,
+# tức ảnh hưởng không cân xứng so với một quan sát bình thường.
 # ════════════════════════════════════════════════════════════════
 print(f"{SEP}")
 print("2. DESCRIPTIVE STATISTICS + OUTLIER DETECTION (Tính trên Train)")
@@ -206,7 +219,8 @@ for col in NUM_FEAT:
 df_stats = pd.DataFrame(rows)
 print(df_stats.to_string(index=False))
 
-# Target stats
+# Biến mục tiêu là tâm điểm của cả bài toán, nên ta soi riêng phân bố của nó:
+# độ lệch trước và sau log1p quyết định trực tiếp có cần biến đổi target không.
 print(f"\n  ── TARGET: {TARGET} (Chi phí du lịch - TZS) ──")
 tgt      = train[TARGET]
 q1t, q3t = tgt.quantile(0.25), tgt.quantile(0.75)
@@ -229,7 +243,10 @@ print("""
 
 
 # ════════════════════════════════════════════════════════════════
-# 3. FEATURE CLASSIFICATION
+# BƯỚC 3 — PHÂN LOẠI ĐẶC TRƯNG
+# Bốn biến đếm này tuy nhận giá trị nguyên nhỏ nhưng vẫn mang bản chất numeric
+# thật sự chứ không phải nhãn phân loại trá hình, nên ta xác nhận chúng đều cần
+# log1p để ghìm độ lệch trước khi đưa vào mô hình, thay vì đem one-hot encode.
 # ════════════════════════════════════════════════════════════════
 print(f"{SEP}")
 print("3. FEATURE CLASSIFICATION: true numeric vs. pseudo-category")
@@ -246,7 +263,11 @@ for k, v in classification.items():
 
 
 # ════════════════════════════════════════════════════════════════
-# 4. SCALING RECOMMENDATIONS  (đề mục 2.2.3)
+# BƯỚC 4 — ĐỀ XUẤT CHUẨN HÓA
+# Vì penalty của Ridge và Lasso áp trực tiếp lên không gian tham số mà không
+# phân biệt đơn vị đo, ta phải đưa mọi biến số về cùng một thang: trước hết
+# log1p để giảm lệch phải, sau đó StandardScaler để mỗi biến có trung bình 0
+# và độ lệch chuẩn 1, nhờ đó penalty mới phạt công bằng lên tất cả hệ số.
 # ════════════════════════════════════════════════════════════════
 print(f"\n{SEP}")
 print("4. SCALING RECOMMENDATIONS")
@@ -263,7 +284,11 @@ for k, v in scaling.items():
 
 
 # ════════════════════════════════════════════════════════════════
-# 5. TRAIN / TEST DISTRIBUTION SHIFT  (KS test)
+# BƯỚC 5 — DỊCH CHUYỂN PHÂN PHỐI GIỮA TRAIN VÀ TEST
+# Nếu hai tập đến từ phân phối khác nhau, hiện tượng covariate shift xảy ra và
+# metric đo trên test sẽ không còn phản ánh đúng khả năng tổng quát hóa thực sự.
+# Ta dùng kiểm định Kolmogorov–Smirnov cho từng biến số, với H0 là hai mẫu cùng
+# phân phối, và chỉ lo ngại khi p-value tụt xuống dưới 0.05.
 # ════════════════════════════════════════════════════════════════
 print(f"\n{SEP}")
 print("5. TRAIN / TEST DISTRIBUTION SHIFT  (Kolmogorov–Smirnov test)")
@@ -285,7 +310,11 @@ print("""
 
 
 # ════════════════════════════════════════════════════════════════
-# 6. VIF — MULTICOLLINEARITY  (công thức đề: VIF_j = 1/(1-R²_j))
+# BƯỚC 6 — KIỂM TRA ĐA CỘNG TUYẾN BẰNG VIF
+# Tương quan theo cặp chỉ thấy được quan hệ giữa đúng hai biến, trong khi đa
+# cộng tuyến thực tế có thể xuất hiện theo kiểu đa biến: một biến bị xấp xỉ tốt
+# bởi tổ hợp tuyến tính của nhiều biến khác. VIF_j = 1/(1 - R²_j) bắt được cả
+# tình huống đó, và ta coi VIF vượt 10 là dấu hiệu đa cộng tuyến nghiêm trọng.
 # ════════════════════════════════════════════════════════════════
 print(f"{SEP}")
 print("6. VIF — MULTICOLLINEARITY CHECK (Kiểm đa cộng tuyến biến liên tục)")
@@ -317,7 +346,11 @@ print("""
 
 
 # ════════════════════════════════════════════════════════════════
-# 7. PREPROCESSING DECISION SUMMARY
+# BƯỚC 7 — TỔNG HỢP QUYẾT ĐỊNH TIỀN XỬ LÝ
+# Toàn bộ phân tích phía trên được gói lại thành một bảng quyết định duy nhất.
+# Bảng này đóng vai trò như một bản hợp đồng để DataPipeline trong
+# data_pipeline.py thực thi đúng những gì EDA đã kết luận, tránh tình trạng
+# mỗi nơi xử lý dữ liệu một kiểu khác nhau.
 # ════════════════════════════════════════════════════════════════
 print(f"{SEP}")
 print("7. PREPROCESSING DECISIONS — tổng hợp cho DataPipeline Day 3")
@@ -351,7 +384,10 @@ print("""
 
 
 # ════════════════════════════════════════════════════════════════
-# 8. VISUALIZATIONS  (đủ yêu cầu đề: histogram, boxplot, heatmap)
+# BƯỚC 8 — TRỰC QUAN HÓA
+# Mỗi nhận định bằng số ở trên được vẽ lại thành biểu đồ tương ứng, gồm
+# histogram, boxplot, heatmap tương quan, VIF và KS. Nhờ đó báo cáo có hình
+# minh họa trực tiếp cho từng kết luận, thay vì chỉ trình bày con số khô khan.
 # ════════════════════════════════════════════════════════════════
 print("Generating plots...")
 
@@ -365,12 +401,13 @@ SHORT = {
     TARGET           : "cost",
 }
 
-# ── Figure 1a: Target Distribution (Original, Log, Boxplot) ────────
+# ── Hình 1a: phân bố biến mục tiêu — đặt cạnh nhau ba góc nhìn (gốc,
+# sau log1p, boxplot) để thấy rõ tác dụng của phép biến đổi log ───────
 fig1a, axes = plt.subplots(1, 3, figsize=(16, 5))
 fig1a.suptitle("Target Distribution Analysis: total_cost (TZS)",
                fontsize=13, fontweight="bold")
 
-# Target — original
+# Bên trái — phân bố gốc: đuôi phải rất dài nên cột tần suất dồn hết về bên trái
 ax = axes[0]
 ax.hist(tgt, bins=60, color="#2196F3", edgecolor="white", alpha=0.85, linewidth=1.2)
 ax.set_title(f"Original Distribution\nSkewness: {tgt.skew():.2f}", fontsize=11, fontweight="bold")
@@ -379,7 +416,7 @@ ax.set_ylabel("Frequency", fontsize=10)
 ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"{x/1e6:.0f}M"))
 ax.grid(axis="y", alpha=0.3)
 
-# Target — log1p
+# Ở giữa — sau log1p: đuôi phải bị nén lại, phân bố trở nên gần chuẩn hơn hẳn
 ax = axes[1]
 log_tgt = np.log1p(tgt)
 ax.hist(log_tgt, bins=60, color="#4CAF50", edgecolor="white", alpha=0.85, linewidth=1.2)
@@ -389,7 +426,7 @@ ax.set_xlabel("log1p(total_cost)", fontsize=10)
 ax.set_ylabel("Frequency", fontsize=10)
 ax.grid(axis="y", alpha=0.3)
 
-# Target — boxplot
+# Bên phải — boxplot: nhìn trực tiếp các điểm outlier theo luật 1.5·IQR
 ax = axes[2]
 bp = ax.boxplot(tgt, vert=True, patch_artist=True,
                 boxprops=dict(facecolor="#2196F3", alpha=0.7, linewidth=1.5),
@@ -410,7 +447,7 @@ fig1a.savefig(out1a, dpi=150, bbox_inches="tight")
 plt.close(fig1a)
 print(f"  ✅ Saved: {out1a}")
 
-# ── Figure 1b: Numeric Features Histograms (2x2) ─────────────────────
+# ── Hình 1b: histogram bốn biến số, để thấy từng biến lệch phải đến mức nào ──
 fig1b, axes = plt.subplots(2, 2, figsize=(14, 10))
 fig1b.suptitle("Numeric Features Distribution", fontsize=13, fontweight="bold")
 axes = axes.flatten()
@@ -431,7 +468,8 @@ fig1b.savefig(out1b, dpi=150, bbox_inches="tight")
 plt.close(fig1b)
 print(f"  ✅ Saved: {out1b}")
 
-# ── Figure 1c: Correlation Heatmap (Full Width) ────────────────────
+# ── Hình 1c: heatmap tương quan giữa các biến số và mục tiêu, vừa soi
+# multicollinearity vừa xem biến nào có tín hiệu tuyến tính với target ──
 fig1c, ax = plt.subplots(figsize=(12, 8))
 corr_cols   = NUM_FEAT + [TARGET]
 corr_matrix = train[corr_cols].corr()
@@ -460,7 +498,8 @@ plt.close(fig1c)
 print(f"  ✅ Saved: {out1c}")
 
 
-# ── Figure 2: Boxplots (phát hiện outlier trực quan) ─────────────
+# ── Hình 2: boxplot từng biến số để định vị outlier, kèm tỷ lệ điểm
+# vượt ngưỡng theo cả luật IQR lẫn ngưỡng |z| > 3 ──────────────────
 fig2, axes2 = plt.subplots(2, 2, figsize=(14, 10))
 fig2.suptitle("EDA — Boxplots (Outlier Detection)", fontsize=14, fontweight="bold")
 
@@ -485,7 +524,7 @@ plt.close(fig2)
 print(f"  ✅ Saved: {out2}")
 
 
-# ── Figure 3a: VIF Scores ─────────────────────────────────────────
+# ── Hình 3a: VIF của từng biến số, kèm hai đường ngưỡng cảnh báo 5 và 10 ──
 fig3a, ax = plt.subplots(figsize=(10, 6))
 vif_feats  = [SHORT[f] for f in vif_scores]
 vif_vals   = list(vif_scores.values())
@@ -506,7 +545,8 @@ fig3a.savefig(out3a, dpi=150, bbox_inches="tight")
 plt.close(fig3a)
 print(f"  ✅ Saved: {out3a}")
 
-# ── Figure 3b: Correlation with Target ─────────────────────────────
+# ── Hình 3b: tương quan Pearson của từng biến số với mục tiêu, để đánh
+# giá nhanh tiềm năng dự đoán tuyến tính đơn biến của mỗi biến ──────────
 fig3b, ax = plt.subplots(figsize=(10, 6))
 corr_vals   = [train[[c, TARGET]].dropna().corr().iloc[0, 1] for c in NUM_FEAT]
 corr_colors = ["#F44336" if v < 0 else "#4CAF50" for v in corr_vals]
@@ -527,7 +567,8 @@ fig3b.savefig(out3b, dpi=150, bbox_inches="tight")
 plt.close(fig3b)
 print(f"  ✅ Saved: {out3b}")
 
-# ── Figure 3c: KS Statistic (Train-Test Shift) ─────────────────────
+# ── Hình 3c: thống kê KS từng biến, thanh đỏ đánh dấu biến có dịch
+# chuyển phân phối giữa train và test (p < 0.05) ──────────────────────
 fig3c, ax = plt.subplots(figsize=(10, 6))
 ks_vals  = [r["KS_stat"] for r in ks_rows]
 ks_labs  = [SHORT[r["feature"]] for r in ks_rows]

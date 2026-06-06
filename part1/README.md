@@ -2,19 +2,22 @@
 
 Phần này chứa các hàm cài đặt từ đầu (from scratch) cho phương pháp Ordinary Least Squares (OLS) và các công cụ phân tích liên quan, theo đúng yêu cầu của đề bài.
 
+> **Thiết kế:** mỗi file là một script độc lập, **không phải package**. Chạy trực tiếp `python <tên_file>.py` (từ trong thư mục `part1/`) là file sẽ tự in ra kết quả minh họa tương ứng với một tiêu chí chấm điểm. Các hàm lõi vẫn thuần Python; chỉ khối demo `__main__` mới dùng NumPy/Matplotlib/SciPy để kiểm chứng và vẽ đồ thị.
+
 ## 📁 Cấu trúc thư mục
 
 ```
 part1/
-├── __init__.py                  # Package initialization
-├── ols_implementation.py        # Core OLS solver
-├── model_evaluation.py          # Model metrics & residual analysis
-├── inference.py                 # Coefficient inference & VIF
-├── regularization.py            # Ridge regression
-├── cross_validation.py          # k-fold cross-validation
-├── gauss_markov_sim.py          # Gauss-Markov simulation
-├── part1_notebook.ipynb         # Comprehensive demo notebook
-└── README.md                    # This file
+├── ols_implementation.py        # OLS từ đầu + hat matrix (kiểm chứng NumPy)
+├── inference.py                 # Suy luận hệ số: t-test, p-value, F-test, VIF
+├── model_evaluation.py          # Chỉ số đánh giá + 4 đồ thị chẩn đoán phần dư
+├── regularization.py            # Ridge & Lasso + vẽ ridge trace / lasso path
+├── cross_validation.py          # k-fold CV và so sánh mô hình
+├── gauss_markov_sim.py          # Kiểm chứng Gauss-Markov bằng Monte Carlo
+├── monte_carlo_gauss_markov.py  # Monte Carlo so sánh OLS với ước lượng khác
+├── outputs/                     # Đồ thị PNG sinh ra khi chạy demo
+├── part1_notebook.ipynb         # Notebook tổng hợp có markdown giải thích
+└── README.md                    # File này
 ```
 
 ## 📚 Module Descriptions
@@ -57,15 +60,17 @@ Returns:
 - `VIFResult`: VIF values and multicollinearity detection
 
 ### 4. `regularization.py`
-**Ridge regression and regularization methods**
+**Ridge regression, Lasso và các phương pháp chuẩn hóa**
 
 Functions:
 - `ridge_fit(X, y, lam)` — Ridge regression: β̂ᵣ = (X'X + λI)⁻¹X'y
-- `ridge_trace(X, y, lambdas)` — Compute ridge coefficients across λ range
+- `ridge_trace(X, y, lambdas)` — Quỹ đạo hệ số Ridge trên dải λ
+- `lasso_fit(X, y, lam)` — Lasso bằng coordinate descent với soft-thresholding
+- `lasso_path(X, y, lambdas)` — Quỹ đạo Lasso với warm start (λ giảm dần)
 
 Returns:
-- `RidgeResult`: Coefficients, RSS, ridge penalty, total loss
-- `RidgeTraceData`: Coefficients and RSS for multiple λ values
+- `RidgeResult` / `LassoResult`: hệ số, RSS, số hạng phạt, tổng hàm mục tiêu
+- `RidgeTraceData` / `LassoTraceData`: hệ số theo từng λ (để vẽ trace/path)
 
 ### 5. `cross_validation.py`
 **k-fold cross-validation for model evaluation**
@@ -94,39 +99,50 @@ Returns:
 - `GaussMarkovSimulation`: Mean/std of estimates, bias, MSE, theoretical variance
 - `dict`: Verification of each Gauss-Markov assumption
 
-## 🚀 Quick Start
+## 🚀 Cách chạy
 
-### Using the functions directly
-
-```python
-from part1 import ols_fit, hat_matrix, model_metrics, coef_inference, vif
-
-# Load your data
-X_list = ...  # List[List[float]], shape (n, p+1), first column = 1
-y_list = ...  # List[float], shape (n,)
-
-# Fit OLS
-result = ols_fit(X_list, y_list)
-print(f"β̂ = {result.beta_hat}")
-print(f"σ̂² = {result.sigma2_hat}")
-
-# Evaluate model
-metrics = model_metrics(y_list, result.y_hat, p=len(X_list[0])-1)
-print(f"R² = {metrics.r2:.4f}")
-
-# Coefficient inference
-inference = coef_inference(X_list, y_list, result.beta_hat, result.sigma2_hat)
-print(f"Standard errors: {inference.std_errors}")
-
-# Check multicollinearity
-vif_result = vif(X_list)
-print(f"Max VIF: {vif_result.max_vif:.2f}")
-```
-
-### Running the demo notebook
+### Chạy từng file để ra kết quả (mỗi file ứng với một tiêu chí chấm điểm)
 
 ```bash
-# In the part1 directory
+cd part1
+python ols_implementation.py     # OLS từ đầu + hat matrix, kiểm chứng với NumPy
+python inference.py              # t-stat, p-value, F-test, VIF (kiểm chứng SciPy)
+python model_evaluation.py       # 4 đồ thị chẩn đoán phần dư → outputs/residual_diagnostics.png
+python regularization.py         # Ridge & Lasso, vẽ ridge trace → outputs/regularization_paths.png
+python cross_validation.py       # k-fold CV và so sánh OLS vs Ridge
+python gauss_markov_sim.py       # Monte Carlo kiểm chứng OLS không chệch & phương sai
+python monte_carlo_gauss_markov.py  # Monte Carlo so sánh OLS với ước lượng tuyến tính khác
+```
+
+| File | Tiêu chí rubric | Đầu ra chính |
+|------|-----------------|--------------|
+| `ols_implementation.py` | Cài đặt OLS từ đầu + Hat matrix | β̂, H, sai số so với NumPy < 1e-8; `idem_err`, `sym_err` |
+| `inference.py` | Kiểm định hệ số (t, F) | Bảng t-stat/p-value/CI, F-test, đối chiếu SciPy |
+| `model_evaluation.py` | Phân tích phần dư (4 biểu đồ) | `outputs/residual_diagnostics.png` + nhận xét |
+| `regularization.py` | Regularization + vẽ ridge trace | `outputs/regularization_paths.png` |
+| `cross_validation.py` | Cross-validation | Điểm CV từng fold, so sánh mô hình |
+| `gauss_markov_sim.py` | Minh họa Gauss–Markov | E[β̂] vs β, sd mẫu vs sd lý thuyết |
+
+### Dùng lại hàm trong code khác
+
+Vì đây không phải package, ta import theo tên module trực tiếp (cần `part1/` nằm trong `sys.path`):
+
+```python
+import sys; sys.path.insert(0, "duong/dan/toi/part1")
+from ols_implementation import ols_fit
+from model_evaluation import model_metrics
+from inference import coef_inference, vif
+
+result = ols_fit(X_list, y_list)            # X_list: List[List[float]] có cột 1 ở đầu
+metrics = model_metrics(y_list, result.y_hat, p=len(X_list[0]) - 1)
+inf = coef_inference(X_list, y_list, result.beta_hat, result.sigma2_hat)
+print(f"R² = {metrics.r2:.4f}, max VIF = {vif(X_list).max_vif:.2f}")
+```
+
+### Chạy notebook tổng hợp
+
+```bash
+cd part1
 jupyter notebook part1_notebook.ipynb
 ```
 

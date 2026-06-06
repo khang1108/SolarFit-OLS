@@ -1,16 +1,10 @@
 """
-Module thực hiện suy luận thống kê cho các hệ số hồi quy OLS.
+File thực hiện suy luận thống kê cho các hệ số hồi quy OLS.
 
-Module này cung cấp hai hàm chính: coef_inference thực hiện suy luận cho từng
+File này cung cấp hai hàm chính: coef_inference thực hiện suy luận cho từng
 hệ số β_j bằng cách tính sai số chuẩn se(β̂_j) = σ̂·sqrt[(X'X)^{-1}_{jj}],
 thống kê t, p-value hai phía và khoảng tin cậy (1-α)·100%; và vif tính Variance
-Inflation Factor để phát hiện và đo lường mức độ multicollinearity. Suy luận
-thống kê dựa trên định lý phân phối: dưới giả thiết GM5 (phần dư có phân phối
-chuẩn), β̂_j tuân theo phân phối t_{n-p-1} chuẩn hóa, từ đó xây dựng được kiểm
-định và khoảng tin cậy chính xác. VIF_j = 1/(1-R²_j) đo mức độ một biến bị giải
-thích bởi các biến còn lại: VIF > 10 là dấu hiệu đáng lo ngại về multicollinearity,
-vì nó làm phình sai số chuẩn của hệ số và làm khoảng tin cậy trở nên rất rộng,
-gây mất ý nghĩa thống kê ngay cả khi biến thực sự quan trọng.
+Inflation Factor để phát hiện và đo lường mức độ multicollinearity. 
 """
 
 from dataclasses import dataclass
@@ -20,7 +14,7 @@ from math import sqrt
 
 @dataclass
 class CoefficientInference:
-    """Lớp chứa kết quả suy luận thống kê cho từng hệ số hồi quy.
+    """Dataclass chứa kết quả suy luận thống kê cho từng hệ số hồi quy.
 
     Dataclass này gom tất cả thông tin cần thiết để đánh giá ý nghĩa thống kê của
     từng hệ số β̂_j: sai số chuẩn phản ánh độ không chắc chắn của ước lượng, thống
@@ -46,7 +40,7 @@ def coef_inference(
 ) -> CoefficientInference:
     """Thực hiện suy luận thống kê cho từng hệ số OLS: se, t-statistic, p-value và CI.
 
-    Dưới mô hình tuyến tính với GM1-GM5, ma trận phương sai-hiệp phương sai của
+    Mô hình tuyến tính với GM1-GM5, ma trận phương sai-hiệp phương sai của
     ước lượng OLS là Cov(β̂) = σ²(X'X)^{-1}, do đó sai số chuẩn của β̂_j là
     se(β̂_j) = σ̂·sqrt[(X'X)^{-1}_{jj}]. Thống kê kiểm định t_j = β̂_j / se(β̂_j)
     tuân theo phân phối t_{n-p-1} dưới H₀: β_j = 0, từ đó suy ra p-value hai phía
@@ -131,14 +125,8 @@ def coef_inference(
 
 @dataclass
 class VIFResult:
-    """Lớp chứa kết quả phân tích Variance Inflation Factor cho tất cả biến.
+    """Dataclass chứa kết quả phân tích Variance Inflation Factor cho tất cả biến."""
 
-    VIF là chỉ số đo lường mức độ multicollinearity: VIF_j = 1/(1-R²_j) trong đó
-    R²_j là hệ số xác định từ hồi quy X_j lên các biến còn lại. Ý nghĩa trực quan:
-    VIF_j = k có nghĩa là phương sai của β̂_j lớn gấp k lần so với trường hợp X_j
-    hoàn toàn độc lập với các biến khác. VIF > 10 thường được coi là ngưỡng đáng
-    lo ngại vì lúc đó sai số chuẩn se(β̂_j) bị phình lên hơn 3 lần (sqrt(10) ≈ 3.16).
-    """
     vif_values: List[float]          # VIF_j cho từng cột của X
     column_names: List[str]          # Tên cột tương ứng
     max_vif: float                   # Giá trị VIF lớn nhất trong mô hình
@@ -150,11 +138,11 @@ def vif(X: List[List[float]], threshold: float = 10.0) -> VIFResult:
 
     VIF_j = 1/(1 - R²_j) trong đó R²_j là hệ số xác định từ hồi quy X_j lên
     tất cả các cột còn lại của X. VIF_j = 1 nghĩa là không có multicollinearity;
-    VIF_j → ∞ khi R²_j → 1, tức là X_j gần như là tổ hợp tuyến tính của các
-    biến khác. Đây là chẩn đoán quan trọng trước khi diễn giải hệ số OLS: khi
+    VIF_j → ∞ khi R²_j → 1.
+    
+    Đây là bước quan trọng trước khi diễn giải hệ số OLS: khi
     VIF cao, các β̂_j trở nên không ổn định và khoảng tin cậy rất rộng, làm mất
-    ý nghĩa thống kê. Phiên bản này dùng numpy để tính hồi quy phụ trợ nhưng
-    interface hoàn toàn là Python thuần.
+    ý nghĩa thống kê. 
 
     Args:
         X: Ma trận thiết kế kích thước n×(p+1) dạng list 2D, bao gồm cả cột intercept.
@@ -190,9 +178,7 @@ def _matrix_inverse(A: List[List[float]]) -> List[List[float]]:
     """Tính nghịch đảo ma trận vuông A bằng phương pháp Gauss-Jordan với partial pivoting.
 
     Hàm nội bộ này được dùng để tính (X'X)^{-1} trong coef_inference, phục vụ
-    tính sai số chuẩn và khoảng tin cậy. Partial pivoting đảm bảo tính ổn định
-    số học bằng cách luôn đưa phần tử có giá trị tuyệt đối lớn nhất lên vị trí
-    pivot, giảm thiểu sai số tích lũy trong phép chia.
+    tính sai số chuẩn và khoảng tin cậy. 
 
     Args:
         A: Ma trận vuông kích thước n×n cần tính nghịch đảo.
@@ -232,11 +218,8 @@ def _matrix_inverse(A: List[List[float]]) -> List[List[float]]:
 def _calculate_r2_excluding_col(X: List[List[float]], exclude_col: int) -> float:
     """Tính R² khi hồi quy cột exclude_col lên tất cả các cột còn lại của X.
 
-    Đây là bước cốt lõi trong tính VIF: R²_j từ hồi quy X_j ~ các X khác cho biết
-    mức độ X_j có thể được dự đoán tuyến tính từ các biến còn lại. Hàm dùng
-    numpy.linalg.lstsq để tính OLS phụ trợ vì bước này không cần triển khai thuần
-    Python, chỉ là công cụ nội bộ hỗ trợ chẩn đoán. Trả về 0.0 nếu không có numpy
-    hoặc gặp lỗi số học.
+    Tính VIF: R²_j từ hồi quy X_j ~ các X khác cho biết
+    mức độ X_j có thể được dự đoán tuyến tính từ các biến còn lại. 
 
     Args:
         X: Ma trận thiết kế đầy đủ kích thước n×(p+1).
@@ -271,8 +254,6 @@ def _t_critical(alpha_half: float, dof: int) -> float:
     Giá trị này là điểm phân vị (1 - alpha_half) của phân phối t_{dof}, dùng để
     xác định "biên độ sai số" của khoảng tin cậy. Khi dof > 30, phân phối t tiệm
     cận chuẩn tắc N(0,1), nên xấp xỉ t ≈ 1.96 là chấp nhận được cho α = 0.05.
-    Nếu có scipy thì dùng giá trị chính xác, ngược lại dùng xấp xỉ kinh nghiệm
-    2.0 + 4.0/dof (đủ tốt cho các mô hình nhỏ trong dự án này).
 
     Args:
         alpha_half: Nửa mức ý nghĩa α/2 (ví dụ: 0.025 cho α = 0.05).
@@ -314,3 +295,79 @@ def _t_pvalue(t_stat: float, dof: int) -> float:
     except:
         # Fallback: no p-value available
         return float('nan')
+
+
+if __name__ == "__main__":
+    import sys
+    import numpy as np
+    from ols_implementation import ols_fit
+    from model_evaluation import model_metrics
+
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")  # pyright: ignore[reportAttributeAccessIssue]
+
+    np.random.seed(42)
+    n_obs = 40
+    beta_true = np.array([5.0, 2.0, 0.0, -1.5])      # x2 vô nghĩa vì beta = 0
+    X_raw = np.random.randn(n_obs, 3)
+    X_np = np.column_stack([np.ones(n_obs), X_raw])
+    y_np = X_np @ beta_true + 0.8 * np.random.randn(n_obs)
+    X_list, y_list = X_np.tolist(), y_np.tolist()
+
+    # Bước 1: ước lượng OLS để lấy beta_hat và sigma^2 làm đầu vào cho suy luận
+    ols = ols_fit(X_list, y_list)
+    beta_hat, sigma2 = ols.beta_hat, ols.sigma2_hat
+
+    # Bước 2: suy luận từng hệ số (se, t, p-value, khoảng tin cậy)
+    inf = coef_inference(X_list, y_list, beta_hat, sigma2, alpha=0.05)
+
+    print("=" * 72)
+    print("  KIỂM ĐỊNH Ý NGHĨA TỪNG HỆ SỐ (t-test) — H0: beta_j = 0")
+    print("=" * 72)
+    names = ["Intercept", "x1", "x2", "x3"]
+    print(f"  {'Hệ số':<10}{'beta_hat':>11}{'se':>10}{'t':>9}{'p-value':>11}    95% CI")
+    for j, nm in enumerate(names):
+        p = inf.p_values[j]
+        star = "***" if p < 0.01 else "**" if p < 0.05 else "*" if p < 0.1 else "(ns)"
+        print(f"  {nm:<10}{beta_hat[j]:>11.4f}{inf.std_errors[j]:>10.4f}"
+              f"{inf.t_statistics[j]:>9.3f}{p:>11.4f}    "
+              f"[{inf.ci_lower[j]:.3f}, {inf.ci_upper[j]:.3f}] {star}")
+    print(f"\n  beta_true = {beta_true.tolist()} — như kỳ vọng, x2 có beta = 0 nên")
+    print("  p-value của nó lớn (ns) trong khi các biến còn lại đều có ý nghĩa.")
+
+    # Bước 3: kiểm định ý nghĩa toàn cục bằng F-test
+    mm = model_metrics(y_list, ols.y_hat, p=3)
+    print("\n" + "=" * 72)
+    print("  KIỂM ĐỊNH Ý NGHĨA TOÀN CỤC (F-test) — H0: beta_1 = ... = beta_p = 0")
+    print("=" * 72)
+    print(f"  F = {mm.f_statistic:.4f}   p-value = {mm.f_pvalue:.3e}   "
+          f"(R² = {mm.r2:.4f}, R²_adj = {mm.r2_adj:.4f})")
+    print("  p-value rất nhỏ nên ta bác bỏ H0: ít nhất một biến có ảnh hưởng.")
+
+    # Bước 4: chẩn đoán đa cộng tuyến bằng VIF
+    vif_res = vif(X_list)
+    print("\n" + "=" * 72)
+    print("  CHẨN ĐOÁN ĐA CỘNG TUYẾN (VIF)")
+    print("=" * 72)
+    for nm, v in zip(["Intercept", "x1", "x2", "x3"], vif_res.vif_values):
+        print(f"  VIF[{nm:<10}] = {v:.3f}")
+    print(f"  max VIF = {vif_res.max_vif:.3f} — "
+          f"{'có' if vif_res.has_multicollinearity else 'không có'} đa cộng tuyến nghiêm trọng.")
+
+    # Bước 5: đối chiếu se, t, p-value với NumPy và SciPy để kiểm chứng cài đặt
+    from scipy import stats as _st
+    XtX_inv = np.linalg.inv(X_np.T @ X_np)
+    se_np = np.sqrt(sigma2 * np.diag(XtX_inv))
+    t_np = np.array(beta_hat) / se_np
+    dof = n_obs - len(beta_hat)
+    p_np = 2 * _st.t.sf(np.abs(t_np), dof)
+
+    d_se = float(np.max(np.abs(np.array(inf.std_errors) - se_np)))
+    d_t = float(np.max(np.abs(np.array(inf.t_statistics) - t_np)))
+    d_p = float(np.max(np.abs(np.array(inf.p_values) - p_np)))
+    print("\n" + "=" * 72)
+    print("  KIỂM CHỨNG VỚI NUMPY + SCIPY")
+    print("=" * 72)
+    print(f"  ||se_ours - se_numpy||_inf = {d_se:.2e}  {'PASSED' if d_se < 1e-8 else 'FAILED'}")
+    print(f"  ||t_ours  - t_numpy||_inf  = {d_t:.2e}  {'PASSED' if d_t < 1e-8 else 'FAILED'}")
+    print(f"  ||p_ours  - p_scipy||_inf  = {d_p:.2e}  {'PASSED' if d_p < 1e-8 else 'FAILED'}")

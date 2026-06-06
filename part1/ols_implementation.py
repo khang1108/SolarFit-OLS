@@ -1,17 +1,15 @@
 """
-Module triển khai thuật toán Ordinary Least Squares (OLS) thuần Python.
+File triển khai thuật toán Ordinary Least Squares (OLS) thuần Python.
 
-Module này cung cấp hai hàm cốt lõi để ước lượng mô hình hồi quy tuyến tính
-theo phương pháp OLS: hàm ols_fit tính vector hệ số beta_hat thông qua Normal
-Equations, và hàm hat_matrix tính ma trận chiếu H = X(X'X)^{-1}X'. Toàn bộ
-tính toán được thực hiện bằng Python thuần túy (không dùng NumPy) để minh họa
-rõ ràng từng bước đại số tuyến tính nền tảng của OLS, đồng thời kiểm chứng kết
-quả so với NumPy ở phần __main__. Các lớp dataclass OLSResult và HatMatrixResult
-đóng gói kết quả trả về theo dạng có cấu trúc, thuận tiện cho các module khác
-trong dự án tái sử dụng mà không phải giải nén tuple thủ công.
+Triển khai hai hàm chính để ước lượng mô hình hồi quy tuyến tính
+theo phương pháp OLS: hàm ``ols_fit`` tính vector hệ số ``beta_hat`` 
+thông qua Normal Equations, và hàm hat_matrix tính ma trận chiếu H = X(X'X)^{-1}X'. 
 """
 
 import copy
+import sys, dataclasses
+import numpy as np
+
 from dataclasses import dataclass
 from math import sqrt
 from time import perf_counter
@@ -27,52 +25,62 @@ DEFAULT_TOL_IDEM = 1e-10
 
 @dataclass
 class OLSResult:
-    """Lớp chứa toàn bộ kết quả trả về của hàm ols_fit.
+    """Dataclass chứa toàn bộ kết quả trả về của hàm ols_fit.
 
-    Thay vì trả về tuple không có tên, dataclass này gom tất cả đại lượng
-    thống kê quan trọng vào một đối tượng có tên trường rõ ràng, giúp các
-    module downstream (model_evaluation, inference, cross_validation) truy
-    cập kết quả một cách minh bạch. Trường success cho biết liệu X'X có khả
-    nghịch hay không, qua đó bảo vệ các bước tính toán tiếp theo khỏi lỗi
-    NaN âm thầm khi gặp multicollinearity.
+    Attributes:
+        method: Tên phương pháp.
+        beta_hat: Vector hệ số ước lượng β̂ ∈ R^{p+1}.
+        sigma2_hat: Ước lượng phương sai nhiễu σ² = RSS / (n-p-1).
+        y_hat: Giá trị dự báo ŷ = Xβ̂ ∈ R^n.
+        residuals: Vector phần dư e = y - ŷ ∈ R^n.
+        rss: Tổng bình phương phần dư RSS = ||e||².
+        dof: Bậc tự do phần dư = n - p - 1.
+        success: True nếu X'X khả nghịch và tính toán thành công, False nếu có lỗi (ví dụ: multicollinearity).
+        runtime_sec: Thời gian chạy của hàm (tính bằng giây).
+        message: Thông báo kết quả hoặc lỗi chi tiết
     """
-    method: str               # Tên phương pháp, ở đây là "OLS-NormalEquations"
-    beta_hat: List[float]     # Vector hệ số ước lượng β̂ ∈ R^{p+1}
-    sigma2_hat: float         # Ước lượng phương sai nhiễu σ² = RSS / (n-p-1)
-    y_hat: List[float]        # Giá trị dự báo ŷ = Xβ̂ ∈ R^n
-    residuals: List[float]    # Vector phần dư e = y - ŷ ∈ R^n
-    rss: float                # Tổng bình phương phần dư RSS = ||e||²
-    dof: int                  # Bậc tự do phần dư = n - p - 1
-    success: bool             # True nếu X'X khả nghịch và tính toán thành công
-    runtime_sec: float        # Thời gian chạy (giây)
-    message: str              # Thông báo kết quả hoặc lỗi
+    method: str              
+    beta_hat: List[float]     
+    sigma2_hat: float         
+    y_hat: List[float]        
+    residuals: List[float]    
+    rss: float                
+    dof: int                  
+    success: bool             
+    runtime_sec: float        
+    message: str              
 
 
 @dataclass
 class HatMatrixResult:
-    """Lớp chứa toàn bộ kết quả trả về của hàm hat_matrix.
+    """Dataclass chứa toàn bộ kết quả trả về của hàm hat_matrix.
 
-    Hat matrix H = X(X'X)^{-1}X' là phép chiếu trực giao lên không gian cột
-    C(X), nên nó phải thỏa mãn hai tính chất đại số: đối xứng (H = H') và
-    idempotent (H² = H). Dataclass này lưu cả ma trận H lẫn các chỉ số sai số
-    sym_err và idem_err để người dùng kiểm chứng số học hai tính chất trên,
-    cũng như rank và trace dự kiến bằng p+1.
+    Attributes:
+        method: Tên phương pháp, ở đây là "HatMatrix"
+        H: Ma trận chiếu H ∈ R^{n×n}.
+        sym_err: ||H - H'||_∞, đo độ lệch đối xứng
+        idem_err: ||H² - H||_F, đo độ lệch idempotent
+        rank_H: Rank của H, kỳ vọng bằng p+1
+        trace_H: Trace của H, kỳ vọng bằng p+1
+        success: True nếu idem_err <= tol
+        runtime_sec: Thời gian chạy (giây)
+        message: Thông báo kết quả hoặc cảnh báo
     """
-    method: str                  # Tên phương pháp, ở đây là "HatMatrix"
-    H: List[List[float]]         # Ma trận chiếu H ∈ R^{n×n}
-    sym_err: float               # ||H - H'||_∞, đo độ lệch đối xứng
-    idem_err: float              # ||H² - H||_F, đo độ lệch idempotent
-    rank_H: int                  # Rank của H, kỳ vọng bằng p+1
-    trace_H: float               # Trace của H, kỳ vọng bằng p+1
-    success: bool                # True nếu idem_err <= tol
-    runtime_sec: float           # Thời gian chạy (giây)
-    message: str                 # Thông báo kết quả hoặc cảnh báo
+    method: str                  
+    H: List[List[float]]         
+    sym_err: float               
+    idem_err: float              
+    rank_H: int                  
+    trace_H: float               
+    success: bool                
+    runtime_sec: float           
+    message: str                 
 
 
 def _validate_inputs(
     X: List[List[float]], y: Optional[List[float]] = None
 ) -> Tuple[List[List[float]], Optional[List[float]]]:
-    """Kiểm tra tính hợp lệ của ma trận X và vector y, trả về bản sao kiểu float.
+    """Kiểm tra tính hợp lệ của ma trận X và vector y, trả về phiên bản chỉnh sửa.
 
     Hàm này đảm bảo các tiền điều kiện cần thiết trước khi thực hiện đại số tuyến tính:
     X phải là danh sách 2 chiều, tất cả hàng phải cùng độ dài, số hàng n phải không
@@ -81,12 +89,12 @@ def _validate_inputs(
     liệu đầu vào của người gọi (no side-effects).
 
     Args:
-        X: Ma trận thiết kế dạng list 2D, kỳ vọng có cột đầu tiên là vector 1
-           tương ứng với intercept, kích thước n×(p+1).
-        y: Vector quan sát tùy chọn, kích thước (n,). Nếu None thì chỉ kiểm tra X.
+        X:  Ma trận thiết kế dạng list 2D, kỳ vọng có cột đầu tiên là vector 1
+            tương ứng với intercept, kích thước n×(p+1).
+        y:  Vector quan sát tùy chọn, kích thước (n,). Nếu None thì chỉ kiểm tra X.
 
     Returns:
-        Bộ (X_copy, y_copy) với các phần tử đã được ép kiểu float. Nếu y là None
+        (X_copy, y_copy) với các phần tử đã được ép kiểu float. Nếu y là None
         thì phần tử thứ hai của bộ trả về cũng là None.
 
     Raises:
@@ -125,20 +133,26 @@ def _matmul(A: List[List[float]], B: List[List[float]]) -> List[List[float]]:
             for i in range(m)]
 
 
-def _matvec(A: List[List[float]], x: List[float]) -> List[float]:
+def _matvec(A: List[List[float]], x: List[float] | None) -> List[float]:
     """Nhân ma trận A với vector cột x, trả về vector Ax.
 
     Hàm này dùng để tính giá trị dự báo ŷ = Xβ̂ và vector X'y khi xây dựng
     Normal Equations.
     """
+    if x is None:
+        return [0.0] * len(A)
+    
     return [sum(A[i][j] * x[j] for j in range(len(x))) for i in range(len(A))]
 
 
-def _vecsub(a: List[float], b: List[float]) -> List[float]:
+def _vecsub(a: List[float] | None, b: List[float]) -> List[float]:
     """Trừ vector b khỏi vector a, trả về vector hiệu a - b.
 
     Dùng để tính vector phần dư e = y - ŷ sau khi có ước lượng β̂.
     """
+    if a is None:
+        return [-b[i] for i in range(len(b))]
+    
     return [a[i] - b[i] for i in range(len(a))]
 
 
@@ -277,9 +291,9 @@ def ols_fit(X: List[List[float]], y: List[float]) -> OLSResult:
     (5) Tính σ̂² = RSS/(n-p-1).
 
     Args:
-        X: Ma trận thiết kế kích thước n×(p+1) dạng list 2D, với cột đầu tiên
-           là vector 1 tương ứng với intercept.
-        y: Vector quan sát kích thước (n,).
+        X:  Ma trận thiết kế kích thước n×(p+1) dạng list 2D, với cột đầu tiên
+            là vector 1 tương ứng với intercept.
+        y:  Vector quan sát kích thước (n,).
 
     Returns:
         OLSResult chứa β̂, σ̂², ŷ, vector phần dư, RSS, bậc tự do, trạng thái
@@ -338,9 +352,11 @@ def ols_fit(X: List[List[float]], y: List[float]) -> OLSResult:
 def hat_matrix(X: List[List[float]], tol: float = DEFAULT_TOL_IDEM) -> HatMatrixResult:
     """Tính hat matrix H = X(X'X)^{-1}X' và kiểm chứng các tính chất đại số của nó.
 
-    Hat matrix H là phép chiếu trực giao lên không gian cột C(X), mang tên "hat"
-    vì nó "đội mũ" lên y: ŷ = Hy. Ma trận phần dư (I - H) chiếu y lên phần bù
-    trực giao của C(X), nên e = (I-H)y. Do H là phép chiếu trực giao, nó phải
+    Hat matrix H là phép chiếu trực giao lên không gian cột C(X)
+    ŷ = Hy. Ma trận phần dư (I - H) chiếu y lên phần bù trực giao của C(X), 
+    nên e = (I-H)y. 
+    
+    Do H là phép chiếu trực giao, nó phải
     thỏa mãn hai tính chất đại số: đối xứng H = H' (vì C(X) là không gian con
     đóng trong R^n) và idempotent H² = H (vì chiếu hai lần bằng chiếu một lần).
     Ngoài ra rank(H) = trace(H) = p+1 do các trị riêng của H chỉ là 0 hoặc 1.
@@ -354,7 +370,7 @@ def hat_matrix(X: List[List[float]], tol: float = DEFAULT_TOL_IDEM) -> HatMatrix
     Args:
         X: Ma trận thiết kế kích thước n×(p+1) dạng list 2D.
         tol: Ngưỡng dung sai Frobenius để coi H là idempotent hợp lệ, mặc định
-             là DEFAULT_TOL_IDEM = 1e-10.
+            là DEFAULT_TOL_IDEM = 1e-10.
 
     Returns:
         HatMatrixResult chứa ma trận H, các chỉ số sai số, rank, trace và
@@ -403,17 +419,17 @@ def hat_matrix(X: List[List[float]], tol: float = DEFAULT_TOL_IDEM) -> HatMatrix
 def run_ols_analysis(
     X: List[List[float]], y: List[float], tol_idem: float = DEFAULT_TOL_IDEM
 ) -> dict:
-    """Chạy đồng thời ols_fit và hat_matrix, trả về dict chứa cả hai kết quả.
+    """Chạy ``ols_fit`` và ``hat_matrix``, trả về dict chứa cả hai kết quả.
 
     Hàm tiện ích này gom hai phép tính cốt lõi của OLS vào một lần gọi duy nhất,
     phù hợp cho các script phân tích cần cả ước lượng hệ số lẫn kiểm tra tính
     chất của hat matrix trong cùng một pipeline.
 
     Args:
-        X: Ma trận thiết kế kích thước n×(p+1).
-        y: Vector quan sát kích thước (n,).
-        tol_idem: Ngưỡng dung sai Frobenius cho kiểm tra idempotent,
-                  mặc định là DEFAULT_TOL_IDEM = 1e-10.
+        X:          Ma trận thiết kế kích thước n×(p+1).
+        y:          Vector quan sát kích thước (n,).
+        tol_idem:   Ngưỡng dung sai Frobenius cho kiểm tra idempotent,
+                    mặc định là DEFAULT_TOL_IDEM = 1e-10.
 
     Returns:
         Dict với hai khóa: "ols" chứa OLSResult và "hat" chứa HatMatrixResult.
@@ -422,11 +438,8 @@ def run_ols_analysis(
 
 
 if __name__ == "__main__":
-    import sys, dataclasses
-    import numpy as np
-
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+    # if hasattr(sys.stdout, "reconfigure"):
+    #     sys.stdout.reconfigure(encoding="utf-8")
 
     np.random.seed(42)
     n_obs, p_feat = 20, 2

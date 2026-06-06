@@ -44,7 +44,7 @@ OUT_DIR    = os.path.join(SCRIPT_DIR, "..", "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
 sys.path.insert(0, SCRIPT_DIR)
 
-# ─── load & preprocess ───────────────────────────────────────────────────────
+# ─── Nạp dữ liệu và tiền xử lý ────────────────────────────────────────────────
 print("=" * 65)
 print("SHAP Analysis: Tanzania Tourism — Ridge Regression")
 print("=" * 65)
@@ -66,7 +66,7 @@ X_train = imp.fit_transform(X_train)
 
 print(f"  X_train: {X_train.shape}  |  NaN remaining: {np.isnan(X_train).sum()}")
 
-# ─── fit Ridge ───────────────────────────────────────────────────────────────
+# ─── Huấn luyện Ridge (mô hình sẽ được SHAP giải thích) ───────────────────────
 from sklearn.linear_model import Ridge
 
 LAMBDA = 100.0
@@ -78,7 +78,7 @@ rss = np.sum((y_train - y_hat) ** 2)
 tss = np.sum((y_train - np.mean(y_train)) ** 2)
 print(f"  Ridge R²: {1 - rss/tss:.4f}")
 
-# ─── SHAP ────────────────────────────────────────────────────────────────────
+# ─── Tính SHAP values ─────────────────────────────────────────────────────────
 print("\nComputing SHAP values (LinearExplainer)…")
 
 # Lấy 200 mẫu ngẫu nhiên làm background distribution để xác định baseline
@@ -100,7 +100,7 @@ top20_vals  = mean_abs[top20_idx]
 print(f"  SHAP values: {shap_vals.shape}")
 print(f"  Top feature: {top20_names[0]}  mean|SHAP|={top20_vals[0]:,.0f}")
 
-# ─── Figure 1: Beeswarm (manual via scatter) ──────────────────────────────────
+# ─── Hình 1: beeswarm (tự vẽ bằng scatter) ────────────────────────────────────
 print("\nGenerating fig_shap_summary.png …")
 
 sv_top20   = shap_vals[:, top20_idx]          # (300, 20)
@@ -139,7 +139,7 @@ ax1.set_title(
 )
 ax1.grid(axis="x", alpha=0.25, linestyle="--")
 
-# Colorbar legend
+# Thanh màu chú giải: ánh xạ giá trị đặc trưng từ thấp (xanh) đến cao (đỏ)
 sm = plt.cm.ScalarMappable(cmap="RdBu_r", norm=plt.Normalize(0, 1))
 sm.set_array([])
 cbar = fig1.colorbar(sm, ax=ax1, fraction=0.025, pad=0.02)
@@ -153,7 +153,7 @@ fig1.savefig(out1, dpi=150, bbox_inches="tight")
 plt.close(fig1)
 print(f"  ✅ {out1}")
 
-# ─── Figure 2: Bar — Mean |SHAP| top 20 ──────────────────────────────────────
+# ─── Hình 2: bar — Mean |SHAP| top 20 đặc trưng quan trọng nhất ───────────────
 print("Generating fig_shap_importance.png …")
 
 cmap   = plt.cm.get_cmap("RdYlGn_r", 20)
@@ -181,7 +181,7 @@ fig2.savefig(out2, dpi=150, bbox_inches="tight")
 plt.close(fig2)
 print(f"  ✅ {out2}")
 
-# ─── Figure 3: Waterfall (manual) for 3 samples ──────────────────────────────
+# ─── Hình 3: waterfall (tự vẽ) cho 3 mẫu đại diện ─────────────────────────────
 print("Generating fig_shap_waterfall.png …")
 
 y_samp  = y_hat[idx_samp]
@@ -271,7 +271,7 @@ fig3.savefig(out3, dpi=150, bbox_inches="tight")
 plt.close(fig3)
 print(f"  ✅ {out3}")
 
-# ─── Summary table ────────────────────────────────────────────────────────────
+# ─── Bảng tổng hợp ────────────────────────────────────────────────────────────
 print("\nTop 20 Features by Mean |SHAP|:")
 print(f"  {'Rank':<5} {'Feature':<42} {'Mean |SHAP| (TZS)':>18}")
 print("  " + "-" * 67)
