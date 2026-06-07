@@ -9,20 +9,25 @@ fitted, Q-Q plot, scale-location, leverage).
 
 from dataclasses import dataclass
 from typing import List, Tuple
-from math import sqrt
-from ols_implementation import ols_fit
+from math import inf, sqrt
+try:
+    from .ols_implementation import ols_fit
+    from .statistical_distributions import f_survival_probability
+except ImportError:  # Cho phép chạy trực tiếp file
+    from ols_implementation import ols_fit
+    from statistical_distributions import f_survival_probability
 
 import os
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
+import numpy as np  # pyright: ignore[reportMissingImports]
+import matplotlib.pyplot as plt  # pyright: ignore[reportMissingImports]
 
 
 @dataclass
 class ModelMetrics:
     """Dataclass chứa toàn bộ chỉ số đánh giá chất lượng mô hình hồi quy."""
     n: int             # Số quan sát
-    p: int             # Số biến giải thích (không tính intercept)
+    p: int             # Số biến giải thích (không tính hệ số tự do)
     rss: float         # Residual Sum of Squares = ||y - ŷ||²
     tss: float         # Total Sum of Squares = ||y - ȳ||²
     ess: float         # Explained Sum of Squares = TSS - RSS
@@ -30,7 +35,7 @@ class ModelMetrics:
     r2_adj: float      # R² hiệu chỉnh = 1 - [RSS/(n-p-1)] / [TSS/(n-1)]
     sigma2_hat: float  # Ước lượng phương sai nhiễu σ̂² = RSS/(n-p-1)
     f_statistic: float # F-statistic = (ESS/p) / (RSS/(n-p-1))
-    f_pvalue: float    # P-value của F-statistic (NaN nếu không có scipy)
+    f_pvalue: float    # P-value đuôi phải của F-statistic, tính từ đầu
     rmse: float        # Root Mean Squared Error = sqrt(σ̂²)
 
 
@@ -46,7 +51,7 @@ def model_metrics(y: List[float], y_hat: List[float], p: int) -> ModelMetrics:
     Args:
         y: Vector giá trị quan sát kích thước (n,).
         y_hat: Vector giá trị dự báo ŷ = Xβ̂ kích thước (n,).
-        p: Số biến giải thích không tính intercept (tức là số cột của X trừ 1).
+        p: Số biến giải thích không tính hệ số tự do (tức là số cột của X trừ 1).
 
     Returns:
         ModelMetrics chứa RSS, TSS, ESS, R², R² hiệu chỉnh, σ̂², F-statistic,
@@ -59,7 +64,7 @@ def model_metrics(y: List[float], y_hat: List[float], p: int) -> ModelMetrics:
     if len(y_hat) != n:
         raise ValueError("y and y_hat must have same length")
 
-    # Tính trung bình ȳ — mức cơ sở (baseline) so với mô hình chỉ có intercept
+    # Tính trung bình ȳ — mức cơ sở (baseline) so với mô hình chỉ có hệ số tự do
     y_mean = sum(y) / n
 
     # RSS: phần dư không được giải thích bởi mô hình, là hàm mà OLS tối thiểu hóa
@@ -72,7 +77,7 @@ def model_metrics(y: List[float], y_hat: List[float], p: int) -> ModelMetrics:
     # ESS: phần độ biến thiên được giải thích; đảm bảo TSS = ESS + RSS
     ess = tss - rss
 
-    # R² = ESS/TSS: tỷ lệ phương sai được giải thích, luôn trong [0, 1] khi có intercept
+    # R² = ESS/TSS: tỷ lệ phương sai được giải thích, luôn trong [0, 1] khi có hệ số tự do
     r2 = 1.0 - (rss / tss) if tss != 0 else 0.0
 
     # R² hiệu chỉnh: chia theo bậc tự do để phạt khi thêm biến không ý nghĩa
@@ -94,20 +99,17 @@ def model_metrics(y: List[float], y_hat: List[float], p: int) -> ModelMetrics:
 
     # F-statistic = (ESS/p) / (RSS/(n-p-1)): tỷ số giữa phương sai giải thích được
     # và phương sai phần dư; phân phối F(p, n-p-1) dưới H₀: β₁ = ... = βₚ = 0
-    if dof_residual > 0 and p > 0:
-        f_stat = (ess / p) / (rss / dof_residual)
+    if dof_residual > 0 and p > 0 and rss == 0.0:
+        f_stat = inf if ess > 0.0 else float("nan")
+    elif dof_residual > 0 and p > 0:
+        f_stat = max(0.0, (ess / p) / (rss / dof_residual))
     else:
         f_stat = float('nan')
 
-    # P-value của F-test = P(F_{p, n-p-1} > f_stat); dùng scipy khi có sẵn,
-    # ngược lại trả về NaN để không phụ thuộc bắt buộc vào thư viện ngoài.
+    # P-value của F-test được tính từ đầu qua hàm beta không đầy đủ chuẩn hóa.
     f_pvalue = float('nan')
     if dof_residual > 0 and p > 0:
-        try:
-            from scipy import stats
-            f_pvalue = float(stats.f.sf(f_stat, p, dof_residual))
-        except Exception:
-            f_pvalue = float('nan')
+        f_pvalue = f_survival_probability(f_stat, p, dof_residual)
 
     return ModelMetrics(
         n=n,
@@ -271,92 +273,3 @@ def _norm_ppf(p: float) -> float:
         q = sqrt(-2.0 * log(1.0 - p))
         return -(((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) / \
                 ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1.0)
-
-
-if __name__ == "__main__":
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")  # pyright: ignore[reportAttributeAccessIssue]
-
-    np.random.seed(7)
-    n_obs = 120
-    beta_true = np.array([3.0, 1.5, -2.0])
-    X_raw = np.random.randn(n_obs, 2)
-    X_np = np.column_stack([np.ones(n_obs), X_raw])
-    y_np = X_np @ beta_true + 1.0 * np.random.randn(n_obs)
-    X_list, y_list = X_np.tolist(), y_np.tolist()
-
-    # Bước 1: ước lượng OLS và in các chỉ số đánh giá tổng quát
-    ols = ols_fit(X_list, y_list)
-    mm = model_metrics(y_list, ols.y_hat, p=2)
-    print("=" * 64)
-    print("  CHỈ SỐ ĐÁNH GIÁ MÔ HÌNH")
-    print("=" * 64)
-    print(f"  n = {mm.n}, p = {mm.p}")
-    print(f"  R²      = {mm.r2:.4f}        R²_adj = {mm.r2_adj:.4f}")
-    print(f"  RMSE    = {mm.rmse:.4f}        σ̂²     = {mm.sigma2_hat:.4f}")
-    print(f"  F-stat  = {mm.f_statistic:.4f}   p-value = {mm.f_pvalue:.3e}")
-
-    # Bước 2: lấy dữ liệu cho bốn đồ thị chẩn đoán phần dư
-    rp = residual_plots(X_list, y_list, ols.beta_hat)
-    fitted = np.array(rp.fitted_values)
-    resid = np.array(rp.residuals)
-    std_resid = np.array(rp.standardized_residuals)
-    theo_q, samp_q = rp.qqplot_data
-
-    # Bước 3: vẽ lưới 2x2 gồm bốn đồ thị chẩn đoán chuẩn
-    fig, axes = plt.subplots(2, 2, figsize=(12, 9))
-    fig.suptitle("Bốn đồ thị chẩn đoán phần dư của mô hình OLS", fontsize=14, fontweight="bold")
-
-    # (1) Residuals vs Fitted — phát hiện phi tuyến và vi phạm dạng hàm
-    ax = axes[0, 0]
-    ax.scatter(fitted, resid, alpha=0.6, edgecolor="k", linewidth=0.3)
-    ax.axhline(0, color="red", linestyle="--", linewidth=1)
-    ax.set_title("(1) Residuals vs Fitted")
-    ax.set_xlabel("Giá trị dự báo ŷ")
-    ax.set_ylabel("Phần dư e")
-
-    # (2) Normal Q-Q — kiểm tra giả thiết chuẩn của phần dư
-    ax = axes[0, 1]
-    ax.scatter(theo_q, samp_q, alpha=0.6, edgecolor="k", linewidth=0.3)
-    lim = [min(min(theo_q), min(samp_q)), max(max(theo_q), max(samp_q))]
-    ax.plot(lim, lim, color="red", linestyle="--", linewidth=1)
-    ax.set_title("(2) Normal Q-Q")
-    ax.set_xlabel("Quantile lý thuyết N(0,1)")
-    ax.set_ylabel("Quantile phần dư chuẩn hóa")
-
-    # (3) Scale-Location — phát hiện phương sai thay đổi (heteroscedasticity)
-    ax = axes[1, 0]
-    ax.scatter(fitted, np.sqrt(np.abs(std_resid)), alpha=0.6, edgecolor="k", linewidth=0.3)
-    ax.set_title("(3) Scale-Location")
-    ax.set_xlabel("Giá trị dự báo ŷ")
-    ax.set_ylabel("√|phần dư chuẩn hóa|")
-
-    # (4) Histogram phần dư — so sánh trực quan với phân phối chuẩn
-    ax = axes[1, 1]
-    ax.hist(resid, bins=20, density=True, alpha=0.7, edgecolor="k")
-    xs = np.linspace(resid.min(), resid.max(), 200)
-    s = resid.std()
-    ax.plot(xs, np.exp(-0.5 * (xs / s) ** 2) / (s * np.sqrt(2 * np.pi)),
-            color="red", linewidth=1.5, label="N(0, σ̂²)")
-    ax.set_title("(4) Histogram phần dư")
-    ax.set_xlabel("Phần dư e")
-    ax.set_ylabel("Mật độ")
-    ax.legend()
-
-    fig.tight_layout(rect=(0, 0, 1, 0.96))
-    out_dir = os.path.join(os.path.dirname(__file__), "outputs")
-    os.makedirs(out_dir, exist_ok=True)
-    out_path = os.path.join(out_dir, "residual_diagnostics.png")
-    fig.savefig(out_path, dpi=120)
-    print("\n  Đã lưu 4 đồ thị chẩn đoán vào:", out_path)
-
-    # Bước 4: nhận xét định lượng dựa trên phần dư
-    print("\n" + "=" * 64)
-    print("  NHẬN XÉT")
-    print("=" * 64)
-    print(f"  Trung bình phần dư  = {resid.mean():.2e} (≈ 0, nhất quán với OLS có intercept).")
-    print(f"  Độ lệch chuẩn phần dư = {resid.std():.4f} (xấp xỉ √σ̂² = {sqrt(mm.sigma2_hat):.4f}).")
-    within2 = float(np.mean(np.abs(std_resid) < 2) * 100)
-    print(f"  Tỷ lệ |phần dư chuẩn hóa| < 2 là {within2:.1f}% (kỳ vọng ~95% nếu chuẩn).")
-    print("  Q-Q plot bám sát đường chéo và Scale-Location không có xu hướng rõ rệt,")
-    print("  nên các giả thiết chuẩn và đồng nhất phương sai được xem là thỏa mãn.")

@@ -1,4 +1,6 @@
 {
     "latex-workshop.latex.autoBuild.run": "never",
-    "latex-workshop.latex.autoClean.run": "onSucceeded"
+    "latex-workshop.latex.autoClean.run": "onSucceeded",
+    "python-envs.defaultEnvManager": "ms-python.python:venv",
+    "python-envs.defaultPackageManager": "ms-python.python:pip"
 }

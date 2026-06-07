@@ -4,12 +4,16 @@ File thực hiện suy luận thống kê cho các hệ số hồi quy OLS.
 File này cung cấp hai hàm chính: coef_inference thực hiện suy luận cho từng
 hệ số β_j bằng cách tính sai số chuẩn se(β̂_j) = σ̂·sqrt[(X'X)^{-1}_{jj}],
 thống kê t, p-value hai phía và khoảng tin cậy (1-α)·100%; và vif tính Variance
-Inflation Factor để phát hiện và đo lường mức độ multicollinearity. 
+Inflation Factor để phát hiện và đo lường mức độ multicollinearity.
 """
 
 from dataclasses import dataclass
-from typing import List, Tuple
-from math import sqrt
+from typing import List
+from math import inf, isfinite, sqrt
+try:
+    from .statistical_distributions import student_t_critical, student_t_two_sided_pvalue
+except ImportError:  # Cho phép chạy trực tiếp file
+    from statistical_distributions import student_t_critical, student_t_two_sided_pvalue
 
 
 @dataclass
@@ -58,9 +62,15 @@ def coef_inference(
     Returns:
         CoefficientInference chứa se, t-statistics, p-values và khoảng tin cậy
         cho tất cả p+1 hệ số.
+
+    Raises:
+        ValueError: Khi dữ liệu đầu vào không hợp lệ hoặc không còn bậc tự do
+            phần dư để thực hiện suy luận.
     """
+    _validate_inference_inputs(X, y, beta_hat, sigma2, alpha)
+
     n = len(y)
-    p = len(beta_hat) - 1  # number of features (excluding intercept)
+    p = len(beta_hat) - 1  # number of features (excluding hệ số tự do)
 
     # Tính X'X — ma trận Gram cần thiết để có Cov(β̂) = σ²(X'X)^{-1}
     k = len(X[0])
@@ -73,7 +83,7 @@ def coef_inference(
     # về NaN cho tất cả thống kê thay vì crash
     try:
         XtX_inv = _matrix_inverse(XtX)
-    except:
+    except ValueError:
         return CoefficientInference(
             coefficients=beta_hat,
             std_errors=[float('nan')] * len(beta_hat),
@@ -99,7 +109,7 @@ def coef_inference(
 
     # Giá trị tới hạn t_{α/2, n-p-1}: xấp xỉ chuẩn khi dof > 30
     dof = n - p - 1
-    t_crit = _t_critical(alpha / 2, dof)
+    t_crit = student_t_critical(alpha / 2, dof)
 
     # CI_j = β̂_j ± t_crit·se(β̂_j): khoảng plausible cho β_j với độ tin cậy (1-α)·100%
     ci_lower = []
@@ -110,7 +120,7 @@ def coef_inference(
         ci_upper.append(beta_hat[i] + margin)
 
     # P-value hai phía: P(|T_{n-p-1}| > |t_j|), nhỏ hơn α thì bác bỏ H₀: β_j = 0
-    p_values = [_t_pvalue(abs(t_stats[i]), dof) for i in range(k)]
+    p_values = [student_t_two_sided_pvalue(t_stats[i], dof) for i in range(k)]
 
     return CoefficientInference(
         coefficients=beta_hat,
@@ -140,29 +150,44 @@ def vif(X: List[List[float]], threshold: float = 10.0) -> VIFResult:
     tất cả các cột còn lại của X. VIF_j = 1 nghĩa là không có multicollinearity;
     VIF_j → ∞ khi R²_j → 1.
     
-    Đây là bước quan trọng trước khi diễn giải hệ số OLS: khi
     VIF cao, các β̂_j trở nên không ổn định và khoảng tin cậy rất rộng, làm mất
     ý nghĩa thống kê. 
 
     Args:
-        X: Ma trận thiết kế kích thước n×(p+1) dạng list 2D, bao gồm cả cột intercept.
+        X: Ma trận thiết kế kích thước n×(p+1) dạng list 2D, bao gồm cả cột hệ số tự do.
         threshold: Ngưỡng VIF để gắn cờ multicollinearity, mặc định là 10.0.
 
     Returns:
         VIFResult chứa VIF cho từng cột, tên cột, VIF lớn nhất và cờ multicollinearity.
+
+    Raises:
+        ValueError: Khi X rỗng, các hàng không cùng số cột hoặc threshold không dương.
     """
+    _validate_design_matrix(X)
+    if threshold <= 0:
+        raise ValueError("threshold must be positive")
+
     n = len(X)
     p = len(X[0])
 
     vif_values = []
     for j in range(p):
-        # R² from regressing X_j on others
+        # Hồi quy phụ trợ X_j theo tất cả cột còn lại, sau đó dùng
+        # VIF_j = 1 / (1 - R²_j). Cột hằng như hệ số tự do có VIF không xác định.
         r2_j = _calculate_r2_excluding_col(X, j)
-        vif_j = 1.0 / (1.0 - r2_j) if r2_j < 1.0 else float('inf')
+        if not isfinite(r2_j):
+            vif_j = float("nan")
+        elif r2_j >= 1.0 - 1e-12:
+            vif_j = inf
+        else:
+            # Chặn R² tại 0 để hạn chế sai số làm tròn rất nhỏ khiến VIF < 1.
+            vif_j = 1.0 / (1.0 - max(0.0, r2_j))
         vif_values.append(vif_j)
 
-    max_vif = max(v for v in vif_values if v != float('inf'))
-    has_multicollinearity = max_vif > threshold
+    # Bỏ qua NaN của hệ số tự do nhưng giữ inf vì đó là dấu hiệu đa cộng tuyến hoàn hảo.
+    comparable_vifs = [value for value in vif_values if value == value]
+    max_vif = max(comparable_vifs) if comparable_vifs else float("nan")
+    has_multicollinearity = max_vif > threshold if max_vif == max_vif else False
 
     col_names = [f"X{i}" for i in range(p)]
 
@@ -177,8 +202,7 @@ def vif(X: List[List[float]], threshold: float = 10.0) -> VIFResult:
 def _matrix_inverse(A: List[List[float]]) -> List[List[float]]:
     """Tính nghịch đảo ma trận vuông A bằng phương pháp Gauss-Jordan với partial pivoting.
 
-    Hàm nội bộ này được dùng để tính (X'X)^{-1} trong coef_inference, phục vụ
-    tính sai số chuẩn và khoảng tin cậy. 
+    Hàm tính (X'X)^{-1} trong coef_inference, phục vụ tính sai số chuẩn và khoảng tin cậy. 
 
     Args:
         A: Ma trận vuông kích thước n×n cần tính nghịch đảo.
@@ -219,155 +243,111 @@ def _calculate_r2_excluding_col(X: List[List[float]], exclude_col: int) -> float
     """Tính R² khi hồi quy cột exclude_col lên tất cả các cột còn lại của X.
 
     Tính VIF: R²_j từ hồi quy X_j ~ các X khác cho biết
-    mức độ X_j có thể được dự đoán tuyến tính từ các biến còn lại. 
+    mức độ X_j có thể được Prediction tuyến tính từ các biến còn lại. 
 
     Args:
         X: Ma trận thiết kế đầy đủ kích thước n×(p+1).
         exclude_col: Chỉ số cột cần làm biến phụ thuộc trong hồi quy phụ trợ.
 
     Returns:
-        Giá trị R² trong khoảng [0, 1]; trả về 0.0 khi không tính được.
+        Giá trị R² của hồi quy phụ trợ; trả về NaN cho cột hằng và 1.0 khi
+        ma trận hồi quy phụ trợ suy biến do đa cộng tuyến hoàn hảo.
     """
+    n = len(X)
+    p = len(X[0])
+    if exclude_col < 0 or exclude_col >= p:
+        raise ValueError("exclude_col is outside the design matrix")
+
+    # Tách cột đang xét làm biến phụ thuộc và giữ các cột khác làm biến giải thích.
+    y_col = [row[exclude_col] for row in X]
+    X_others = [
+        [value for column, value in enumerate(row) if column != exclude_col]
+        for row in X
+    ]
+
+    # SST bằng 0 đối với cột hằng, điển hình là hệ số tự do. Khi đó R² và VIF
+    # không được định nghĩa nên trả NaN thay vì gán một giá trị gây hiểu nhầm.
+    y_mean = sum(y_col) / n
+    ss_tot = sum((value - y_mean) ** 2 for value in y_col)
+    if ss_tot <= 1e-15:
+        return float("nan")
+
+    # Nếu không còn biến giải thích, dự báo tốt nhất trong mô hình rỗng là 0.
+    if not X_others[0]:
+        ss_res = sum(value**2 for value in y_col)
+        return 1.0 - ss_res / ss_tot
+
+    # Tự xây dựng normal equations (Z'Z)γ = Z'y cho hồi quy phụ trợ.
+    q = len(X_others[0])
+    ZtZ = [[0.0] * q for _ in range(q)]
+    Zty = [0.0] * q
+    for i in range(q):
+        Zty[i] = sum(X_others[row][i] * y_col[row] for row in range(n))
+        for j in range(q):
+            ZtZ[i][j] = sum(
+                X_others[row][i] * X_others[row][j] for row in range(n)
+            )
+
     try:
-        import numpy as np
-        X_arr = np.array(X, dtype=float)
-        y_col = X_arr[:, exclude_col]
-        X_others = np.delete(X_arr, exclude_col, axis=1)
+        gamma = _matrix_vector_multiply(_matrix_inverse(ZtZ), Zty)
+    except ValueError:
+        # Z'Z suy biến nghĩa là các biến giải thích trong hồi quy phụ trợ phụ
+        # thuộc tuyến tính hoàn hảo; toàn bộ thiết kế đang có đa cộng tuyến hoàn hảo.
+        return 1.0
 
-        # Simple OLS
-        try:
-            beta = np.linalg.lstsq(X_others, y_col, rcond=None)[0]
-            y_pred = X_others @ beta
-            ss_res = np.sum((y_col - y_pred)**2)
-            ss_tot = np.sum((y_col - np.mean(y_col))**2)
-            r2 = 1.0 - (ss_res / ss_tot) if ss_tot > 0 else 0.0
-            return float(r2)
-        except:
-            return 0.0
-    except ImportError:
-        return 0.0
+    y_pred = [
+        sum(X_others[row][column] * gamma[column] for column in range(q))
+        for row in range(n)
+    ]
+    ss_res = sum((y_col[row] - y_pred[row]) ** 2 for row in range(n))
+
+    # Sai số số học có thể làm R² hơi vượt khỏi [0, 1], nên chặn về miền hợp lệ.
+    return min(1.0, max(0.0, 1.0 - ss_res / ss_tot))
 
 
-def _t_critical(alpha_half: float, dof: int) -> float:
-    """Tính giá trị tới hạn t_{alpha_half, dof} để xây dựng khoảng tin cậy.
-
-    Giá trị này là điểm phân vị (1 - alpha_half) của phân phối t_{dof}, dùng để
-    xác định "biên độ sai số" của khoảng tin cậy. Khi dof > 30, phân phối t tiệm
-    cận chuẩn tắc N(0,1), nên xấp xỉ t ≈ 1.96 là chấp nhận được cho α = 0.05.
-
-    Args:
-        alpha_half: Nửa mức ý nghĩa α/2 (ví dụ: 0.025 cho α = 0.05).
-        dof: Bậc tự do phần dư = n - p - 1.
-
-    Returns:
-        Giá trị tới hạn t dương tương ứng với xác suất (1 - alpha_half).
-    """
-    try:
-        from scipy import stats
-        return float(stats.t.ppf(1 - alpha_half, dof))
-    except:
-        # Fallback: approximate with normal (good for dof > 30)
-        if dof > 30:
-            return 1.96  # 95% CI
-        else:
-            # Simple approximation
-            return 2.0 + 4.0 / dof
+def _matrix_vector_multiply(
+    matrix: List[List[float]], vector: List[float]
+) -> List[float]:
+    """Nhân ma trận với vector bằng Python thuần."""
+    if not matrix or len(matrix[0]) != len(vector):
+        raise ValueError("matrix and vector dimensions are incompatible")
+    return [
+        sum(matrix[row][column] * vector[column] for column in range(len(vector)))
+        for row in range(len(matrix))
+    ]
 
 
-def _t_pvalue(t_stat: float, dof: int) -> float:
-    """Tính p-value hai phía cho thống kê t trong kiểm định hệ số hồi quy.
-
-    P-value = P(|T_{dof}| > |t_stat|) = 2·P(T_{dof} > |t_stat|) trong đó T_{dof}
-    là biến ngẫu nhiên phân phối t_{dof} dưới giả thuyết không H₀: β_j = 0. P-value
-    nhỏ (thường < 0.05) là bằng chứng chống lại H₀, nghĩa là hệ số β_j có ý nghĩa
-    thống kê. Cần scipy để tính chính xác; trả về NaN khi không có scipy.
-
-    Args:
-        t_stat: Giá trị tuyệt đối của thống kê t, tức là |β̂_j / se(β̂_j)|.
-        dof: Bậc tự do phần dư = n - p - 1.
-
-    Returns:
-        P-value hai phía trong khoảng [0, 1]; trả về NaN khi không có scipy.
-    """
-    try:
-        from scipy import stats
-        return float(2 * (1 - stats.t.cdf(abs(t_stat), dof)))
-    except:
-        # Fallback: no p-value available
-        return float('nan')
+def _validate_design_matrix(X: List[List[float]]) -> None:
+    """Kiểm tra ma trận thiết kế không rỗng, hữu hạn và có dạng chữ nhật."""
+    if not X or not X[0]:
+        raise ValueError("X must be a non-empty design matrix")
+    width = len(X[0])
+    if any(len(row) != width for row in X):
+        raise ValueError("all rows of X must have the same number of columns")
+    if any(not isfinite(value) for row in X for value in row):
+        raise ValueError("X must contain only finite values")
 
 
-if __name__ == "__main__":
-    import sys
-    import numpy as np
-    from ols_implementation import ols_fit
-    from model_evaluation import model_metrics
-
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")  # pyright: ignore[reportAttributeAccessIssue]
-
-    np.random.seed(42)
-    n_obs = 40
-    beta_true = np.array([5.0, 2.0, 0.0, -1.5])      # x2 vô nghĩa vì beta = 0
-    X_raw = np.random.randn(n_obs, 3)
-    X_np = np.column_stack([np.ones(n_obs), X_raw])
-    y_np = X_np @ beta_true + 0.8 * np.random.randn(n_obs)
-    X_list, y_list = X_np.tolist(), y_np.tolist()
-
-    # Bước 1: ước lượng OLS để lấy beta_hat và sigma^2 làm đầu vào cho suy luận
-    ols = ols_fit(X_list, y_list)
-    beta_hat, sigma2 = ols.beta_hat, ols.sigma2_hat
-
-    # Bước 2: suy luận từng hệ số (se, t, p-value, khoảng tin cậy)
-    inf = coef_inference(X_list, y_list, beta_hat, sigma2, alpha=0.05)
-
-    print("=" * 72)
-    print("  KIỂM ĐỊNH Ý NGHĨA TỪNG HỆ SỐ (t-test) — H0: beta_j = 0")
-    print("=" * 72)
-    names = ["Intercept", "x1", "x2", "x3"]
-    print(f"  {'Hệ số':<10}{'beta_hat':>11}{'se':>10}{'t':>9}{'p-value':>11}    95% CI")
-    for j, nm in enumerate(names):
-        p = inf.p_values[j]
-        star = "***" if p < 0.01 else "**" if p < 0.05 else "*" if p < 0.1 else "(ns)"
-        print(f"  {nm:<10}{beta_hat[j]:>11.4f}{inf.std_errors[j]:>10.4f}"
-              f"{inf.t_statistics[j]:>9.3f}{p:>11.4f}    "
-              f"[{inf.ci_lower[j]:.3f}, {inf.ci_upper[j]:.3f}] {star}")
-    print(f"\n  beta_true = {beta_true.tolist()} — như kỳ vọng, x2 có beta = 0 nên")
-    print("  p-value của nó lớn (ns) trong khi các biến còn lại đều có ý nghĩa.")
-
-    # Bước 3: kiểm định ý nghĩa toàn cục bằng F-test
-    mm = model_metrics(y_list, ols.y_hat, p=3)
-    print("\n" + "=" * 72)
-    print("  KIỂM ĐỊNH Ý NGHĨA TOÀN CỤC (F-test) — H0: beta_1 = ... = beta_p = 0")
-    print("=" * 72)
-    print(f"  F = {mm.f_statistic:.4f}   p-value = {mm.f_pvalue:.3e}   "
-          f"(R² = {mm.r2:.4f}, R²_adj = {mm.r2_adj:.4f})")
-    print("  p-value rất nhỏ nên ta bác bỏ H0: ít nhất một biến có ảnh hưởng.")
-
-    # Bước 4: chẩn đoán đa cộng tuyến bằng VIF
-    vif_res = vif(X_list)
-    print("\n" + "=" * 72)
-    print("  CHẨN ĐOÁN ĐA CỘNG TUYẾN (VIF)")
-    print("=" * 72)
-    for nm, v in zip(["Intercept", "x1", "x2", "x3"], vif_res.vif_values):
-        print(f"  VIF[{nm:<10}] = {v:.3f}")
-    print(f"  max VIF = {vif_res.max_vif:.3f} — "
-          f"{'có' if vif_res.has_multicollinearity else 'không có'} đa cộng tuyến nghiêm trọng.")
-
-    # Bước 5: đối chiếu se, t, p-value với NumPy và SciPy để kiểm chứng cài đặt
-    from scipy import stats as _st
-    XtX_inv = np.linalg.inv(X_np.T @ X_np)
-    se_np = np.sqrt(sigma2 * np.diag(XtX_inv))
-    t_np = np.array(beta_hat) / se_np
-    dof = n_obs - len(beta_hat)
-    p_np = 2 * _st.t.sf(np.abs(t_np), dof)
-
-    d_se = float(np.max(np.abs(np.array(inf.std_errors) - se_np)))
-    d_t = float(np.max(np.abs(np.array(inf.t_statistics) - t_np)))
-    d_p = float(np.max(np.abs(np.array(inf.p_values) - p_np)))
-    print("\n" + "=" * 72)
-    print("  KIỂM CHỨNG VỚI NUMPY + SCIPY")
-    print("=" * 72)
-    print(f"  ||se_ours - se_numpy||_inf = {d_se:.2e}  {'PASSED' if d_se < 1e-8 else 'FAILED'}")
-    print(f"  ||t_ours  - t_numpy||_inf  = {d_t:.2e}  {'PASSED' if d_t < 1e-8 else 'FAILED'}")
-    print(f"  ||p_ours  - p_scipy||_inf  = {d_p:.2e}  {'PASSED' if d_p < 1e-8 else 'FAILED'}")
+def _validate_inference_inputs(
+    X: List[List[float]],
+    y: List[float],
+    beta_hat: List[float],
+    sigma2: float,
+    alpha: float,
+) -> None:
+    """Kiểm tra các điều kiện cần trước khi thực hiện suy luận OLS."""
+    _validate_design_matrix(X)
+    if len(X) != len(y):
+        raise ValueError("X and y must contain the same number of observations")
+    if any(not isfinite(value) for value in y):
+        raise ValueError("y must contain only finite values")
+    if len(beta_hat) != len(X[0]):
+        raise ValueError("beta_hat length must match the number of columns in X")
+    if any(not isfinite(value) for value in beta_hat):
+        raise ValueError("beta_hat must contain only finite values")
+    if sigma2 < 0.0 or not isfinite(sigma2):
+        raise ValueError("sigma2 must be a finite non-negative number")
+    if not 0.0 < alpha < 1.0:
+        raise ValueError("alpha must be between 0 and 1")
+    if len(y) - len(beta_hat) <= 0:
+        raise ValueError("residual degrees of freedom must be positive")

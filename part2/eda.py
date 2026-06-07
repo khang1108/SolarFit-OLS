@@ -11,7 +11,7 @@ thể được ghi lại tường minh và trực tiếp ảnh hưởng đến c
 DataPipeline trong data_pipeline.py.
 
 Kết quả phân tích được tóm tắt trong bảng quyết định cuối script và dẫn
-đến ba quyết định tiền xử lý chính: (1) dùng log1p transform cho target
+đến ba quyết định Preprocessing chính: (1) dùng log1p transform cho target
 total_cost vì skew = 2.97, (2) điền khuyết travel_with bằng nhãn "Unknown"
 thay vì xóa hàng vì tỷ lệ missing 23% quá cao cho listwise deletion, (3)
 giữ nguyên outlier trong target vì chúng là dữ liệu hợp lệ phản ánh chi phí
@@ -23,7 +23,7 @@ dễ dàng điều chỉnh khi cấu trúc thư mục thay đổi.
 
 Tác giả: trongnghia090406@gmail.com
 Tham chiếu: Toan_UDTK_Project_2 — Mục 2.2.1, 2.2.2, 2.2.3
-Cách chạy: python main.py (yêu cầu Train.csv và Test.csv trong thư mục data/)
+Cách chạy: python eda.py (yêu cầu Train.csv và Test.csv trong thư mục data/)
 """
 
 import os
@@ -34,7 +34,8 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.ticker as mticker
 from scipy import stats
-from sklearn.linear_model import LinearRegression
+
+from part1.ols_implementation import ols_fit
 
 warnings.filterwarnings("ignore")
 np.random.seed(42)
@@ -45,8 +46,9 @@ np.random.seed(42)
 # ngay đầu file, để khi cấu trúc thư mục hay tên biến thay đổi thì chỉ cần sửa
 # duy nhất khối này thay vì dò khắp script.
 # ════════════════════════════════════════════════════════════════
-DATA_DIR   = "data"
-OUTPUT_DIR = "outputs"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR   = os.path.join(SCRIPT_DIR, "data")
+OUTPUT_DIR = os.path.join(SCRIPT_DIR, "outputs")
 TRAIN_FILE = "Train.csv"
 TEST_FILE  = "Test.csv"
 
@@ -81,8 +83,8 @@ CAT_FEAT = [
 SEP = "=" * 65
 
 # ════════════════════════════════════════════════════════════════
-# BƯỚC 0 — NẠP DỮ LIỆU THÔ
-# Trước khi phân tích bất cứ điều gì, ta nạp đồng thời cả train lẫn test để có
+# BƯỚC 0 — Load DỮ LIỆU THÔ
+# Trước khi phân tích bất cứ điều gì, ta Load đồng thời cả train lẫn test để có
 # thể soi hai tập song song, đồng thời đếm ngay số dòng trùng lặp: một dòng bị
 # lặp sẽ làm phồng giả tạo trọng số của quan sát đó khi mô hình fit về sau.
 # ════════════════════════════════════════════════════════════════
@@ -330,8 +332,17 @@ for j, col in enumerate(NUM_FEAT):
     # hồi quy biến j lên tất cả các biến còn lại; VIF > 10 báo hiệu đa cộng tuyến
     X_other = np.delete(X_vif, j, axis=1)
     y_col   = X_vif[:, j]
-    lr      = LinearRegression().fit(X_other, y_col)
-    r2      = lr.score(X_other, y_col)
+    # Thêm cột intercept (all 1s) theo quy ước Part 1 ols_fit
+    ones    = np.ones((len(y_col), 1))
+    X_aug   = np.hstack([ones, X_other])
+    res     = ols_fit(X_aug.tolist(), y_col.tolist())
+    if res.success:
+        y_hat = np.array(res.y_hat)
+        ss_res = float(np.sum((y_col - y_hat) ** 2))
+        ss_tot = float(np.sum((y_col - y_col.mean()) ** 2))
+        r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else 0.0
+    else:
+        r2 = 0.0
     vif_scores[col] = round(1 / (1 - r2), 3) if r2 < 1 else float("inf")
 
 for col, vif in vif_scores.items():
@@ -346,7 +357,7 @@ print("""
 
 
 # ════════════════════════════════════════════════════════════════
-# BƯỚC 7 — TỔNG HỢP QUYẾT ĐỊNH TIỀN XỬ LÝ
+# BƯỚC 7 — TỔNG HỢP QUYẾT ĐỊNH Preprocessing
 # Toàn bộ phân tích phía trên được gói lại thành một bảng quyết định duy nhất.
 # Bảng này đóng vai trò như một bản hợp đồng để DataPipeline trong
 # data_pipeline.py thực thi đúng những gì EDA đã kết luận, tránh tình trạng
@@ -546,7 +557,7 @@ plt.close(fig3a)
 print(f"  ✅ Saved: {out3a}")
 
 # ── Hình 3b: tương quan Pearson của từng biến số với mục tiêu, để đánh
-# giá nhanh tiềm năng dự đoán tuyến tính đơn biến của mỗi biến ──────────
+# giá nhanh tiềm năng Prediction tuyến tính đơn biến của mỗi biến ──────────
 fig3b, ax = plt.subplots(figsize=(10, 6))
 corr_vals   = [train[[c, TARGET]].dropna().corr().iloc[0, 1] for c in NUM_FEAT]
 corr_colors = ["#F44336" if v < 0 else "#4CAF50" for v in corr_vals]

@@ -59,7 +59,7 @@ POLY_DEGREES = [2, 3]      # Các bậc Polynomial cần thử
 RANDOM_STATE = 42
 
 # ════════════════════════════════════════════════════════════════
-# 0. LOAD & PREPROCESS (tái sử dụng logic từ main.py)
+# 0. LOAD & PREPROCESS (theo các quyết định Preprocessing từ eda.py)
 # ════════════════════════════════════════════════════════════════
 print(SEP)
 print("0. LOADING & PREPROCESSING DATA")

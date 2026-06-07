@@ -1,55 +1,47 @@
 """
-Module phân tích SHAP (SHapley Additive exPlanations) cho mô hình Ridge Regression
+File phân tích SHAP (SHapley Additive exPlanations) cho mô hình Ridge Regression
 trên bộ dữ liệu Tanzania Tourism Expenditure, cung cấp giải thích về tầm quan
 trọng đặc trưng vượt ra ngoài phân tích hệ số thông thường.
 
-SHAP dựa trên lý thuyết trò chơi Shapley: giá trị SHAP của một đặc trưng đối
-với một mẫu cụ thể là phần đóng góp biên của đặc trưng đó vào giá trị dự đoán,
-tính trung bình qua tất cả các hoán vị có thể của tập đặc trưng. Điều này cho
-phép giải thích mô hình ở cả cấp độ toàn cục (feature importance trung bình)
-lẫn cấp độ cục bộ (tại sao mô hình đưa ra dự đoán cụ thể cho một mẫu). SHAP
-được ưu tiên hơn phân tích hệ số thuần túy vì nó phản ánh đúng tầm quan trọng
-ngay cả khi các đặc trưng có tương quan với nhau.
-
-Thư viện shap.LinearExplainer được chọn vì cho phép tính SHAP value chính xác
+Thư viện shap.LinearExplainer vì cho phép tính SHAP value chính xác
 cho mô hình tuyến tính (không cần xấp xỉ như TreeExplainer hay KernelExplainer),
-sử dụng phân phối nền (background distribution) từ 200 mẫu ngẫu nhiên của
-tập huấn luyện.
+sử dụng background distribution từ 200 mẫu ngẫu nhiên của tập huấn luyện.
 
-Module tạo ba biểu đồ trong thư mục outputs/:
-  fig_shap_summary.png    — Beeswarm: phân phối giá trị SHAP theo từng đặc trưng,
+File này tạo ba biểu đồ trong thư mục outputs/:
+    fig_shap_summary.png    — Beeswarm: phân phối giá trị SHAP theo từng đặc trưng,
                             màu sắc biểu thị giá trị đặc trưng (thấp/cao).
-  fig_shap_importance.png — Bar chart: mean |SHAP| feature importance (top 20).
-  fig_shap_waterfall.png  — Waterfall: giải thích cục bộ cho 3 mẫu dự đoán
+    fig_shap_importance.png — Bar chart: mean |SHAP| feature importance (top 20).
+    fig_shap_waterfall.png  — Waterfall: giải thích cục bộ cho 3 mẫu Prediction
                             điển hình (chi phí thấp, trung bình và cao).
 
-Cách chạy: python shap_analysis.py (từ thư mục part2/src/)
+Cách chạy từ project root: python -m part2.shap_analysis
 """
 
-import os, sys, warnings
+import os, warnings
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import shap
+
+matplotlib.use("Agg")  # Đảm bảo chạy được trên môi trường không có display (như server hoặc notebook không GUI)
+from part1.regularization import ridge_fit
 
 warnings.filterwarnings("ignore")
 np.random.seed(42)
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR   = os.path.join(SCRIPT_DIR, "..", "data")
-OUT_DIR    = os.path.join(SCRIPT_DIR, "..", "outputs")
+DATA_DIR   = os.path.join(SCRIPT_DIR, "data")
+OUT_DIR    = os.path.join(SCRIPT_DIR, "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
-sys.path.insert(0, SCRIPT_DIR)
 
-# ─── Nạp dữ liệu và tiền xử lý ────────────────────────────────────────────────
+# ─── Load dữ liệu và Preprocessing ────────────────────────────────────────────────
 print("=" * 65)
 print("SHAP Analysis: Tanzania Tourism — Ridge Regression")
 print("=" * 65)
 
-from data_pipeline import DataPipeline, PipelineConfig
+from part2.data_pipeline import DataPipeline, PipelineConfig
 
 config = PipelineConfig(data_dir=DATA_DIR, missing_method="mean")
 result = DataPipeline(config).run()
@@ -58,20 +50,25 @@ X_train       = result.X_train.copy()
 y_train       = result.y_train.copy()
 feature_names = result.feature_names
 
-# Điền NaN còn sót lại (nếu có) bằng 0 để LinearExplainer không bị lỗi;
-# lý do dùng fill_value=0 thay vì mean: sau khi StandardScaler thì mean = 0
-from sklearn.impute import SimpleImputer
-imp = SimpleImputer(strategy="constant", fill_value=0.0)
-X_train = imp.fit_transform(X_train)
+# Điền NaN còn sót lại (nếu có) bằng 0; sau StandardScaler thì mean = 0
+X_train = np.nan_to_num(X_train, nan=0.0)
 
 print(f"  X_train: {X_train.shape}  |  NaN remaining: {np.isnan(X_train).sum()}")
 
 # ─── Huấn luyện Ridge (mô hình sẽ được SHAP giải thích) ───────────────────────
-from sklearn.linear_model import Ridge
-
 LAMBDA = 100.0
-ridge  = Ridge(alpha=LAMBDA, fit_intercept=False)
-ridge.fit(X_train, y_train)
+_ridge_result = ridge_fit(X_train.tolist(), y_train.tolist(), lam=LAMBDA)
+
+# Wrapper để tương thích với shap.LinearExplainer.
+# DataPipeline đã thêm intercept column nên coef_ bao gồm tất cả coefficients,
+# intercept_ = 0 (không có bias riêng vì đã nằm trong X[:,0]).
+class _RidgeWrapper:
+    coef_      = np.array(_ridge_result.coefficients)
+    intercept_ = 0.0
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        return X @ self.coef_
+
+ridge = _RidgeWrapper()
 y_hat = ridge.predict(X_train)
 
 rss = np.sum((y_train - y_hat) ** 2)
@@ -120,7 +117,7 @@ for fi in range(n_feat):
     ft_min, ft_max = ft_col.min(), ft_col.max()
     ft_norm = (ft_col - ft_min) / (ft_max - ft_min + 1e-9)
 
-    colors_ = plt.cm.RdBu_r(ft_norm)
+    colors_ = plt.cm.RdBu_r(ft_norm) # pyright: ignore
 
     # Thêm jitter theo chiều y để hiển thị mật độ điểm (beeswarm effect)
     # mà không bị chồng chéo khi nhiều điểm có cùng SHAP value
@@ -140,7 +137,7 @@ ax1.set_title(
 ax1.grid(axis="x", alpha=0.25, linestyle="--")
 
 # Thanh màu chú giải: ánh xạ giá trị đặc trưng từ thấp (xanh) đến cao (đỏ)
-sm = plt.cm.ScalarMappable(cmap="RdBu_r", norm=plt.Normalize(0, 1))
+sm = plt.cm.ScalarMappable(cmap="RdBu_r", norm=plt.Normalize(0, 1)) # pyright: ignore
 sm.set_array([])
 cbar = fig1.colorbar(sm, ax=ax1, fraction=0.025, pad=0.02)
 cbar.set_label("Feature Value (low → high)", fontsize=10)
@@ -151,7 +148,7 @@ fig1.tight_layout()
 out1 = os.path.join(OUT_DIR, "fig_shap_summary.png")
 fig1.savefig(out1, dpi=150, bbox_inches="tight")
 plt.close(fig1)
-print(f"  ✅ {out1}")
+print(f"OK: {out1}")
 
 # ─── Hình 2: bar — Mean |SHAP| top 20 đặc trưng quan trọng nhất ───────────────
 print("Generating fig_shap_importance.png …")
@@ -165,7 +162,7 @@ bars = ax2.barh(
     color=colors[::-1], edgecolor="white", linewidth=1.1,
 )
 ax2.set_xlabel("Mean |SHAP Value| (average impact on prediction, TZS)",
-               fontsize=11, fontweight="bold")
+                fontsize=11, fontweight="bold")
 ax2.set_title(
     "Feature Importance via SHAP — Top 20 Features\n"
     "Ridge Regression (λ=100) · Tanzania Tourism",
@@ -174,12 +171,12 @@ ax2.set_title(
 ax2.grid(axis="x", alpha=0.3, linestyle="--")
 for bar, val in zip(bars, top20_vals[::-1]):
     ax2.text(val + max(top20_vals) * 0.005, bar.get_y() + bar.get_height() / 2,
-             f"{val:,.0f}", va="center", fontsize=8.5, fontweight="bold")
+                f"{val:,.0f}", va="center", fontsize=8.5, fontweight="bold")
 fig2.tight_layout()
 out2 = os.path.join(OUT_DIR, "fig_shap_importance.png")
 fig2.savefig(out2, dpi=150, bbox_inches="tight")
 plt.close(fig2)
-print(f"  ✅ {out2}")
+print(f"OK: {out2}")
 
 # ─── Hình 3: waterfall (tự vẽ) cho 3 mẫu đại diện ─────────────────────────────
 print("Generating fig_shap_waterfall.png …")
@@ -188,28 +185,22 @@ y_samp  = y_hat[idx_samp]
 base    = explainer.expected_value
 
 # Chọn ba mẫu đại diện: chi phí thấp nhất, gần trung vị nhất và cao nhất,
-# để waterfall chart phủ được toàn bộ phổ dự đoán và giải thích đa dạng
+# để waterfall chart phủ được toàn bộ phổ Prediction và giải thích đa dạng
 low_i  = int(np.argmin(y_samp))
 mid_i  = int(np.argmin(np.abs(y_samp - np.median(y_samp))))
 high_i = int(np.argmax(y_samp))
 
 def waterfall_ax(ax, sv_row, feat_row, feat_names, base_val, pred_val,
-                 title, n_show=10):
-    """Vẽ biểu đồ waterfall thể hiện đóng góp cục bộ của từng đặc trưng cho một dự đoán.
-
-    Waterfall chart minh họa quá trình đi từ giá trị kỳ vọng base_val (trung
-    bình dự đoán trên background) đến giá trị dự đoán cụ thể pred_val bằng
-    cách cộng dần từng giá trị SHAP theo thứ tự tăng dần. Màu đỏ biểu thị
-    đóng góp dương (đặc trưng làm tăng dự đoán), màu xanh biểu thị đóng góp
-    âm (đặc trưng làm giảm dự đoán).
+                title, n_show=10):
+    """Vẽ biểu đồ waterfall thể hiện đóng góp cục bộ của từng đặc trưng cho một Prediction.
 
     Args:
-        ax: Đối tượng matplotlib Axes sẽ vẽ lên.
+        ax:  matplotlib Axes sẽ vẽ lên.
         sv_row: Vector SHAP values của một mẫu cụ thể, hình dạng (n_top_features,).
         feat_row: Vector giá trị đặc trưng tương ứng của mẫu, hình dạng (n_top_features,).
         feat_names: Danh sách tên các top features tương ứng với sv_row.
         base_val: Giá trị kỳ vọng (baseline) của mô hình, tính từ background set.
-        pred_val: Giá trị dự đoán thực tế của mẫu này (đơn vị TZS).
+        pred_val: Giá trị Prediction thực tế của mẫu này (đơn vị TZS).
         title: Tiêu đề hiển thị trên biểu đồ con.
         n_show: Số lượng đặc trưng quan trọng nhất cần hiển thị, mặc định 10.
     """
@@ -248,8 +239,8 @@ def waterfall_ax(ax, sv_row, feat_row, feat_names, base_val, pred_val,
 fig3, axes3 = plt.subplots(1, 3, figsize=(18, 8))
 
 for ax, si, label in zip(axes3,
-                          [low_i, mid_i, high_i],
-                          ["Low-cost", "Median-cost", "High-cost"]):
+                        [low_i, mid_i, high_i],
+                        ["Low-cost", "Median-cost", "High-cost"]):
     waterfall_ax(
         ax,
         sv_row     = sv_top20[si],
@@ -269,7 +260,7 @@ fig3.tight_layout()
 out3 = os.path.join(OUT_DIR, "fig_shap_waterfall.png")
 fig3.savefig(out3, dpi=150, bbox_inches="tight")
 plt.close(fig3)
-print(f"  ✅ {out3}")
+print(f"  OK: {out3}")
 
 # ─── Bảng tổng hợp ────────────────────────────────────────────────────────────
 print("\nTop 20 Features by Mean |SHAP|:")
@@ -279,5 +270,5 @@ for rank, (name, val) in enumerate(zip(top20_names, top20_vals), 1):
     print(f"  {rank:<5} {name:<42} {val:>18,.2f}")
 
 print(f"\n{'='*65}")
-print("✅  SHAP Analysis: HOÀN THÀNH")
+print("OK: SHAP Analysis: HOÀN THÀNH")
 print(f"{'='*65}")

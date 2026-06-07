@@ -90,7 +90,7 @@ def _validate_inputs(
 
     Args:
         X:  Ma trận thiết kế dạng list 2D, kỳ vọng có cột đầu tiên là vector 1
-            tương ứng với intercept, kích thước n×(p+1).
+            tương ứng với hệ số tự do, kích thước n×(p+1).
         y:  Vector quan sát tùy chọn, kích thước (n,). Nếu None thì chỉ kiểm tra X.
 
     Returns:
@@ -292,7 +292,7 @@ def ols_fit(X: List[List[float]], y: List[float]) -> OLSResult:
 
     Args:
         X:  Ma trận thiết kế kích thước n×(p+1) dạng list 2D, với cột đầu tiên
-            là vector 1 tương ứng với intercept.
+            là vector 1 tương ứng với hệ số tự do.
         y:  Vector quan sát kích thước (n,).
 
     Returns:
@@ -435,47 +435,3 @@ def run_ols_analysis(
         Dict với hai khóa: "ols" chứa OLSResult và "hat" chứa HatMatrixResult.
     """
     return {"ols": ols_fit(X, y), "hat": hat_matrix(X, tol=tol_idem)}
-
-
-if __name__ == "__main__":
-    # if hasattr(sys.stdout, "reconfigure"):
-    #     sys.stdout.reconfigure(encoding="utf-8")
-
-    np.random.seed(42)
-    n_obs, p_feat = 20, 2
-    beta_true     = np.array([2.0, 1.0, -0.5])
-    X_raw         = np.random.randn(n_obs, p_feat)
-    X_np          = np.column_stack([np.ones(n_obs), X_raw])
-    y_np          = X_np @ beta_true + 0.5 * np.random.randn(n_obs)
-
-    X_list, y_list = X_np.tolist(), y_np.tolist()
-    results = run_ols_analysis(X_list, y_list)
-
-    for name, res in results.items():
-        print(f"\n{'='*55}\n  {name.upper()}\n{'='*55}")
-        for field, val in dataclasses.asdict(res).items():
-            if isinstance(val, list):
-                if val and isinstance(val[0], list):
-                    print(f"  {field}: <{len(val)}x{len(val[0])} matrix>")
-                elif len(val) <= 6:
-                    print(f"  {field}: {[round(v, 6) for v in val]}")
-                else:
-                    print(f"  {field}: {[round(v, 6) for v in val[:4]]} ... (n={len(val)})")
-            else:
-                print(f"  {field}: {val}")
-
-    # --- Verification against NumPy ---
-    ols_res = results["ols"]
-    hat_res = results["hat"]
-    print(f"\n{'='*55}\n  Verification\n{'='*55}")
-
-    beta_np, _, _, _ = np.linalg.lstsq(X_np, y_np, rcond=None)
-    diff_beta = float(np.max(np.abs(np.array(ols_res.beta_hat) - beta_np)))
-    print(f"  ols_fit   ||beta_hat - numpy||_inf  = {diff_beta:.2e}  {'PASSED' if diff_beta < 1e-8 else 'FAILED'}")
-
-    H_np   = X_np @ np.linalg.inv(X_np.T @ X_np) @ X_np.T
-    diff_H = float(np.max(np.abs(np.array(hat_res.H) - H_np)))
-    print(f"  hat_matrix ||H_ours - H_numpy||_inf = {diff_H:.2e}  {'PASSED' if diff_H < 1e-8 else 'FAILED'}")
-
-    print(f"\n  beta_true : {beta_true.tolist()}")
-    print(f"  beta_hat  : {[round(v, 6) for v in ols_res.beta_hat]}")

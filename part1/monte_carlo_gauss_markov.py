@@ -3,7 +3,7 @@ File minh họa Định lý Gauss-Markov bằng mô phỏng Monte Carlo so sánh
 
 Xây dựng một ước lượng tuyến tính không chệch thay thế
 β̃_Alt = β̂_OLS + Ay và chứng minh qua mô phỏng rằng Var(β̃_Alt) >= Var(β̂_OLS),
-tức là OLS có phương sai nhỏ nhất trong lớp ước lượng đó.
+tức là OLS có phương sai nhỏ nhất trong Class ước lượng đó.
 Ma trận nhiễu A được chọn thỏa mãn AX = 0 để đảm bảo β̃_Alt không chệch: 
     vì E[β̃_Alt] = E[β̂_OLS] + A·E[y] = β + AXβ = β khi AX = 0. 
     
@@ -11,7 +11,10 @@ Cụ thể, A = B(I - H) với B bất kỳ tự động thỏa mãn AX = B(I-H)
 """
 
 import numpy as np
-from ols_implementation import ols_fit, hat_matrix, _matmul, _matvec
+try:
+    from .ols_implementation import _matmul, _matvec, hat_matrix, ols_fit
+except ImportError:  # Cho phép chạy trực tiếp file
+    from ols_implementation import _matmul, _matvec, hat_matrix, ols_fit
 
 def make_perturbation(X, B):
     """Tạo ma trận nhiễu A = B(I - H) thỏa mãn ràng buộc không chệch AX = 0.
@@ -70,7 +73,7 @@ def run_monte_carlo(n=30, beta_true=(2.0, 1.0, -0.5), sigma=1.0,
 
     Args:
         n:          Số quan sát trong mỗi lần lặp, mặc định là 30.
-        beta_true:  Vector tham số thực dạng tuple (intercept, slope1, slope2),
+        beta_true:  Vector tham số thực dạng tuple (hệ số tự do, slope1, slope2),
                     mặc định là (2.0, 1.0, -0.5).
         sigma:      Độ lệch chuẩn của nhiễu, mặc định là 1.0.
         n_rep:      Số lần lặp Monte Carlo, mặc định là 8000. Giá trị lớn hơn cho
@@ -89,7 +92,7 @@ def run_monte_carlo(n=30, beta_true=(2.0, 1.0, -0.5), sigma=1.0,
     k = len(beta_true)
 
     # Ma trận thiết kế X được giữ cố định theo quy ước định lý (conditional on X);
-    # cột đầu là 1 cho intercept, các cột sau là biến giải thích Gaussian
+    # cột đầu là 1 cho hệ số tự do, các cột sau là biến giải thích Gaussian
     X_np = np.column_stack([np.ones(n), rng.normal(size=(n, k - 1))])
     X_list = X_np.tolist()
 
@@ -135,7 +138,7 @@ def verify_with_numpy_sklearn(X_np, y_one):
     Python không có lỗi số học đáng kể. 
 
     Args:
-        X_np: Ma trận thiết kế dạng numpy array, kích thước n×k, bao gồm cột intercept.
+        X_np: Ma trận thiết kế dạng numpy array, kích thước n×k, bao gồm cột hệ số tự do.
         y_one: Vector quan sát dạng list hoặc numpy array, kích thước (n,).
 
     Returns:
@@ -152,25 +155,3 @@ def verify_with_numpy_sklearn(X_np, y_one):
         "error_numpy": np.max(np.abs(beta_scratch - beta_numpy)),
         "error_sklearn": np.max(np.abs(beta_scratch - beta_sklearn)),
     }
-
-
-if __name__ == "__main__":
-    # Run the simulation with default parameters
-    print("Running Monte Carlo simulation...")
-    results = run_monte_carlo()
-
-    # Compute summary statistics
-    beta_ols_mean = results["beta_ols"].mean(axis=0)
-    beta_alt_mean = results["beta_alt"].mean(axis=0)
-    beta_ols_var = results["beta_ols"].var(axis=0, ddof=1)
-    beta_alt_var = results["beta_alt"].var(axis=0, ddof=1)
-
-    print("\nMean estimates (should match true values):")
-    print(f"β_true:     {results['beta_true']}")
-    print(f"β̂_OLS:      {beta_ols_mean}")
-    print(f"β̃_Alt:      {beta_alt_mean}")
-
-    print("\nVariance comparison (Alt should be larger):")
-    print(f"Var(β̂_OLS): {beta_ols_var}")
-    print(f"Var(β̃_Alt): {beta_alt_var}")
-    print(f"Ratio:      {beta_alt_var / beta_ols_var}")

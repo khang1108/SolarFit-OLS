@@ -1,0 +1,76 @@
+\section{Kết Luận Chung}
+
+\subsection{Tóm Tắt Kết Quả}
+
+Project đã xây dựng một quy trình data fitting xuyên suốt từ nền tảng toán học
+đến ứng dụng trên dữ liệu thực tế. Ở Phần 1, nhóm triển khai từ đầu các thành
+phần cốt lõi của OLS: nghiệm normal equations, hat matrix, các chỉ số đánh giá,
+suy luận hệ số, VIF, Ridge, Lasso, cross-validation và mô phỏng Monte Carlo cho
+Định lý Gauss--Markov. Những thành phần cần phân phối xác suất như
+$p$-value Student-$t$, $p$-value kiểm định $F$ và critical value cũng được tính
+từ đầu thông qua hàm beta không đầy đủ chuẩn hóa. NumPy, SciPy và scikit-learn
+chỉ được dùng làm oracle kiểm chứng.
+
+Các kiểm chứng số cho thấy implementation scratch khớp thư viện chuẩn ở mức
+sai số máy. Hệ số OLS và hat matrix có sai số cực đại cỡ $10^{-16}$; suy luận
+hệ số, $p$-value và effective degrees of freedom của Ridge đều đạt sai số nhỏ
+hơn $10^{-8}$. Mô phỏng Monte Carlo xác nhận OLS không chệch và có phương sai
+nhỏ hơn ước lượng tuyến tính không chệch đối chứng, phù hợp với kết luận BLUE.
+Generalized Cross-Validation của Ridge cũng thể hiện đúng dạng giảm đến điểm
+tối ưu rồi tăng trở lại.
+
+Ở Phần 2, nhóm áp dụng quy trình hồi quy lên dữ liệu Tanzania Tourism
+Expenditure: thực hiện EDA, xử lý missing values, mã hóa biến phân loại, chuẩn
+hóa biến số, xây dựng nhiều mô hình và đánh giá bằng cross-validation. Kết quả
+cho thấy regularization giúp mô hình ổn định hơn OLS và các biến liên quan đến
+hình thức tour, nhóm du lịch, quốc gia xuất phát và nguồn thông tin đóng vai trò
+quan trọng trong Prediction chi phí.
+
+\subsection{Bài Học Rút Ra}
+
+Kinh nghiệm đầu tiên và cũng là sâu sắc nhất mà nhóm rút ra là khoảng cách giữa công thức toán học và một implementation thực sự đáng tin cậy. Một công thức đúng về mặt đại số vẫn có thể thất bại trong thực tế khi gặp ma trận suy biến, dữ liệu ill-conditioned hay đơn giản là đầu vào không hợp lệ; vì vậy mỗi hàm scratch đều cần đi kèm kiểm tra điều kiện đầu vào, xử lý trường hợp suy biến và test số đối chiếu với thư viện chuẩn. Cách tiếp cận sử dụng NumPy, SciPy và scikit-learn làm oracle độc lập tỏ ra đặc biệt hiệu quả: nó xác nhận tính đúng của thuật toán tự cài đặt mà không thay thế nội dung cần chứng minh, đồng thời tạo ra vòng kiểm chứng khép kín giữa lý thuyết và kết quả số.
+
+Kinh nghiệm thứ hai liên quan đến việc hiểu đúng vị trí và giới hạn của từng phương pháp hồi quy. OLS có khả năng diễn giải mạnh và cung cấp ước lượng không chệch, nhưng nhạy với đa cộng tuyến và dữ liệu ill-conditioned; Ridge và Lasso không phải là sự thay thế đơn giản mà là sự đánh đổi có hệ thống giữa độ chệch, phương sai và tính thưa của mô hình tùy vào mục tiêu phân tích. Đặc biệt quan trọng là nguyên tắc tách biệt ba giai đoạn đánh giá: dữ liệu dùng để fit mô hình, dữ liệu dùng để chọn siêu tham số và dữ liệu dùng để kiểm tra cuối cùng phải hoàn toàn độc lập với nhau, vì bất kỳ sự trộn lẫn nào giữa ba giai đoạn này đều dẫn đến metric lạc quan do data leakage --- một sai lầm phổ biến nhưng khó phát hiện nếu không có nhận thức rõ ràng về ranh giới giữa các tập dữ liệu.
+
+Kinh nghiệm cuối cùng, thực tế nhưng không kém phần quan trọng, là sự gắn kết giữa báo cáo và code. Khi báo cáo được viết trước khi chạy code lần cuối hoặc được cập nhật một phần sau khi pipeline thay đổi, các bảng số liệu, hệ số mô hình và kết luận định tính có thể trở nên mâu thuẫn với implementation thực tế; cách phòng tránh duy nhất là tạo ra số liệu trong báo cáo trực tiếp từ output của code thay vì ghi thủ công. Nguyên tắc này tuy đơn giản nhưng đòi hỏi kỷ luật trong suốt quá trình làm project, đặc biệt khi nhiều thành viên cùng chỉnh sửa cả code lẫn báo cáo song song.
+
+\subsection{Hướng Mở Rộng}
+
+Các hướng phát triển tiếp theo gồm hoàn thiện nested cross-validation và
+holdout độc lập cho Phần 2; nghiên cứu robust regression khi dữ liệu có outlier
+hoặc heteroscedasticity; bổ sung smearing correction khi chuyển Prediction từ
+thang log về đơn vị gốc; và mở rộng scratch core bằng QR decomposition hoặc SVD
+để cải thiện ổn định số so với normal equations. Với dữ liệu du lịch, có thể
+thử thêm interaction features có định hướng, mô hình hóa missing mechanism và
+thu thập các biến giải thích mới như thu nhập, loại hình lưu trú hoặc thời điểm
+đặt tour.
+
+\subsection{Phân Công Nhóm}
+
+\begin{table}[H]
+\centering
+\caption{Phân công các hạng mục chính của project}
+\label{tab:team_contributions}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Thành viên} & \textbf{Hạng mục phụ trách} \\ \midrule
+Khang Phuc Nguyen -- 24120068
+    & Điều phối và tích hợp project; implementation OLS, Ridge/Lasso và
+      statistical inference; kiểm chứng số; tổng hợp và build báo cáo. \\
+Nghia Trong Hoang -- 24120103
+    & Nền tảng lý thuyết OLS, hat matrix, các giả thiết và Định lý
+      Gauss--Markov; mô phỏng Monte Carlo và diễn giải kết quả. \\
+Nhat Hoang Mai -- 24120109
+    & EDA dữ liệu Tanzania Tourism, trực quan hóa, phân tích missing values,
+      data shift và các giả thiết mô hình. \\
+Nhat Hoang Nguyen -- 24120110
+    & Data pipeline, preprocessing, feature engineering, huấn luyện và đánh
+      giá các mô hình Phần 2. \\
+Long Nhat Phung Vo -- 24120088
+    & Cross-validation, so sánh mô hình, phân tích feature importance,
+      chuẩn hóa output/submission và rà soát nội dung báo cáo. \\ \bottomrule
+\end{tabularx}
+\end{table}
+
+Mọi thành viên cùng tham gia rà soát lý thuyết, kiểm thử kết quả, chỉnh sửa báo
+cáo và chuẩn bị phần trình bày cuối cùng.

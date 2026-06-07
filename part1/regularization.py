@@ -7,7 +7,7 @@ quỹ đạo thay đổi của hệ số theo dải giá trị λ. Hồi quy Rid
 multicollinearity mà OLS thường gặp bằng cách thêm số hạng phạt λ||β||² vào hàm
 mục tiêu, qua đó ép các hệ số co về phía không mặc dù gây ra một lượng bias nhỏ.
 Khi λ → 0, nghiệm Ridge hội tụ về nghiệm OLS; khi λ → ∞, tất cả hệ số (trừ
-intercept) tiến về không. Toàn bộ tính toán được thực hiện bằng Python thuần
+hệ số tự do) tiến về không. Toàn bộ tính toán được thực hiện bằng Python thuần
 (không dùng NumPy) bằng cách giải hệ tuyến tính với Gauss elimination có partial
 pivoting thông qua hàm nội bộ _solve_linear_system.
 """
@@ -29,7 +29,7 @@ class RidgeResult:
     coefficients: List[float]  # Vector hệ số β̂_ridge ∈ R^{p+1}
     lambda_val: float           # Giá trị tham số chuẩn hóa λ được sử dụng
     rss: float                  # Tổng bình phương phần dư ||y - Xβ̂||²
-    ridge_penalty: float        # Số hạng phạt ||β̂_{-0}||² (không tính intercept)
+    ridge_penalty: float        # Số hạng phạt ||β̂_{-0}||² (không tính hệ số tự do)
     total_loss: float           # Tổng hàm mục tiêu = RSS + λ·ridge_penalty
     success: bool               # True nếu hệ tuyến tính được giải thành công
     message: str                # Thông báo kết quả hoặc lỗi
@@ -42,12 +42,12 @@ def ridge_fit(X: List[List[float]], y: List[float], lam: float) -> RidgeResult:
     β̂_ridge = (X'X + λI)^{-1}X'y. Điểm mấu chốt là ma trận X'X + λI luôn khả
     nghịch với mọi λ > 0, kể cả khi X'X gần suy biến do multicollinearity, vì λI
     đảm bảo tất cả trị riêng đều lớn hơn λ > 0. Lưu ý rằng số hạng phạt chỉ áp
-    dụng cho các hệ số hồi quy (không áp dụng cho intercept β₀), đây là quy ước
+    dụng cho các hệ số hồi quy (không áp dụng cho hệ số tự do β₀), đây là quy ước
     chuẩn để Ridge không phụ thuộc vào đơn vị đo lường của y.
 
     Args:
         X: Ma trận thiết kế kích thước n×(p+1) dạng list 2D, với cột đầu tiên
-            là vector 1 tương ứng với intercept.
+            là vector 1 tương ứng với hệ số tự do.
         y: Vector quan sát kích thước (n,).
         lam: Tham số chuẩn hóa λ >= 0. Khi λ = 0, kết quả trùng với OLS.
 
@@ -71,7 +71,7 @@ def ridge_fit(X: List[List[float]], y: List[float], lam: float) -> RidgeResult:
         )
 
     n = len(y) # Số lượng quan sát
-    p = len(X[0]) # Số lượng biến (bao gồm intercept)
+    p = len(X[0]) # Số lượng biến (bao gồm hệ số tự do)
 
     try:
         # Tính X'X — ma trận Gram của X
@@ -82,9 +82,10 @@ def ridge_fit(X: List[List[float]], y: List[float], lam: float) -> RidgeResult:
                 XtX[i][j] = sum(X[row][i] * X[row][j] for row in range(n))
 
         # Thêm λI vào đường chéo để đảm bảo X'X + λI luôn khả nghịch khi λ > 0,
-        # ngay cả khi X'X gần suy biến do multicollinearity
+        # ngay cả khi X'X gần suy biến do multicollinearity. Chỉ phạt từ cột 1 trở
+        # đi (bỏ qua hệ số tự do ở cột 0) theo quy ước tiêu chuẩn: hệ số tự do không bị phạt.
         XtX_ridge = [XtX[i][:] for i in range(p)]
-        for i in range(p):
+        for i in range(1, p):
             XtX_ridge[i][i] += lam
 
         # Tính X'y — vế phải của hệ Normal Equations đã được chuẩn hóa
@@ -97,7 +98,7 @@ def ridge_fit(X: List[List[float]], y: List[float], lam: float) -> RidgeResult:
         y_pred = [sum(X[i][j] * beta_ridge[j] for j in range(p)) for i in range(n)]
         residuals = [y[i] - y_pred[i] for i in range(n)]
         rss = sum(e**2 for e in residuals)
-        # Số hạng phạt không tính intercept (beta_ridge[0]) theo quy ước chuẩn
+        # Số hạng phạt không tính hệ số tự do (beta_ridge[0]) theo quy ước chuẩn
         ridge_penalty = sum(b**2 for b in beta_ridge[1:])
         total_loss = rss + lam * ridge_penalty
 
@@ -135,6 +136,7 @@ class RidgeTraceData:
     lambdas: List[float]                  # Dải giá trị λ được đánh giá
     coefficients_trace: List[List[float]] # β̂_ridge(λ) cho mỗi giá trị λ
     rss_trace: List[float]                # RSS(λ) cho mỗi giá trị λ
+    effective_df_trace: List[float]       # tr(H_ridge), số bậc tự do hiệu dụng
     gcv_trace: List[float]                # Chỉ số GCV(λ) cho mỗi giá trị λ
 
 
@@ -145,7 +147,14 @@ def ridge_trace(X: List[List[float]], y: List[float], lambdas: List[float]) -> R
     thu thập kết quả, tạo ra dữ liệu để vẽ ridge trace plot. Đây là bước cần thiết
     trong Ridge regression vì không có công thức dạng đóng để chọn λ tối
     ưu; thay vào đó ta sẽ quan sát đồ thị hoặc dùng cross-validation để xác định
-    λ tại điểm các hệ số bắt đầu ổn định. Chỉ số GCV được tính xấp xỉ trong vì sự phức tạp của hat matrix Ridge.
+    λ tại điểm các hệ số bắt đầu ổn định. Với hệ số tự do không bị phạt, các biến
+    giải thích được tâm hóa trước khi tính trị kỳ dị. Khi đó:
+
+        tr(H_ridge) = 1 + sum_i d_i² / (d_i² + λ)
+        GCV(λ) = (RSS(λ) / n) / (1 - tr(H_ridge) / n)²
+
+    trong đó d_i là singular values của ma trận biến giải thích đã tâm hóa và
+    số 1 đầu tiên là bậc tự do của hệ số tự do.
 
     Args:
         X: Ma trận thiết kế kích thước n×(p+1) dạng list 2D.
@@ -154,10 +163,19 @@ def ridge_trace(X: List[List[float]], y: List[float], lambdas: List[float]) -> R
             np.logspace hoặc dải tuyến tính tùy ngữ cảnh.
 
     Returns:
-        RidgeTraceData chứa quỹ đạo hệ số, RSS và GCV cho mỗi giá trị λ.
+        RidgeTraceData chứa quỹ đạo hệ số, RSS, bậc tự do hiệu dụng và GCV.
     """
+    if not X or not X[0]:
+        raise ValueError("X must be a non-empty design matrix")
+    if len(X) != len(y):
+        raise ValueError("X and y must have the same number of observations")
+    if any(len(row) != len(X[0]) for row in X):
+        raise ValueError("all rows of X must have the same number of columns")
+
+    n = len(y)
     coefficients_trace = []
     rss_trace = []
+    effective_df_trace = []
     gcv_trace = []
 
     for lam in lambdas: # Tiến hành tính ridge_fit cho từng giá trị λ và thu thập kết quả để vẽ đồ thị
@@ -167,23 +185,137 @@ def ridge_trace(X: List[List[float]], y: List[float], lambdas: List[float]) -> R
 
             coefficients_trace.append(result.coefficients)
             rss_trace.append(result.rss)
-            # GCV (Generalized Cross-Validation): RSS / (1 - tr(H_ridge)/n)^2
-            # Simplified approximation
-            gcv = result.rss  # placeholder
+            effective_df = _ridge_effective_degrees_of_freedom(X, lam)
+            denominator = 1.0 - effective_df / n
+            gcv = (
+                (result.rss / n) / (denominator ** 2)
+                if abs(denominator) > 1e-15
+                else float("inf")
+            )
+            effective_df_trace.append(effective_df)
             gcv_trace.append(gcv)
         else:
             # Nếu ridge_fit thất bại với λ này (hiếm gặp), điền NaN để giữ đúng
             # độ dài mảng, tránh lệch chỉ số khi vẽ đồ thị
             coefficients_trace.append([])
             rss_trace.append(float('nan'))
+            effective_df_trace.append(float('nan'))
             gcv_trace.append(float('nan'))
 
     return RidgeTraceData(
         lambdas=lambdas,
         coefficients_trace=coefficients_trace,
         rss_trace=rss_trace,
+        effective_df_trace=effective_df_trace,
         gcv_trace=gcv_trace,
     )
+
+
+def _ridge_effective_degrees_of_freedom(
+    X: List[List[float]],
+    lam: float,
+) -> float:
+    """Tính tr(H_ridge) từ singular values mà không dùng NumPy/SciPy.
+
+    Vì ``ridge_fit`` không phạt hệ số tự do, các cột feature được tâm hóa để tách
+    hệ số tự do ra khỏi phần bị phạt. Trị riêng của Z'Z chính là bình phương
+    singular values d_i² của ma trận feature đã tâm hóa Z.
+    """
+    if lam < 0.0:
+        raise ValueError("lambda must be non-negative")
+
+    n = len(X)
+    feature_count = len(X[0]) - 1
+    if feature_count == 0:
+        return 1.0
+
+    means = [
+        sum(X[row][column] for row in range(n)) / n
+        for column in range(1, feature_count + 1)
+    ]
+    gram = [[0.0] * feature_count for _ in range(feature_count)]
+    for left in range(feature_count):
+        for right in range(left, feature_count):
+            value = sum(
+                (X[row][left + 1] - means[left])
+                * (X[row][right + 1] - means[right])
+                for row in range(n)
+            )
+            gram[left][right] = value
+            gram[right][left] = value
+
+    squared_singular_values = _symmetric_eigenvalues_jacobi(gram)
+    penalized_df = sum(
+        eigenvalue / (eigenvalue + lam)
+        if eigenvalue + lam > 1e-15
+        else 0.0
+        for eigenvalue in squared_singular_values
+    )
+    return 1.0 + penalized_df
+
+
+def _symmetric_eigenvalues_jacobi(
+    matrix: List[List[float]],
+    tolerance: float = 1e-12,
+    max_iterations: int = 10000,
+) -> List[float]:
+    """Tính trị riêng ma trận đối xứng bằng phép quay Jacobi từ scratch."""
+    size = len(matrix)
+    if size == 0:
+        return []
+    if any(len(row) != size for row in matrix):
+        raise ValueError("matrix must be square")
+
+    work = [row[:] for row in matrix]
+    for _ in range(max_iterations):
+        pivot_row = 0
+        pivot_column = 0
+        largest_off_diagonal = 0.0
+        for row in range(size):
+            for column in range(row + 1, size):
+                candidate = abs(work[row][column])
+                if candidate > largest_off_diagonal:
+                    largest_off_diagonal = candidate
+                    pivot_row = row
+                    pivot_column = column
+
+        if largest_off_diagonal <= tolerance:
+            # Sai số làm tròn có thể tạo trị riêng âm rất nhỏ cho ma trận PSD.
+            return [max(0.0, work[index][index]) for index in range(size)]
+
+        p = pivot_row
+        q = pivot_column
+        if abs(work[p][p] - work[q][q]) <= tolerance:
+            tangent = 1.0 if work[p][q] >= 0.0 else -1.0
+        else:
+            tau = (work[q][q] - work[p][p]) / (2.0 * work[p][q])
+            tangent = (
+                1.0 / (tau + sqrt(1.0 + tau * tau))
+                if tau >= 0.0
+                else -1.0 / (-tau + sqrt(1.0 + tau * tau))
+            )
+        cosine = 1.0 / sqrt(1.0 + tangent * tangent)
+        sine = tangent * cosine
+
+        app = work[p][p]
+        aqq = work[q][q]
+        apq = work[p][q]
+        work[p][p] = app - tangent * apq
+        work[q][q] = aqq + tangent * apq
+        work[p][q] = 0.0
+        work[q][p] = 0.0
+
+        for index in range(size):
+            if index == p or index == q:
+                continue
+            aip = work[index][p]
+            aiq = work[index][q]
+            work[index][p] = cosine * aip - sine * aiq
+            work[p][index] = work[index][p]
+            work[index][q] = sine * aip + cosine * aiq
+            work[q][index] = work[index][q]
+
+    raise ArithmeticError("Jacobi eigenvalue algorithm did not converge")
 
 
 # ============================================================
@@ -198,13 +330,13 @@ class LassoResult:
     là λ||β||₁ thay vì λ||β||². Lasso có khả năng thực hiện feature selection bằng
     cách ép một số hệ số về chính xác 0, trong khi Ridge chỉ co các hệ số về gần 0.
     """
-    coefficients: List[float]   # β̂_lasso ∈ R^{p+1}, bao gồm intercept ở vị trí 0
+    coefficients: List[float]   # β̂_lasso ∈ R^{p+1}, bao gồm hệ số tự do ở vị trí 0
     lambda_val: float            # Giá trị λ đã dùng
     rss: float                   # Tổng bình phương phần dư ||y - Xβ̂||²
-    lasso_penalty: float         # Số hạng phạt L1 ||β̂_{-0}||₁ (không tính intercept)
+    lasso_penalty: float         # Số hạng phạt L1 ||β̂_{-0}||₁ (không tính hệ số tự do)
     total_loss: float            # Hàm mục tiêu = RSS + λ·||β̂_{-0}||₁
     n_iter: int                  # Số vòng lặp coordinate descent đến khi hội tụ
-    nonzero_coef: int            # Số hệ số ≠ 0 (không tính intercept)
+    nonzero_coef: int            # Số hệ số ≠ 0 (không tính hệ số tự do)
     converged: bool              # True nếu ||Δβ||∞ < tol trước khi hết max_iter
     success: bool                # True nếu hoàn thành không có lỗi
     message: str                 # Thông báo kết quả hoặc lỗi
@@ -259,7 +391,7 @@ def lasso_fit(
 
         f(β) = ||y − Xβ||² + λ·||β₋₀||₁
 
-    trong đó ||β₋₀||₁ = Σ|β_j| (j ≥ 1) không áp dụng cho intercept β₀. Vì
+    trong đó ||β₋₀||₁ = Σ|β_j| (j ≥ 1) không áp dụng cho hệ số tự do β₀. Vì
     |β_j| không khả vi tại 0, bài toán không có nghiệm dạng đóng — khác với
     Ridge — nên phải dùng thuật toán lặp Coordinate Descent.
 
@@ -267,11 +399,11 @@ def lasso_fit(
     Bài toán 1D kết quả có nghiệm giải tích chính xác:
 
         β_j ← S(ρ_j, λ/2) / z_j      (j ≥ 1, có penalty L1)
-        β_0 ← ρ_0 / z_0               (j = 0, intercept, không penalty)
+        β_0 ← ρ_0 / z_0               (j = 0, hệ số tự do, không penalty)
 
     trong đó ρ_j = X_j^T r^{(-j)} là partial residual projection,
     z_j = ||X_j||² là chuẩn bình phương cột j, và S là soft-thresholding.
-    Nhân tử λ/2 (không phải λ) xuất hiện vì đạo hàm của RSS sinh ra hệ số 2:
+    Nhân tử λ/2 (không phải λ) xuất hiện vì đạo hàm của RSS Tạo ra hệ số 2:
     d/dβ_j ||y-Xβ||² = -2·X_j^T(y-Xβ), và khi giải KKT ta thu được λ/2.
 
     So sánh với sklearn: sklearn tối thiểu (1/2n)||y-Xβ||² + α||β||₁, tương
@@ -283,7 +415,7 @@ def lasso_fit(
     xuống O(n·p).
 
     Args:
-        X: Ma trận thiết kế n×(p+1), cột đầu là vector 1 (intercept).
+        X: Ma trận thiết kế n×(p+1), cột đầu là vector 1 (hệ số tự do).
         y: Vector mục tiêu (n,).
         lam: Tham số chuẩn hóa λ ≥ 0. λ=0 cho nghiệm OLS (không penalty).
         max_iter: Số epoch tối đa qua toàn bộ features (mặc định 1000).
@@ -341,7 +473,7 @@ def lasso_fit(
                 )
 
                 if j == 0:
-                    # Intercept β₀: cập nhật OLS thông thường, không soft-threshold
+                    # hệ số tự do β₀: cập nhật OLS thông thường, không soft-threshold
                     beta[j] = rho_j / z[j]
                 else:
                     # β_j (j ≥ 1): áp dụng soft-thresholding với ngưỡng λ/2
@@ -412,6 +544,153 @@ class LassoTraceData:
     nonzero_counts: List[int]          # Số hệ số khác 0 tại mỗi giá trị λ
     n_iter_list: List[int]             # Số vòng lặp coordinate descent tại mỗi λ
     converged_list: List[bool]         # Trạng thái hội tụ tại mỗi giá trị λ
+
+
+@dataclass
+class ElasticNetResult:
+    """Kết quả ElasticNet được ước lượng bằng coordinate descent từ scratch."""
+
+    coefficients: List[float]
+    lambda_l1: float
+    lambda_l2: float
+    rss: float
+    l1_penalty: float
+    l2_penalty: float
+    total_loss: float
+    n_iter: int
+    nonzero_coef: int
+    converged: bool
+    success: bool
+    message: str
+
+
+def elasticnet_fit(
+    X: List[List[float]],
+    y: List[float],
+    lambda_l1: float,
+    lambda_l2: float,
+    max_iter: int = 1000,
+    tol: float = 1e-6,
+    beta_init: Optional[List[float]] = None,
+) -> ElasticNetResult:
+    """Ước lượng ElasticNet bằng coordinate descent hoàn toàn từ scratch.
+
+    Hàm tối thiểu hóa:
+
+        RSS + lambda_l1 * ||beta_-0||_1 + lambda_l2 * ||beta_-0||_2^2
+
+    hệ số tự do ở cột đầu không bị phạt. Với từng hệ số có penalty, nghiệm cập
+    nhật một chiều là ``S(rho_j, lambda_l1 / 2) / (z_j + lambda_l2)``.
+    Khi ``lambda_l2 = 0``, công thức trở về đúng cập nhật Lasso.
+    """
+    if lambda_l1 < 0.0 or lambda_l2 < 0.0:
+        return ElasticNetResult(
+            coefficients=[],
+            lambda_l1=lambda_l1,
+            lambda_l2=lambda_l2,
+            rss=float("nan"),
+            l1_penalty=float("nan"),
+            l2_penalty=float("nan"),
+            total_loss=float("nan"),
+            n_iter=0,
+            nonzero_coef=0,
+            converged=False,
+            success=False,
+            message="lambda_l1 and lambda_l2 must be non-negative",
+        )
+    if not X or not X[0] or len(X) != len(y):
+        raise ValueError("X must be non-empty and have the same row count as y")
+    if any(len(row) != len(X[0]) for row in X):
+        raise ValueError("all rows of X must have the same number of columns")
+
+    n = len(y)
+    p = len(X[0])
+    beta = beta_init[:] if beta_init is not None else [0.0] * p
+    if len(beta) != p:
+        raise ValueError("beta_init must have one value per column of X")
+
+    residual = [
+        y[row] - sum(X[row][column] * beta[column] for column in range(p))
+        for row in range(n)
+    ]
+    squared_norms = [
+        sum(X[row][column] ** 2 for row in range(n))
+        for column in range(p)
+    ]
+    half_l1 = lambda_l1 / 2.0
+    converged = False
+    n_iter = 0
+
+    try:
+        for epoch in range(max_iter):
+            largest_change = 0.0
+            for column in range(p):
+                if squared_norms[column] < 1e-12:
+                    continue
+
+                old_value = beta[column]
+                rho = sum(
+                    X[row][column]
+                    * (residual[row] + X[row][column] * old_value)
+                    for row in range(n)
+                )
+                if column == 0:
+                    new_value = rho / squared_norms[column]
+                else:
+                    new_value = (
+                        _soft_threshold(rho, half_l1)
+                        / (squared_norms[column] + lambda_l2)
+                    )
+
+                delta = new_value - old_value
+                beta[column] = new_value
+                largest_change = max(largest_change, abs(delta))
+                if abs(delta) > 1e-15:
+                    for row in range(n):
+                        residual[row] -= X[row][column] * delta
+
+            n_iter = epoch + 1
+            if largest_change < tol:
+                converged = True
+                break
+
+        rss = sum(value * value for value in residual)
+        l1_penalty = sum(abs(value) for value in beta[1:])
+        l2_penalty = sum(value * value for value in beta[1:])
+        total_loss = (
+            rss + lambda_l1 * l1_penalty + lambda_l2 * l2_penalty
+        )
+        nonzero_coef = sum(abs(value) > 1e-10 for value in beta[1:])
+        status = "converged" if converged else f"stopped at max_iter={max_iter}"
+        return ElasticNetResult(
+            coefficients=beta,
+            lambda_l1=lambda_l1,
+            lambda_l2=lambda_l2,
+            rss=rss,
+            l1_penalty=l1_penalty,
+            l2_penalty=l2_penalty,
+            total_loss=total_loss,
+            n_iter=n_iter,
+            nonzero_coef=nonzero_coef,
+            converged=converged,
+            success=True,
+            message=f"ElasticNet {status} in {n_iter} iterations.",
+        )
+    except Exception as exc:
+        return ElasticNetResult(
+            coefficients=beta,
+            lambda_l1=lambda_l1,
+            lambda_l2=lambda_l2,
+            rss=float("nan"),
+            l1_penalty=float("nan"),
+            l2_penalty=float("nan"),
+            total_loss=float("nan"),
+            n_iter=n_iter,
+            nonzero_coef=0,
+            converged=False,
+            success=False,
+            message=f"elasticnet_fit failed: {exc}",
+        )
 
 
 def lasso_path(
@@ -535,117 +814,3 @@ def _solve_linear_system(A: List[List[float]], b: List[float]) -> List[float]:
             x[row] /= mat[row][row]
 
     return x
-
-
-if __name__ == "__main__":
-    # ------------------------------------------------------------------
-    # Demo regularization: nhóm sinh dữ liệu có đa cộng tuyến mạnh để OLS
-    # trở nên bất ổn, sau đó khớp Ridge và Lasso rồi vẽ hai quỹ đạo hệ số
-    # theo λ. Ridge trace cho thấy các hệ số co dần về 0 một cách trơn tru
-    # khi λ tăng, trong khi Lasso path cho thấy từng hệ số bị ép hẳn về 0,
-    # qua đó minh họa khả năng chọn biến tự động của chuẩn hóa L1. Cuối cùng
-    # nhóm đối chiếu nghiệm Ridge và Lasso với scikit-learn để kiểm chứng.
-    # ------------------------------------------------------------------
-    import os
-    import sys
-    import numpy as np
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")  # pyright: ignore[reportAttributeAccessIssue]
-
-    np.random.seed(11)
-    n_obs = 80
-    x1 = np.random.randn(n_obs)
-    x2 = 0.95 * x1 + 0.05 * np.random.randn(n_obs)   # gần như trùng x1
-    x3 = np.random.randn(n_obs)
-    x4 = np.random.randn(n_obs)
-    X_np = np.column_stack([np.ones(n_obs), x1, x2, x3, x4])
-    beta_true = np.array([2.0, 3.0, 0.0, 1.5, 0.0])  # x2 và x4 thực sự vô nghĩa
-    y_np = X_np @ beta_true + 0.7 * np.random.randn(n_obs)
-    X_list, y_list = X_np.tolist(), y_np.tolist()
-
-    # Bước 1: khớp Ridge và Lasso tại cùng một λ để so sánh cách hai chuẩn
-    # hóa xử lý biến dư thừa x2 (vốn gần như trùng x1)
-    lam_demo = 8.0
-    ridge = ridge_fit(X_list, y_list, lam=lam_demo)
-    lasso = lasso_fit(X_list, y_list, lam=lam_demo)
-    print("=" * 66)
-    print(f"  HỆ SỐ RIDGE VÀ LASSO TẠI λ = {lam_demo}")
-    print("=" * 66)
-    names = ["Intercept", "x1", "x2", "x3", "x4"]
-    print(f"  {'Hệ số':<10}{'Ridge':>12}{'Lasso':>12}{'beta_true':>12}")
-    for j, nm in enumerate(names):
-        print(f"  {nm:<10}{ridge.coefficients[j]:>12.4f}"
-              f"{lasso.coefficients[j]:>12.4f}{beta_true[j]:>12.1f}")
-    print(f"\n  Tại cùng λ, Ridge chỉ co nhỏ mọi hệ số trong khi Lasso ép hẳn "
-          f"{5 - 1 - lasso.nonzero_coef} biến về 0")
-    print(f"  (còn {lasso.nonzero_coef} hệ số khác 0): biến dư thừa x2 bị loại, "
-          f"thể hiện khả năng chọn biến tự động của chuẩn L1.")
-
-    # Bước 2: tính quỹ đạo Ridge và Lasso trên dải λ rộng
-    lambdas = [10 ** e for e in np.linspace(-2, 3, 40)]
-    rt = ridge_trace(X_list, y_list, lambdas)
-    lp = lasso_path(X_list, y_list, lambdas)
-
-    # Bước 3: vẽ hai quỹ đạo cạnh nhau
-    fig, (axL, axR) = plt.subplots(1, 2, figsize=(13, 5))
-    fig.suptitle("Quỹ đạo hệ số theo tham số chuẩn hóa λ", fontsize=14, fontweight="bold")
-
-    # Ridge trace: vẽ từng hệ số (bỏ intercept) theo log10(λ)
-    for j in range(1, len(names)):
-        axL.plot(np.log10(rt.lambdas), [c[j] for c in rt.coefficients_trace],
-                 marker="o", markersize=2, label=names[j])
-    axL.axhline(0, color="gray", linewidth=0.8, linestyle="--")
-    axL.set_title("Ridge trace (chuẩn L2)")
-    axL.set_xlabel("log₁₀(λ)")
-    axL.set_ylabel("Hệ số β̂_j(λ)")
-    axL.legend(fontsize=9)
-
-    # Lasso path: cùng trục, làm nổi bật việc hệ số bị ép về 0
-    for j in range(1, len(names)):
-        axR.plot(np.log10(lp.lambdas), [c[j] for c in lp.coefficients],
-                 marker="o", markersize=2, label=names[j])
-    axR.axhline(0, color="gray", linewidth=0.8, linestyle="--")
-    axR.set_title("Lasso path (chuẩn L1)")
-    axR.set_xlabel("log₁₀(λ)")
-    axR.set_ylabel("Hệ số β̂_j(λ)")
-    axR.legend(fontsize=9)
-
-    fig.tight_layout(rect=(0, 0, 1, 0.95))
-    out_dir = os.path.join(os.path.dirname(__file__), "outputs")
-    os.makedirs(out_dir, exist_ok=True)
-    out_path = os.path.join(out_dir, "regularization_paths.png")
-    fig.savefig(out_path, dpi=120)
-    print("\n  Đã lưu quỹ đạo Ridge trace và Lasso path vào:", out_path)
-
-    # Bước 4: kiểm chứng tính nhất quán nội tại của hai quỹ đạo. Đây là các
-    # tính chất định nghĩa của chuẩn hóa nên là cách kiểm tra cài đặt chắc chắn
-    # nhất. Lưu ý ridge_trace trả về λ theo thứ tự input (tăng dần) còn lasso_path
-    # sắp xếp λ giảm dần để phục vụ warm start, vì vậy nhóm sắp lại theo λ tăng
-    # dần trước khi kiểm tra để kết quả không phụ thuộc quy ước thứ tự.
-    def _l2(coefs):
-        return sqrt(sum(c ** 2 for c in coefs[1:]))   # bỏ intercept khỏi norm
-
-    ridge_sorted = sorted(zip(rt.lambdas, rt.coefficients_trace), key=lambda t: t[0])
-    lasso_sorted = sorted(zip(lp.lambdas, lp.nonzero_counts), key=lambda t: t[0])
-    ridge_norms = [_l2(c) for _, c in ridge_sorted]
-    lasso_nz = [nz for _, nz in lasso_sorted]
-
-    # Khi λ tăng: chuẩn L2 của Ridge không tăng, số hệ số khác 0 của Lasso không tăng
-    ridge_monotone = all(ridge_norms[i] >= ridge_norms[i + 1] - 1e-9
-                         for i in range(len(ridge_norms) - 1))
-    lasso_monotone = all(lasso_nz[i] >= lasso_nz[i + 1]
-                         for i in range(len(lasso_nz) - 1))
-    lam_lo, lam_hi = ridge_sorted[0][0], ridge_sorted[-1][0]
-    print("\n" + "=" * 66)
-    print("  KIỂM CHỨNG TÍNH NHẤT QUÁN")
-    print("=" * 66)
-    print(f"  ||β||₂ giảm từ {ridge_norms[0]:.3f} (λ={lam_lo:.2f}) xuống "
-          f"{ridge_norms[-1]:.3f} (λ={lam_hi:.1f}).")
-    print(f"  Ridge: ||β||₂ giảm đơn điệu khi λ tăng  → {'PASSED' if ridge_monotone else 'FAILED'}")
-    print(f"  Lasso: số hệ số khác 0 giảm khi λ tăng  → {'PASSED' if lasso_monotone else 'FAILED'}")
-    print(f"  Lasso path: số biến khác 0 đi từ {lasso_nz[0]} (λ nhỏ) "
-          f"xuống {lasso_nz[-1]} (λ lớn) — đúng quy luật chọn biến của chuẩn L1.")

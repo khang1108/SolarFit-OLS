@@ -33,32 +33,32 @@
 
 **9 Functions required:**
 
-| # | Function | Mô tả | Điểm |
-|---|----------|-------|------|
-| 1 | `ols_fit(X, y)` | Tính β̂ = (X'X)^{-1}X'y và σ̂² | - |
-| 2 | `hat_matrix(X)` | Tính H = X(X'X)^{-1}X', kiểm tra idempotent | - |
-| 3 | `model_metrics(y, y_hat, p)` | Tính RSS, TSS, R², R̄², RMSE, F-statistic | - |
-| 4 | `coef_inference(X, y, beta_hat, sigma2)` | Tính standard errors, t-stats, p-values, CI 95% | - |
-| 5 | `vif(X)` | Tính VIF cho từng biến | - |
-| 6 | `ridge_fit(X, y, lam)` | Cài đặt Ridge Regression, về ridge trace | - |
-| 7 | `residual_plots(X, y, beta_hat)` | 4 biểu đồ diagnostic: Residuals vs Fitted, Q-Q, Scale-Location, Cook's Distance | - |
-| 8 | `kfold_cv(X, y, k)` | Cài đặt k-fold cross-validation, tính CV score | - |
-| 9 | `gauss_markov_simulation(X, beta_true, sigma, n_sim)` | Monte Carlo kiểm chứng E[β̂]=β và BLUE | - |
+| #   | Function                                              | Mô tả                                                                           | Điểm |
+| --- | ----------------------------------------------------- | ------------------------------------------------------------------------------- | ---- |
+| 1   | `ols_fit(X, y)`                                       | Tính β̂ = (X'X)^{-1}X'y và σ̂²                                                    | -    |
+| 2   | `hat_matrix(X)`                                       | Tính H = X(X'X)^{-1}X', kiểm tra idempotent                                     | -    |
+| 3   | `model_metrics(y, y_hat, p)`                          | Tính RSS, TSS, R², R̄², RMSE, F-statistic                                        | -    |
+| 4   | `coef_inference(X, y, beta_hat, sigma2)`              | Tính standard errors, t-stats, p-values, CI 95%                                 | -    |
+| 5   | `vif(X)`                                              | Tính VIF cho từng biến                                                          | -    |
+| 6   | `ridge_fit(X, y, lam)`                                | Cài đặt Ridge Regression, về ridge trace                                        | -    |
+| 7   | `residual_plots(X, y, beta_hat)`                      | 4 biểu đồ diagnostic: Residuals vs Fitted, Q-Q, Scale-Location, Cook's Distance | -    |
+| 8   | `kfold_cv(X, y, k)`                                   | Cài đặt k-fold cross-validation, tính CV score                                  | -    |
+| 9   | `gauss_markov_simulation(X, beta_true, sigma, n_sim)` | Monte Carlo kiểm chứng E[β̂]=β và BLUE                                           | -    |
 
 #### 1.6 Tiêu Chí Đánh Giá — Phần 1
 
-| Tiêu chí | Mô tả | Điểm |
-|----------|-------|------|
-| Trình bày lý thuyết OLS | Đúng, đầy đủ công thức, chứng minh | 1.0 |
-| Cài đặt OLS từ đầu | Đúng, kiểm chứng với NumPy | 1.0 |
-| Hat Matrix và tính chất | Cài đặt, kiểm tra idempotent | 0.5 |
-| Kiểm định giả số (t, F) | Tính đúng t-stat, p-value | 0.5 |
-| Regularization (Ridge/Lasso) | Cài đặt, về ridge trace | 1.0 |
-| Phân tích phần dư | 4 biểu đồ đầy đủ, nhận xét | 0.5 |
-| Cross-validation | Cài k-fold CV, so sánh mô hình | 0.5 |
-| Gauss-Markov verification | Monte Carlo rõ ràng, nhận xét | 0.5 |
-| Trình bày Notebook | Rõ ràng, có markdown giải thích | 0.5 |
-| **Tổng Phần 1** | | **6.0** |
+| Tiêu chí                     | Mô tả                              | Điểm    |
+| ---------------------------- | ---------------------------------- | ------- |
+| Trình bày lý thuyết OLS      | Đúng, đầy đủ công thức, chứng minh | 1.0     |
+| Cài đặt OLS từ đầu           | Đúng, kiểm chứng với NumPy         | 1.0     |
+| Hat Matrix và tính chất      | Cài đặt, kiểm tra idempotent       | 0.5     |
+| Kiểm định giả số (t, F)      | Tính đúng t-stat, p-value          | 0.5     |
+| Regularization (Ridge/Lasso) | Cài đặt, về ridge trace            | 1.0     |
+| Phân tích phần dư            | 4 biểu đồ đầy đủ, nhận xét         | 0.5     |
+| Cross-validation             | Cài k-fold CV, so sánh mô hình     | 0.5     |
+| Gauss-Markov verification    | Monte Carlo rõ ràng, nhận xét      | 0.5     |
+| Trình bày Notebook           | Rõ ràng, có markdown giải thích    | 0.5     |
+| **Tổng Phần 1**              |                                    | **6.0** |
 
 ---
 
@@ -81,7 +81,7 @@
 - WHO Global Health Observatory
 - OECD Data
 
-#### 2.2 Tiền Xử Lý Dữ Liệu
+#### 2.2 Preprocessing Dữ Liệu
 
 ##### 2.2.1 Khảo Sát Dữ Liệu (EDA)
 
@@ -97,17 +97,17 @@
 
 **5 Phương pháp cần biết:**
 
-| Phương pháp | Mô tả | Yêu cầu |
-|-------------|-------|--------|
-| **MV1. Listwise deletion** | Xóa toàn bộ hàng có ít nhất một giá trị thiếu | Tùy chọn |
+| Phương pháp                          | Mô tả                                                           | Yêu cầu      |
+| ------------------------------------ | --------------------------------------------------------------- | ------------ |
+| **MV1. Listwise deletion**           | Xóa toàn bộ hàng có ít nhất một giá trị thiếu                   | Tùy chọn     |
 | **MV2. Mean/Median/Mode imputation** | Thay giá trị thiếu bằng trung bình, trung vị, hoặc mode của cột | **Bắt buộc** |
-| **MV3. Regression imputation** | Dự đoán giá trị thiếu bằng hồi quy từ các biến khác | Tùy chọn |
-| **MV4. k-NN imputation** | Thay bằng trung bình k quan sát gần nhất | Tùy chọn |
-| **MV5. MICE (Multiple Imputation)** | Tạo nhiều bản sao dữ liệu đã điền, gộp kết quả | Tùy chọn |
+| **MV3. Regression imputation**       | Prediction giá trị thiếu bằng hồi quy từ các biến khác          | Tùy chọn     |
+| **MV4. k-NN imputation**             | Thay bằng trung bình k quan sát gần nhất                        | Tùy chọn     |
+| **MV5. MICE (Multiple Imputation)**  | Tạo nhiều bản sao dữ liệu đã điền, gộp kết quả                  | Tùy chọn     |
 
-**Lưu ý IMPORTANT:** Sinh viên nên giải thích *lý do* chọn phương pháp xử lý missing values (MCAR, MAR hay MNAR).
+**Lưu ý IMPORTANT:** Tạo viên nên giải thích *lý do* chọn phương pháp xử lý missing values (MCAR, MAR hay MNAR).
 
-##### 2.2.3 Các Bước Tiền Xử Lý Khác
+##### 2.2.3 Các Bước Preprocessing Khác
 
 - **Feature engineering:** Tạo biến mới, biến đổi (log, √, polynomial)
 - **Encoding biến phân loại:** One-Hot encoding hoặc Ordinal encoding
@@ -120,20 +120,20 @@
 ##### 2.3.1 Quy Trình Xây Dựng Mô Hình
 
 ```
-EDA → Tiền xử lý → Train/Test Split → Xây dựng mô hình → Đánh giá → Điều chỉnh lại
+EDA → Preprocessing → Train/Test Split → Xây dựng mô hình → Đánh giá → Điều chỉnh lại
 ```
 
 ##### 2.3.2 Các Mô Hình Cần Thử Nghiệm
 
 **Bắt buộc cài đặt (≥3 mô hình):**
 
-| Mô hình | Loại | Mô tả |
-|---------|------|-------|
-| **OLS cơ bản** | Bắt buộc | Hồi quy tuyến tính không có regularization |
-| **OLS + feature selection** | Bắt buộc | Loại bỏ biến không giải thích, dựa trên p-value hoặc VIF |
-| **Ridge / Lasso** | Bắt buộc | Regularization (L2 hoặc L1), chọn λ qua cross-validation |
-| **Polynomial / Interaction** | Tùy chọn | Thêm đặc trưng đa thức hoặc tương tác |
-| **Kernel / Bayesian** | Bonus (+0.5) | Kernel Ridge hoặc Bayesian Linear Regression |
+| Mô hình                      | Loại         | Mô tả                                                    |
+| ---------------------------- | ------------ | -------------------------------------------------------- |
+| **OLS cơ bản**               | Bắt buộc     | Hồi quy tuyến tính không có regularization               |
+| **OLS + feature selection**  | Bắt buộc     | Loại bỏ biến không giải thích, dựa trên p-value hoặc VIF |
+| **Ridge / Lasso**            | Bắt buộc     | Regularization (L2 hoặc L1), chọn λ qua cross-validation |
+| **Polynomial / Interaction** | Tùy chọn     | Thêm đặc trưng đa thức hoặc tương tác                    |
+| **Kernel / Bayesian**        | Bonus (+0.5) | Kernel Ridge hoặc Bayesian Linear Regression             |
 
 ##### 2.3.3 Tiêu Chí So Sánh Mô Hình
 
@@ -172,17 +172,17 @@ với $K_{ij} = k(x_i, x_j)$ (Gram matrix), kernel RBF: $k_{RBF}(x, x') = \exp\l
 
 #### 2.6 Tiêu Chí Đánh Giá — Phần 2
 
-| Tiêu chí | Mô tả | Điểm |
-|----------|-------|------|
-| Chọn bộ dữ liệu | Đúng tiêu chí, mô tả rõ ràng | 0.5 |
-| EDA | Đầy đủ thống kê mô tả, biểu đồ | 0.5 |
-| Xử lý missing values | Đúng phương pháp, có giải thích | 1.0 |
-| Tiền xử lý tổng thể | Pipeline đầy đủ, fit/transform đúng | 0.5 |
-| Xây dựng ≥3 mô hình | OLS, Ridge/Lasso, mô hình khác | 1.5 |
-| Đánh giá trên test set | MAE, RMSE, R², phân tích phần dư | 1.0 |
-| Nhân xét & kết luận | Phân tích có chiều sâu, liên hệ lý thuyết | 0.5 |
-| Kỹ thuật nâng cao (bonus) | Kernel / Bayesian | **+0.5** |
-| **Tổng Phần 2** | | **5.5 (+0.5)** |
+| Tiêu chí                  | Mô tả                                     | Điểm           |
+| ------------------------- | ----------------------------------------- | -------------- |
+| Chọn bộ dữ liệu           | Đúng tiêu chí, mô tả rõ ràng              | 0.5            |
+| EDA                       | Đầy đủ thống kê mô tả, biểu đồ            | 0.5            |
+| Xử lý missing values      | Đúng phương pháp, có giải thích           | 1.0            |
+| Preprocessing tổng thể    | Pipeline đầy đủ, fit/transform đúng       | 0.5            |
+| Xây dựng ≥3 mô hình       | OLS, Ridge/Lasso, mô hình khác            | 1.5            |
+| Đánh giá trên test set    | MAE, RMSE, R², phân tích phần dư          | 1.0            |
+| Nhân xét & kết luận       | Phân tích có chiều sâu, liên hệ lý thuyết | 0.5            |
+| Kỹ thuật nâng cao (bonus) | Kernel / Bayesian                         | **+0.5**       |
+| **Tổng Phần 2**           |                                           | **5.5 (+0.5)** |
 
 ---
 
@@ -245,11 +245,11 @@ Báo cáo viết bằng **LaTeX hoặc Markdown** (xuất ra PDF), bao gồm:
 
 ## 🎯 Tổng Điểm
 
-| Phần | Điểm |
-|------|------|
-| Part 1: Lý thuyết OLS | 6.0 |
-| Part 2: Ứng dụng thực tế | 5.5 |
-| **Tổng** | **11.5** |
+| Phần                     | Điểm     |
+| ------------------------ | -------- |
+| Part 1: Lý thuyết OLS    | 6.0      |
+| Part 2: Ứng dụng thực tế | 5.5      |
+| **Tổng**                 | **11.5** |
 
 **Bonus:** Kỹ thuật nâng cao (Kernel/Bayesian) +0.5 điểm
 

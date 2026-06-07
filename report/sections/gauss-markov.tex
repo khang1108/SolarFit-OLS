@@ -1,10 +1,12 @@
-\subsection{Các Giả Thiết Gauss--Markov}
+\subsection{Định Lý Gauss--Markov và Kiểm Chứng Monte Carlo}
 
-\subsubsection{Bối cảnh}
+\subsubsection{Các Giả Thiết Gauss--Markov}
+
+\subsubsubsection{Bối cảnh}
 
 Công thức nghiệm OLS $\hat{\boldsymbol{\beta}} = (\mat{X}^T\mat{X})^{-1}\mat{X}^T\mat{y}$ thuần túy mang tính \textit{đại số}: nó tối thiểu hóa RSS bất kể dữ liệu
-được sinh ra như thế nào. Tuy nhiên, để nói về \textbf{chất lượng thống kê} của ước
-lượng — tính không chệch, phương sai, và tính tối ưu — ta cần một số giả thiết về cách dữ liệu được sinh
+được Tạo ra như thế nào. Tuy nhiên, để nói về \textbf{chất lượng thống kê} của ước
+lượng — tính không chệch, phương sai, và tính tối ưu — ta cần một số giả thiết về cách dữ liệu được Tạo
 ra. Các giả thiết đó được gọi là \textbf{giả thiết Gauss--Markov}.
 
 \begin{mydef}{Các giả thiết Gauss--Markov (GM1--GM5)}{gm_assumptions}
@@ -16,7 +18,7 @@ với $\mat{X} \in \R^{n\times(p+1)}$. Các giả thiết Gauss--Markov gồm:
     \item[GM2.] \textbf{Không đa cộng tuyến hoàn hảo:}
           $\rank(\mat{X}) = p+1$ (các cột của $\mat{X}$ độc lập tuyến tính),
           bảo đảm $\mat{X}^T\mat{X}$ khả nghịch.
-    \item[GM3.] \textbf{Ngoại sinh nghiêm ngặt (kỳ vọng nhiễu bằng 0):}
+    \item[GM3.] \textbf{Ngoại Tạo nghiêm ngặt (kỳ vọng nhiễu bằng 0):}
           $\E[\boldsymbol{\varepsilon}\mid\mat{X}] = \mat{0}$,
           tức $\E[\varepsilon_i\mid\mat{X}] = 0$ với mọi $i$.
     \item[GM4.] \textbf{Đồng phương sai và không tương quan (cầu phương sai):}
@@ -44,10 +46,40 @@ $\hat{\boldsymbol{\beta}}_{\mathrm{OLS}} \sim \mathcal{N}\bigl(\boldsymbol{\beta
 \sigma^2(\mat{X}^T\mat{X})^{-1}\bigr)$, nhờ đó mới thực hiện được suy diễn chính xác ở mẫu
 hữu hạn (kiểm định $t$, $F$, khoảng tin cậy).
 
-% ============================================================
-\subsection{Định Lý Gauss--Markov (BLUE)}
+\subsubsubsection{Chẩn đoán trực quan giả thiết GM1}
 
-\subsubsection{Phát biểu}
+GM1 phát biểu mô hình tuyến tính theo tham số đã mô tả đúng cấu trúc kỳ vọng có
+điều kiện của dữ liệu. Không thể kết luận GM1 thỏa mãn chỉ bằng cách gán một cờ
+\texttt{True}, và cũng không thể chứng minh tuyệt đối giả thiết này chỉ từ một
+mẫu quan sát. Tuy nhiên, đồ thị \textbf{Residuals vs Fitted} có thể phát hiện
+dấu hiệu mô hình tuyến tính bị sai dạng: nếu phần dư tạo thành đường cong hoặc
+xu hướng có hệ thống theo fitted values, mô hình có thể đang thiếu thành phần
+phi tuyến hoặc interaction quan trọng.
+
+Hàm \texttt{verify\_assumptions} vì vậy trả
+\texttt{GM1\_Linearity=None}, kèm fitted values, residuals và trung bình phần dư
+theo từng bin để phục vụ chẩn đoán. Hình~\ref{fig:gm1_linearity_diagnostic}
+minh họa kết quả trên dữ liệu mô phỏng tuyến tính. Các điểm xanh là phần dư từng
+quan sát; đường đỏ nối trung bình phần dư trong các khoảng fitted.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.86\textwidth]{images/part1_gm1_linearity_diagnostic.png}
+\caption{Chẩn đoán GM1 bằng Residuals vs Fitted và trung bình phần dư theo bin.}
+\label{fig:gm1_linearity_diagnostic}
+\end{figure}
+
+\noindent\textbf{Nhận xét.}
+Đường trung bình phần dư dao động quanh đường 0 và không tạo thành dạng cong có
+hệ thống, do đó \textbf{không thấy dấu hiệu phi tuyến rõ rệt} trong mẫu này.
+Kết luận đúng phải được diễn đạt ở mức chẩn đoán như vậy, thay vì khẳng định
+``GM1 đã thỏa mãn''. Nếu đường đỏ có dạng chữ U, chữ S hoặc xu hướng tăng/giảm
+rõ rệt, cần bổ sung biến phi tuyến, interaction hoặc thay đổi dạng hàm.
+
+% ============================================================
+\subsubsection{Định Lý Gauss--Markov (BLUE)}
+
+\subsubsubsection{Phát biểu}
 
 \begin{mythm}{Định lý Gauss--Markov}{gauss_markov}
 Dưới các giả thiết GM1--GM4, ước lượng OLS
@@ -75,7 +107,7 @@ Hơn nữa, ma trận hiệp phương sai của ước lượng OLS là
 \end{equation}
 \end{mythm}
 
-\subsubsection{Chứng minh}
+\subsubsubsection{Chứng minh}
 
 \begin{proof}
 Đặt $\mat{C} = (\mat{X}^T\mat{X})^{-1}\mat{X}^T \in \R^{(p+1)\times n}$, khi đó
@@ -194,7 +226,7 @@ Suy ra
 \]
 Lấy phần tử đường chéo thứ $j$ (chọn $\mat{v} = \mat{e}_j$) cho
 $\mathrm{Var}(\tilde{\beta}_j) \geq \mathrm{Var}(\hat{\beta}_{j,\mathrm{OLS}})$. Vậy
-$\hat{\boldsymbol{\beta}}_{\mathrm{OLS}}$ có phương sai nhỏ nhất trong lớp các ước lượng
+$\hat{\boldsymbol{\beta}}_{\mathrm{OLS}}$ có phương sai nhỏ nhất trong Class các ước lượng
 tuyến tính không chệch, tức là BLUE.
 
 \medskip
@@ -203,21 +235,21 @@ hay $\mat{D} = \mat{C}$: OLS là ước lượng BLUE \textbf{duy nhất}.
 \end{proof}
 
 % ============================================================
-\subsection{Minh Họa Định Lý Gauss--Markov bằng Mô Phỏng Monte Carlo}
+\subsubsection{Minh Họa Định Lý Gauss--Markov bằng Mô Phỏng Monte Carlo}
 
-\subsubsection{Ý tưởng}
+\subsubsubsection{Ý tưởng}
 
 Định lý Gauss--Markov khẳng định hai tính chất của $\hat{\boldsymbol{\beta}}_{\mathrm{OLS}}$:
 \textbf{không chệch} ($\E[\hat{\boldsymbol{\beta}}\mid\mat{X}] = \boldsymbol{\beta}$) và
-\textbf{phương sai nhỏ nhất} trong lớp các ước lượng tuyến tính không chệch. Đây là các
+\textbf{phương sai nhỏ nhất} trong Class các ước lượng tuyến tính không chệch. Đây là các
 mệnh đề về \textit{kỳ vọng} và \textit{phương sai} --- những đại lượng không quan sát được
 từ một mẫu duy nhất. Mô phỏng Monte Carlo cho phép \textbf{xấp xỉ} chúng: cố định ma trận
-thiết kế $\mat{X}$ và tham số thật $\boldsymbol{\beta}$, ta sinh lặp lại nhiều bộ dữ liệu
+thiết kế $\mat{X}$ và tham số thật $\boldsymbol{\beta}$, ta Tạo lặp lại nhiều bộ dữ liệu
 chỉ khác nhau ở nhiễu ngẫu nhiên, rồi quan sát phân phối của các ước lượng thu được.
 
-\subsubsection{Công thức ước lượng Monte Carlo}
+\subsubsubsection{Công thức ước lượng Monte Carlo}
 
-Với mỗi lần lặp $r = 1, \ldots, M$, ta giữ nguyên $\mat{X}$ và sinh
+Với mỗi lần lặp $r = 1, \ldots, M$, ta giữ nguyên $\mat{X}$ và Tạo
 \[
     \boldsymbol{\varepsilon}^{(r)} \sim \mathcal{N}(\mat{0}, \sigma^2\mat{I}_n),
     \qquad
@@ -274,29 +306,30 @@ OLS --- đúng kết luận của định lý.
 \begin{note}[Mô phỏng có điều kiện trên $\mat{X}$]
 Định lý Gauss--Markov là mệnh đề \textit{có điều kiện trên} $\mat{X}$, nên trong toàn bộ
 $M$ lần lặp ta \textbf{giữ nguyên} $\mat{X}$ và chỉ cho nhiễu $\boldsymbol{\varepsilon}$
-thay đổi. Nếu sinh lại $\mat{X}$ mỗi lần, ta sẽ trộn lẫn biến thiên của thiết kế vào kết quả.
+thay đổi. Nếu Tạo lại $\mat{X}$ mỗi lần, ta sẽ trộn lẫn biến thiên của thiết kế vào kết quả.
 \end{note}
 
-\subsubsection{Thiết lập thực nghiệm}
+\subsubsubsection{Thiết lập thực nghiệm}
 
 \begin{itemize}[noitemsep, leftmargin=1.4cm]
     \item Số quan sát $n = 30$; số tham số $p+1 = 3$ với
           $\boldsymbol{\beta} = (2.0,\, 1.0,\, -0.5)^T$.
     \item Phương sai nhiễu $\sigma^2 = 1.0$; số lần lặp $M = 8000$.
-    \item Ma trận $\mat{X}$: cột 1 toàn số 1, hai cột còn lại sinh từ $\mathcal{N}(0,1)$,
+    \item Ma trận $\mat{X}$: cột 1 toàn số 1, hai cột còn lại Tạo từ $\mathcal{N}(0,1)$,
           \textbf{cố định} suốt mô phỏng.
     \item Ước lượng đối chứng Alt: $\mat{A} = \mat{B}(\mat{I}-\mat{H})$ với $\mat{B}$ là
-          ma trận hằng cố định (sinh ngẫu nhiên một lần, $\mathtt{alt\_scale} = 0.06$).
+          ma trận hằng cố định (Tạo ngẫu nhiên một lần, $\mathtt{alt\_scale} = 0.06$).
 \end{itemize}
 
-\subsubsection{Cài đặt Python}
+\subsubsubsection{Cài đặt Python}
 
 Ước lượng OLS tái sử dụng hàm \texttt{ols\_fit} đã xây từ đầu. Ước lượng đối chứng Alt và
-vòng lặp Monte Carlo được lưu trong file \texttt{code/monte\_carlo\_gauss\_markov.py}. Cài đặt
-sử dụng NumPy chỉ để sinh nhiễu, tổng hợp kết quả và kiểm chứng; các phép toán ma trận được
+vòng lặp Monte Carlo được lưu trong file
+\texttt{part1/monte\_carlo\_gauss\_markov.py}. Cài đặt
+sử dụng NumPy chỉ để Tạo nhiễu, tổng hợp kết quả và kiểm chứng; các phép toán ma trận được
 xây dựng từ đầu.
 
-\subsubsection{Kết quả mô phỏng}
+\subsubsubsection{Kết quả mô phỏng}
 
 \paragraph{Bảng kết quả tổng hợp.}
 Bảng~\ref{tab:mc_results} tóm tắt toàn bộ kết quả qua $M = 8000$ lần lặp. Cả hai ước lượng
@@ -380,14 +413,15 @@ gần như bằng nhau --- mô phỏng khớp công thức $\sigma^2(\mat{X}^T\m
 \eqref{eq:alt_var}. Cột Alt cao hơn cột OLS ở \textbf{mọi} hệ số (tỉ số $\approx 2.5$--$4.5$),
 khẳng định OLS có phương sai nhỏ hơn --- đúng kết luận BLUE.
 
-\subsubsection{Kiểm chứng với NumPy và scikit-learn}
+\subsubsubsection{Kiểm chứng với NumPy và scikit-learn}
 
 Để bảo đảm cài đặt từ đầu là chính xác, ta so nghiệm OLS thu được trên một mẫu với hai
 công cụ chuẩn: \texttt{numpy.linalg.lstsq} và
 \texttt{sklearn.linear\_model.LinearRegression} (đặt \texttt{fit\_intercept=False} vì cột
 hệ số tự do đã nằm trong $\mat{X}$).
 
-Hàm \texttt{verify\_with\_numpy\_sklearn()} trong \texttt{code/monte\_carlo\_gauss\_markov.py}
+Hàm \texttt{verify\_with\_numpy\_sklearn()} trong
+\texttt{part1/monte\_carlo\_gauss\_markov.py}
 thực hiện kiểm chứng này:
 
 \noindent Kết quả kiểm chứng:

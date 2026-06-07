@@ -1,21 +1,21 @@
-PHAN 2 - TOM TAT PIPELINE MO HINH HOP NHAT
+PHAN 2 - THE BEST MODEL
 ==============================================================================
 
-Train rows: 4,809
+Dev train rows: 3,847
 Test rows : 1,601
-Features  : 188
+Features  : 151
 Target    : log1p(total_cost) khi train, expm1 ve TZS khi submit
 
 MODEL SUMMARY
 ------------------------------------------------------------------------------
-OLS                        Train R2=0.3120, Train RMSE=10,138,649.75, CV R2=0.2916, CV RMSE=10,273,957.31
-OLS_Selected               Train R2=0.3103, Train RMSE=10,151,338.10, CV R2=0.2987, CV RMSE=10,222,101.57
-Ridge                      Train R2=0.3111, Train RMSE=10,145,509.33, CV R2=0.3017, CV RMSE=10,201,404.41
-Lasso                      Train R2=0.3076, Train RMSE=10,171,419.93, CV R2=0.3014, CV RMSE=10,203,772.48
-ElasticNet                 Train R2=0.3087, Train RMSE=10,162,904.72, CV R2=0.3017, CV RMSE=10,201,512.84
-Polynomial2_ElasticNet     Train R2=0.3097, Train RMSE=10,155,774.94, CV R2=0.3008, CV RMSE=10,208,157.92
-KernelRidge_RBF            Train R2=0.2978, Train RMSE=10,243,024.80, CV R2=0.2960, CV RMSE=9,221,462.33
-Ensemble_Mean              Train R2=0.3099, Train RMSE=10,154,289.73, CV: xem score website
+OLS                        Train R2=0.3096, Train RMSE=10,134,521.30, Holdout R2=0.2943, Holdout RMSE=10,357,468.10, CV R2=0.2807, CV RMSE=10,331,582.01
+OLS_Selected               Train R2=0.2790, Train RMSE=10,356,377.57, Holdout R2=0.2536, Holdout RMSE=10,651,422.48, CV R2=0.2639, CV RMSE=10,446,976.61
+Ridge                      Train R2=0.3096, Train RMSE=10,134,858.01, Holdout R2=0.2930, Holdout RMSE=10,366,870.49, CV R2=0.2943, CV RMSE=10,232,251.72
+Lasso                      Train R2=0.3030, Train RMSE=10,182,736.73, Holdout R2=0.2799, Holdout RMSE=10,462,572.38, CV R2=0.2934, CV RMSE=10,236,355.76
+ElasticNet                 Train R2=0.3068, Train RMSE=10,155,229.14, Holdout R2=0.2879, Holdout RMSE=10,403,906.29, CV R2=0.2943, CV RMSE=10,230,899.59
+Polynomial2_ElasticNet     Train R2=0.3077, Train RMSE=10,148,673.91, Holdout R2=0.2878, Holdout RMSE=10,404,751.67, CV R2=0.2908, CV RMSE=10,256,219.33
+KernelRidge_RBF            Train R2=0.3091, Train RMSE=10,138,215.41, Holdout R2=0.2513, Holdout RMSE=10,667,977.30, CV R2=0.2955, CV RMSE=9,001,251.52
+Ensemble_Mean              Train R2=0.3141, Train RMSE=10,101,360.32, Holdout R2=0.2896, Holdout RMSE=10,391,351.00, CV: xem score website
 
 SUBMISSION
 ------------------------------------------------------------------------------
