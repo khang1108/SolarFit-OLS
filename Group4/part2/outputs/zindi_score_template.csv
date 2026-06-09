@@ -1,0 +1,9 @@
+model,submission_file,website_score,note
+OLS,outputs/submissions/submission_ols.csv,,Upload file nay len Zindi roi dien score vao cot website_score.
+OLS_Selected,outputs/submissions/submission_ols_selected.csv,,Upload file nay len Zindi roi dien score vao cot website_score.
+Ridge,outputs/submissions/submission_ridge.csv,,Upload file nay len Zindi roi dien score vao cot website_score.
+Lasso,outputs/submissions/submission_lasso.csv,,Upload file nay len Zindi roi dien score vao cot website_score.
+ElasticNet,outputs/submissions/submission_elasticnet.csv,,Upload file nay len Zindi roi dien score vao cot website_score.
+Polynomial2_ElasticNet,outputs/submissions/submission_poly2_elasticnet.csv,,Upload file nay len Zindi roi dien score vao cot website_score.
+KernelRidge_RBF,outputs/submissions/submission_kernel_ridge_rbf.csv,,Upload file nay len Zindi roi dien score vao cot website_score.
+Ensemble_Mean,outputs/submissions/submission_ensemble_mean.csv,,Upload file nay len Zindi roi dien score vao cot website_score.

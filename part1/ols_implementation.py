@@ -279,7 +279,7 @@ def ols_fit(X: List[List[float]], y: List[float]) -> OLSResult:
     β̂ = (X'X)^{-1}X'y, gọi là Normal Equations. Đây là ước lượng BLUE (Best Linear
     Unbiased Estimator) theo Định lý Gauss-Markov khi các giả thiết GM1-GM4 thỏa
     mãn, tức là khi phần dư có kỳ vọng bằng 0 và phương sai đồng nhất σ²I. Phương
-    sai nhiễu được ước lượng không chệch bởi σ̂² = RSS/(n-p-1), trong đó n-p-1 là
+    sai nhiễu được ước lượng không Bias bởi σ̂² = RSS/(n-p-1), trong đó n-p-1 là
     bậc tự do phần dư. Toàn bộ tính toán được thực hiện bằng Python thuần để minh
     họa các bước đại số một cách tường minh.
 
@@ -328,7 +328,7 @@ def ols_fit(X: List[List[float]], y: List[float]) -> OLSResult:
         residuals = _vecsub(y_vec, y_hat)
         rss       = _dot(residuals, residuals)
 
-        # Bước 5: ước lượng không chệch phương sai nhiễu; chia cho (n-p-1) chứ
+        # Bước 5: ước lượng không Bias phương sai nhiễu; chia cho (n-p-1) chứ
         # không phải n vì phần dư bị ràng buộc bởi p+1 phương trình pháp tuyến
         dof        = n - p - 1
         sigma2_hat = rss / dof

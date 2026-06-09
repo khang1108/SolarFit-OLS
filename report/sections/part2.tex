@@ -56,7 +56,7 @@ Quan sát bảng trên cho thấy rằng \code{travel\_with} chứa 23.1\% missi
 % ============================================================
 \subsubsection{Phân Tích Dữ Liệu Khám Phá (EDA)}
 
-Tukey \cite{tukey1977} định nghĩa EDA là quá trình dùng các công cụ thống kê và trực quan hóa để hiểu cấu trúc của dữ liệu trước khi áp đặt bất kỳ mô hình nào. Trong hồi quy tuyến tính, EDA đóng vai trò đặc biệt quan trọng vì nó giúp kiểm tra sơ bộ các giả thiết Gauss–Markov (GM1–GM5) ngay từ đầu, từ đó định hướng các quyết định Preprocessing và lựa chọn mô hình \cite{wooldridge2013}. Nhóm đã xây dựng script \texttt{part2/src/eda.py} để thực hiện toàn bộ quá trình EDA, bao gồm phân tích phân bố biến mục tiêu, khám phá tương quan, kiểm tra đa cộng tuyến và phát hiện data shift.
+Tukey \cite{tukey1977} định nghĩa EDA là quá trình dùng các công cụ thống kê và trực quan hóa để hiểu cấu trúc của dữ liệu trước khi áp đặt bất kỳ mô hình nào. Trong hồi quy tuyến tính, EDA đóng vai trò đặc biệt quan trọng vì nó giúp kiểm tra sơ bộ các giả thiết Gauss–Markov (GM1–GM4) ngay từ đầu, từ đó định hướng các quyết định Preprocessing và lựa chọn mô hình \cite{wooldridge2013}. Nhóm đã xây dựng script \texttt{part2/src/eda.py} để thực hiện toàn bộ quá trình EDA, bao gồm phân tích phân bố biến mục tiêu, khám phá tương quan, kiểm tra đa cộng tuyến và phát hiện data shift.
 
 \subsubsubsection{Phân Bố Biến Mục Tiêu}
 
@@ -71,7 +71,7 @@ Hình \ref{fig:target_distribution} trình bày phân tích chi tiết về phâ
 \label{fig:target_distribution}
 \end{figure}
 
-Vì Skewness = 2.97 vi phạm rõ ràng giả thiết GM5, do đó ta áp dụng biến đổi \texttt{log1p($y$)} trước khi huấn luyện. Sau biến đổi, skewness giảm xuống $-0.32$, đưa $y$ gần phân bố chuẩn, đảm bảo tính BLUE của ước lượng OLS và hiệu lực của các kiểm định thống kê. Ngoài ra, số lượng lớn outliers trong boxplot gợi ý đưa Huber Regression vào danh sách so sánh để đánh giá xem mô hình robust có cải thiện đáng kể so với OLS hay không.
+Vì Skewness = 2.97 cho thấy $y$ lệch nặng, phần dư $\hat{\varepsilon}$ khó thỏa mãn giả thiết chuẩn GM5; do đó ta áp dụng biến đổi \texttt{log1p($y$)} trước khi huấn luyện. Sau biến đổi, skewness giảm xuống $-0.32$, phân phối $y$ gần chuẩn hơn, giúp củng cố hiệu lực của các kiểm định $t$ và $F$. Ngoài ra, số lượng lớn outliers trong boxplot gợi ý đưa Huber Regression vào danh sách so sánh để đánh giá xem mô hình robust có cải thiện đáng kể so với OLS hay không.
 
 % ----------------------------------------------------------------
 \subsubsubsection{Phân Bố Các Biến Số}
@@ -226,7 +226,7 @@ Vì hàm mục tiêu là bậc hai và lồi (convex) theo $\boldsymbol{\beta}$,
     \hat{\boldsymbol{\beta}}_{\text{OLS}} = (\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\mathbf{y}
 \end{equation}
 
-Theo Định lý Gauss–Markov đã chứng minh ở Phần 1, $\hat{\boldsymbol{\beta}}_{\text{OLS}}$ là ước lượng tuyến tính không chệch có phương sai nhỏ nhất (BLUE) khi các giả thiết GM1–GM4 thỏa mãn. Tuy nhiên trong bối cảnh ứng dụng này, với 187 feature và chỉ 4{,}809 quan sát (tỷ lệ $n/p \approx 26$), tính BLUE không đủ để ngăn chặn overfitting: mô hình có đủ tự do để fit cả noise lẫn signal trong dữ liệu huấn luyện, dẫn đến hiệu suất kém trên dữ liệu mới \cite{james2013}. Vì lý do này, OLS được dùng làm baseline để so sánh với các mô hình có regularization.
+Theo Định lý Gauss–Markov đã chứng minh ở Phần 1, $\hat{\boldsymbol{\beta}}_{\text{OLS}}$ là ước lượng tuyến tính không Bias có phương sai nhỏ nhất (BLUE) khi các giả thiết GM1–GM4 thỏa mãn. Tuy nhiên trong bối cảnh ứng dụng này, với 187 feature và chỉ 4{,}809 quan sát (tỷ lệ $n/p \approx 26$), tính BLUE không đủ để ngăn chặn overfitting: mô hình có đủ tự do để fit cả noise lẫn signal trong dữ liệu huấn luyện, dẫn đến hiệu suất kém trên dữ liệu mới \cite{james2013}. Vì lý do này, OLS được dùng làm baseline để so sánh với các mô hình có regularization.
 
 % ----------------------------------------------------------------
 \subsubsubsection{Mô Hình 2: Ridge Regression}

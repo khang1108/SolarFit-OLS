@@ -88,7 +88,7 @@ def model_metrics(y: List[float], y_hat: List[float], p: int) -> ModelMetrics:
     else:
         r2_adj = r2
 
-    # σ̂²: ước lượng không chệch phương sai nhiễu; bậc tự do n-p-1 chứ không phải n
+    # σ̂²: ước lượng không Bias phương sai nhiễu; bậc tự do n-p-1 chứ không phải n
     if dof_residual > 0:
         sigma2_hat = rss / dof_residual
     else:

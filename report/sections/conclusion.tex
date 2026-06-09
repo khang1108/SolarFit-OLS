@@ -14,8 +14,8 @@ chỉ được dùng làm oracle kiểm chứng.
 Các kiểm chứng số cho thấy implementation scratch khớp thư viện chuẩn ở mức
 sai số máy. Hệ số OLS và hat matrix có sai số cực đại cỡ $10^{-16}$; suy luận
 hệ số, $p$-value và effective degrees of freedom của Ridge đều đạt sai số nhỏ
-hơn $10^{-8}$. Mô phỏng Monte Carlo xác nhận OLS không chệch và có phương sai
-nhỏ hơn ước lượng tuyến tính không chệch đối chứng, phù hợp với kết luận BLUE.
+hơn $10^{-8}$. Mô phỏng Monte Carlo xác nhận OLS không Bias và có phương sai
+nhỏ hơn ước lượng tuyến tính không Bias đối chứng, phù hợp với kết luận BLUE.
 Generalized Cross-Validation của Ridge cũng thể hiện đúng dạng giảm đến điểm
 tối ưu rồi tăng trở lại.
 
@@ -30,7 +30,7 @@ quan trọng trong Prediction chi phí.
 
 Kinh nghiệm đầu tiên và cũng là sâu sắc nhất mà nhóm rút ra là khoảng cách giữa công thức toán học và một implementation thực sự đáng tin cậy. Một công thức đúng về mặt đại số vẫn có thể thất bại trong thực tế khi gặp ma trận suy biến, dữ liệu ill-conditioned hay đơn giản là đầu vào không hợp lệ; vì vậy mỗi hàm scratch đều cần đi kèm kiểm tra điều kiện đầu vào, xử lý trường hợp suy biến và test số đối chiếu với thư viện chuẩn. Cách tiếp cận sử dụng NumPy, SciPy và scikit-learn làm oracle độc lập tỏ ra đặc biệt hiệu quả: nó xác nhận tính đúng của thuật toán tự cài đặt mà không thay thế nội dung cần chứng minh, đồng thời tạo ra vòng kiểm chứng khép kín giữa lý thuyết và kết quả số.
 
-Kinh nghiệm thứ hai liên quan đến việc hiểu đúng vị trí và giới hạn của từng phương pháp hồi quy. OLS có khả năng diễn giải mạnh và cung cấp ước lượng không chệch, nhưng nhạy với đa cộng tuyến và dữ liệu ill-conditioned; Ridge và Lasso không phải là sự thay thế đơn giản mà là sự đánh đổi có hệ thống giữa độ chệch, phương sai và tính thưa của mô hình tùy vào mục tiêu phân tích. Đặc biệt quan trọng là nguyên tắc tách biệt ba giai đoạn đánh giá: dữ liệu dùng để fit mô hình, dữ liệu dùng để chọn siêu tham số và dữ liệu dùng để kiểm tra cuối cùng phải hoàn toàn độc lập với nhau, vì bất kỳ sự trộn lẫn nào giữa ba giai đoạn này đều dẫn đến metric lạc quan do data leakage --- một sai lầm phổ biến nhưng khó phát hiện nếu không có nhận thức rõ ràng về ranh giới giữa các tập dữ liệu.
+Kinh nghiệm thứ hai liên quan đến việc hiểu đúng vị trí và giới hạn của từng phương pháp hồi quy. OLS có khả năng diễn giải mạnh và cung cấp ước lượng không Bias, nhưng nhạy với đa cộng tuyến và dữ liệu ill-conditioned; Ridge và Lasso không phải là sự thay thế đơn giản mà là sự đánh đổi có hệ thống giữa độ Bias, phương sai và tính thưa của mô hình tùy vào mục tiêu phân tích. Đặc biệt quan trọng là nguyên tắc tách biệt ba giai đoạn đánh giá: dữ liệu dùng để fit mô hình, dữ liệu dùng để chọn siêu tham số và dữ liệu dùng để kiểm tra cuối cùng phải hoàn toàn độc lập với nhau, vì bất kỳ sự trộn lẫn nào giữa ba giai đoạn này đều dẫn đến metric lạc quan do data leakage --- một sai lầm phổ biến nhưng khó phát hiện nếu không có nhận thức rõ ràng về ranh giới giữa các tập dữ liệu.
 
 Kinh nghiệm cuối cùng, thực tế nhưng không kém phần quan trọng, là sự gắn kết giữa báo cáo và code. Khi báo cáo được viết trước khi chạy code lần cuối hoặc được cập nhật một phần sau khi pipeline thay đổi, các bảng số liệu, hệ số mô hình và kết luận định tính có thể trở nên mâu thuẫn với implementation thực tế; cách phòng tránh duy nhất là tạo ra số liệu trong báo cáo trực tiếp từ output của code thay vì ghi thủ công. Nguyên tắc này tuy đơn giản nhưng đòi hỏi kỷ luật trong suốt quá trình làm project, đặc biệt khi nhiều thành viên cùng chỉnh sửa cả code lẫn báo cáo song song.
 
@@ -47,30 +47,62 @@ thu thập các biến giải thích mới như thu nhập, loại hình lưu tr
 
 \subsection{Phân Công Nhóm}
 
-\begin{table}[H]
-\centering
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.28\textwidth}%
+                  >{\raggedright\arraybackslash}p{0.66\textwidth}}
 \caption{Phân công các hạng mục chính của project}
-\label{tab:team_contributions}
-\begin{tabularx}{\textwidth}{lX}
+\label{tab:team_contributions} \\
 \toprule
-\textbf{Thành viên} & \textbf{Hạng mục phụ trách} \\ \midrule
-Khang Phuc Nguyen -- 24120068
-    & Điều phối và tích hợp project; implementation OLS, Ridge/Lasso và
-      statistical inference; kiểm chứng số; tổng hợp và build báo cáo. \\
-Nghia Trong Hoang -- 24120103
-    & Nền tảng lý thuyết OLS, hat matrix, các giả thiết và Định lý
-      Gauss--Markov; mô phỏng Monte Carlo và diễn giải kết quả. \\
+\textbf{Thành viên} & \textbf{Hạng mục phụ trách} \\
+\midrule
+\endfirsthead
+\multicolumn{2}{r}{\small\textit{(tiếp theo)}} \\
+\toprule
+\textbf{Thành viên} & \textbf{Hạng mục phụ trách} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{2}{r}{\small\textit{(xem trang tiếp)}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+Khang Phuc Nguyen (Leader) -- 24120068
+    & Điều phối và tích hợp project; tổ chức cấu trúc source code, merge và
+      hoàn chỉnh implementation của các thành viên; xây dựng toàn bộ
+      báo cáo và kiểm thử cuối. \\[4pt]
 Nhat Hoang Mai -- 24120109
-    & EDA dữ liệu Tanzania Tourism, trực quan hóa, phân tích missing values,
-      data shift và các giả thiết mô hình. \\
+    & \textit{Phần 1:} Phát biểu bài toán Data Fitting tổng quát, chứng minh
+      Normal Equations bằng giải tích ma trận; cài đặt \texttt{ols\_fit}
+      (beta\_hat, sigma\_squared\_hat) và \texttt{hat\_matrix} (ma trận
+      chiếu, kiểm tra idempotent). \\
+    & \textit{Phần 2:} Xác nhận mục tiêu bài toán, đơn vị target và feature
+      hợp lệ trên test.csv; kiểm tra rủi ro leakage ban đầu; chốt schema
+      train/test, ID, target và submission format. \\[4pt]
+Nghia Trong Hoang -- 24120103
+    & \textit{Phần 1:} Trình bày ý nghĩa $R^2$ và $R^2$ hiệu chỉnh, lý thuyết
+      kiểm định $t$-test và $F$-test; cài đặt \texttt{model\_metrics}
+      (RSS, TSS, $R^2$, $F$-statistic) và \texttt{coef\_inference}
+      (ma trận hiệp phương sai, SE, $t$-stat, $p$-value, khoảng tin cậy 95\%). \\
+    & \textit{Phần 2:} Thống kê missing theo train/test, phân tích pattern
+      MCAR/MAR/MNAR và chiến lược imputation không leakage; xác định
+      numeric thật sự và numeric dạng code/category; đánh giá tương quan
+      với target và kiểm tra VIF. \\[4pt]
 Nhat Hoang Nguyen -- 24120110
-    & Data pipeline, preprocessing, feature engineering, huấn luyện và đánh
-      giá các mô hình Phần 2. \\
+    & \textit{Phần 1:} Trình bày khái niệm đa cộng tuyến và hậu quả; lý
+      thuyết hồi quy Ridge và công thức nghiệm
+      $(\mathbf{X}^\top\mathbf{X} + \lambda\mathbf{I})^{-1}\mathbf{X}^\top\mathbf{y}$;
+      cài đặt \texttt{vif} (hồi quy phụ trợ từng cột, tính $R^2_j$,
+      $\text{VIF}_j$) và \texttt{ridge\_fit} (nghiệm dạng đóng, ridge trace). \\
+    & \textit{Phần 2:} Phân tích categorical (cardinality, rare categories,
+      text inconsistency, ordinal candidates); so sánh median target theo
+      category; kiểm tra phân phối train/test, missing ratio shift và
+      category chỉ xuất hiện ở một tập. \\[4pt]
 Long Nhat Phung Vo -- 24120088
-    & Cross-validation, so sánh mô hình, phân tích feature importance,
-      chuẩn hóa output/submission và rà soát nội dung báo cáo. \\ \bottomrule
-\end{tabularx}
-\end{table}
-
-Mọi thành viên cùng tham gia rà soát lý thuyết, kiểm thử kết quả, chỉnh sửa báo
-cáo và chuẩn bị phần trình bày cuối cùng.
+    & \textit{Phần 1:} Trình bày các giả thiết về phần dư và phương sai đồng
+      nhất; cài đặt \texttt{residual\_plots} (4 subplot: Residuals vs
+      Fitted, Normal Q-Q, Scale-Location, Cook's Distance) và
+      \texttt{kfold\_cv} (chia dữ liệu thành $k$ fold, vòng lặp fit/test,
+      tổng hợp MSE). \\
+    & \textit{Phần 2:} Phân tích target (missing, phân phối gốc và log1p,
+      skewness, outlier); đề xuất chiến lược holdout/$k$-fold và
+      stratify theo quantiles target; xác định baseline cần vượt. \\
+\end{longtable}

@@ -1,10 +1,10 @@
 """
 File minh họa Định lý Gauss-Markov bằng mô phỏng Monte Carlo so sánh OLS với ước lượng thay thế.
 
-Xây dựng một ước lượng tuyến tính không chệch thay thế
+Xây dựng một ước lượng tuyến tính không Bias thay thế
 β̃_Alt = β̂_OLS + Ay và chứng minh qua mô phỏng rằng Var(β̃_Alt) >= Var(β̂_OLS),
 tức là OLS có phương sai nhỏ nhất trong Class ước lượng đó.
-Ma trận nhiễu A được chọn thỏa mãn AX = 0 để đảm bảo β̃_Alt không chệch: 
+Ma trận nhiễu A được chọn thỏa mãn AX = 0 để đảm bảo β̃_Alt không Bias: 
     vì E[β̃_Alt] = E[β̂_OLS] + A·E[y] = β + AXβ = β khi AX = 0. 
     
 Cụ thể, A = B(I - H) với B bất kỳ tự động thỏa mãn AX = B(I-H)X = 0 vì (I-H)X = 0 theo định nghĩa của hat matrix. 
@@ -17,9 +17,9 @@ except ImportError:  # Cho phép chạy trực tiếp file
     from ols_implementation import _matmul, _matvec, hat_matrix, ols_fit
 
 def make_perturbation(X, B):
-    """Tạo ma trận nhiễu A = B(I - H) thỏa mãn ràng buộc không chệch AX = 0.
+    """Tạo ma trận nhiễu A = B(I - H) thỏa mãn ràng buộc không Bias AX = 0.
 
-    Để ước lượng thay thế β̃_Alt = β̂_OLS + Ay không chệch, cần A thỏa mãn
+    Để ước lượng thay thế β̃_Alt = β̂_OLS + Ay không Bias, cần A thỏa mãn
     AX = 0. Hàm này khai thác tính chất (I - H)X = 0 của ma trận chiếu phần bù:
     vì HX = X (X chiếu lên chính mình qua C(X)), nên (I-H)X = X - HX = 0.
 
@@ -39,9 +39,9 @@ def make_perturbation(X, B):
 
 
 def alt_fit(X, y, A):
-    """Tính ước lượng tuyến tính không chệch thay thế β̃_Alt = β̂_OLS + Ay.
+    """Tính ước lượng tuyến tính không Bias thay thế β̃_Alt = β̂_OLS + Ay.
 
-    Tính không chệch của β̃_Alt được đảm bảo vì E[β̃_Alt | X] = E[β̂_OLS | X] + A·E[y | X] =
+    Tính không Bias của β̃_Alt được đảm bảo vì E[β̃_Alt | X] = E[β̂_OLS | X] + A·E[y | X] =
     β + AXβ = β + 0 = β. 
 
     Args:
